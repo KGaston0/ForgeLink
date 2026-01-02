@@ -153,6 +153,9 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
+# WARNING: CORS_ALLOW_ALL_ORIGINS=True allows any origin to access your API.
+# This is suitable for development only. For production, set to False and
+# specify allowed origins in CORS_ALLOWED_ORIGINS.
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',

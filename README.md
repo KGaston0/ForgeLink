@@ -146,6 +146,36 @@ Access the admin panel at `http://localhost:8000/admin/` with your superuser cre
 ### Browsable API
 The Django REST Framework provides a browsable API interface at `http://localhost:8000/api/`
 
+## Security Considerations
+
+⚠️ **Important**: This is a development scaffolding setup. Before deploying to production:
+
+1. **Authentication & Authorization**:
+   - Current setup uses `AllowAny` permissions for all API endpoints
+   - Implement proper authentication (e.g., Token Authentication, JWT, OAuth)
+   - Add appropriate permission classes to protect endpoints
+   - Example: Change `DEFAULT_PERMISSION_CLASSES` in `settings.py` to `['rest_framework.permissions.IsAuthenticated']`
+
+2. **CORS Configuration**:
+   - `CORS_ALLOW_ALL_ORIGINS=True` allows any website to access your API
+   - For production, set `CORS_ALLOW_ALL_ORIGINS=False`
+   - Specify only trusted origins in `CORS_ALLOWED_ORIGINS`
+
+3. **Secret Key**:
+   - Generate a new, unique `SECRET_KEY` for production
+   - Never commit the `.env` file with real credentials
+
+4. **Database**:
+   - Use strong passwords for the PostgreSQL user
+   - Configure proper database backups
+
+5. **DEBUG Mode**:
+   - Set `DEBUG=False` in production to prevent information disclosure
+
+6. **HTTPS**:
+   - Use HTTPS in production to encrypt data in transit
+   - Update `ALLOWED_HOSTS` with your production domain
+
 ## License
 
 This project is licensed under the MIT License.
