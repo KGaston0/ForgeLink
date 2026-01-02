@@ -1,72 +1,36 @@
 from rest_framework import serializers
-from .models import Project, Node, NodeConnection
-
-
-class NodeConnectionSerializer(serializers.ModelSerializer):
-    """
-    Serializer for NodeConnection model
-    """
-    class Meta:
-        model = NodeConnection
-        fields = [
-            'id', 'project', 'source_node', 'target_node',
-            'connection_type', 'label', 'created_at'
-        ]
-        read_only_fields = ['created_at']
+from .models import Node
 
 
 class NodeSerializer(serializers.ModelSerializer):
     """
     Serializer for Node model
     """
-    outgoing_connections = NodeConnectionSerializer(many=True, read_only=True)
-    incoming_connections = NodeConnectionSerializer(many=True, read_only=True)
+    child_count = serializers.SerializerMethodField()
+    depth_level = serializers.SerializerMethodField()
 
     class Meta:
         model = Node
         fields = [
-            'id', 'project', 'title', 'node_type', 'content',
+            'id', 'project', 'parent_node', 'title', 'node_type', 'content',
             'position_x', 'position_y', 'color',
             'created_at', 'updated_at',
-            'outgoing_connections', 'incoming_connections'
+            'child_count', 'depth_level'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
+    def get_child_count(self, obj):
+        return obj.child_nodes.count()
 
-class ProjectSerializer(serializers.ModelSerializer):
+    def get_depth_level(self, obj):
+        return obj.get_depth()
+
+
+class NodeDetailSerializer(NodeSerializer):
     """
-    Serializer for Project model
+    Detailed serializer with nested children
     """
-    nodes = NodeSerializer(many=True, read_only=True)
-    connections = NodeConnectionSerializer(many=True, read_only=True)
-    node_count = serializers.SerializerMethodField()
+    child_nodes = NodeSerializer(many=True, read_only=True)
 
-    class Meta:
-        model = Project
-        fields = [
-            'id', 'name', 'description', 'owner',
-            'created_at', 'updated_at',
-            'nodes', 'connections', 'node_count'
-        ]
-        read_only_fields = ['created_at', 'updated_at']
-
-    def get_node_count(self, obj):
-        return obj.nodes.count()
-
-
-class ProjectListSerializer(serializers.ModelSerializer):
-    """
-    Lightweight serializer for listing projects (without nested nodes)
-    """
-    node_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Project
-        fields = [
-            'id', 'name', 'description', 'owner',
-            'created_at', 'updated_at', 'node_count'
-        ]
-        read_only_fields = ['created_at', 'updated_at']
-
-    def get_node_count(self, obj):
-        return obj.nodes.count()
+    class Meta(NodeSerializer.Meta):
+        fields = NodeSerializer.Meta.fields + ['child_nodes']

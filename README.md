@@ -2,179 +2,220 @@
 
 Django backend for a node-based project management and worldbuilding application.
 
+ForgeLink provides a system for modeling knowledge as graphs, with isolated projects, typed relationships, and evolution over time. Suitable for worldbuilding, story design, and complex knowledge systems.
+
+---
+
 ## Features
 
-- **Django REST Framework API** for managing projects, nodes, and connections
-- **PostgreSQL** database support
-- **Node-based graph structure** for flexible project organization
-- **Multiple node types**: characters, locations, events, items, concepts, and notes
-- **Node connections** with various relationship types
-- **CORS support** for frontend integration
+- Django REST Framework API for managing projects, nodes, and connections
+- PostgreSQL database support
+- Node-based graph structure for flexible project organization
+- Multiple node types: characters, locations, events, items, concepts, and notes
+- Node connections with various relationship types
+- Project-scoped isolation
+- CORS support for frontend integration
+- Extensible architecture for future authentication, permissions, and realtime features
+
+---
 
 ## Tech Stack
 
-- Django 4.2+
-- Django REST Framework
-- PostgreSQL
-- django-cors-headers
-- django-filter
+- Language: Python 3.10+
+- Backend:
+  - Django 4.2+
+  - Django REST Framework
+- Database: PostgreSQL
+- Libraries:
+  - django-cors-headers
+  - django-filter
+  - python-dotenv
+
+---
 
 ## Installation
 
-1. Clone the repository:
+1. Clone the repository  
 ```bash
-git clone https://github.com/KGaston0/ForgeLink.git
-cd ForgeLink
+   git clone https://github.com/KGaston0/ForgeLink.git  
+   cd ForgeLink
+```  
+
+2. Create a virtual environment and activate it  
+```bash
+   python -m venv venv  
+   source venv/bin/activate  
+   (On Windows: venv\Scripts\activate)
+```
+3. Install dependencies  
+```bash
+   pip install -r requirements.txt  
+```
+4. Create environment variables  
+```bash
+   cp .env.example .env  
 ```
 
-2. Create a virtual environment and activate it:
+   Example `.env` configuration:  
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+   DEBUG=True  
+   SECRET_KEY=change-me  
+   DB_NAME=forgelink_db  
+   DB_USER=forgelink_user  
+   DB_PASSWORD=strongpassword  
+   DB_HOST=localhost  
+   DB_PORT=5432  
+   CORS_ALLOW_ALL_ORIGINS=True  
 ```
 
-3. Install dependencies:
+5. PostgreSQL setup  
 ```bash
-pip install -r requirements.txt
+   createdb forgelink_db  
+   createuser forgelink_user  
 ```
 
-4. Create a `.env` file based on `.env.example`:
+   SQL:
 ```bash
-cp .env.example .env
+   ALTER USER forgelink_user WITH PASSWORD 'strongpassword';  
+   GRANT ALL PRIVILEGES ON DATABASE forgelink_db TO forgelink_user;  
 ```
 
-5. Set up PostgreSQL database:
+6. Run migrations  
 ```bash
-# Create a PostgreSQL database and user
-createdb forgelink_db
-createuser forgelink_user
-# Grant privileges to the user on the database
+   python manage.py migrate  
+```
+7. Create a superuser
+```bash
+   python manage.py createsuperuser  
 ```
 
-6. Update `.env` with your database credentials.
-
-7. Run migrations:
+8. Run the development server
 ```bash
-python manage.py migrate
+   python manage.py runserver  
 ```
 
-8. Create a superuser:
-```bash
-python manage.py createsuperuser
-```
+The API will be available at:  
+http://localhost:8000/api/
 
-9. Run the development server:
-```bash
-python manage.py runserver
-```
+---
 
 ## API Endpoints
 
-The API is available at `http://localhost:8000/api/`
+Base URL:  
+http://localhost:8000/api/
 
 ### Projects
-- `GET /api/projects/` - List all projects
-- `POST /api/projects/` - Create a new project
-- `GET /api/projects/{id}/` - Get project details
-- `PUT/PATCH /api/projects/{id}/` - Update project
-- `DELETE /api/projects/{id}/` - Delete project
-- `GET /api/projects/{id}/nodes/` - Get all nodes in a project
-- `GET /api/projects/{id}/connections/` - Get all connections in a project
+
+- GET /api/projects/ — List all projects
+- POST /api/projects/ — Create a new project
+- GET /api/projects/{id}/ — Get project details
+- PUT/PATCH /api/projects/{id}/ — Update project
+- DELETE /api/projects/{id}/ — Delete project
+- GET /api/projects/{id}/nodes/ — Get all nodes in a project
+- GET /api/projects/{id}/connections/ — Get all connections in a project
 
 ### Nodes
-- `GET /api/nodes/` - List all nodes
-- `POST /api/nodes/` - Create a new node
-- `GET /api/nodes/{id}/` - Get node details
-- `PUT/PATCH /api/nodes/{id}/` - Update node
-- `DELETE /api/nodes/{id}/` - Delete node
+
+- GET /api/nodes/ — List all nodes
+- POST /api/nodes/ — Create a new node
+- GET /api/nodes/{id}/ — Get node details
+- PUT/PATCH /api/nodes/{id}/ — Update node
+- DELETE /api/nodes/{id}/ — Delete node
 
 Query parameters:
-- `?project={id}` - Filter by project
-- `?node_type={type}` - Filter by node type
-- `?search={query}` - Search in title and content
+- project — Filter by project
+- node_type — Filter by node type
+- search — Search in title and content
 
 ### Node Connections
-- `GET /api/connections/` - List all connections
-- `POST /api/connections/` - Create a new connection
-- `GET /api/connections/{id}/` - Get connection details
-- `PUT/PATCH /api/connections/{id}/` - Update connection
-- `DELETE /api/connections/{id}/` - Delete connection
+
+- GET /api/connections/ — List all connections
+- POST /api/connections/ — Create a new connection
+- GET /api/connections/{id}/ — Get connection details
+- PUT/PATCH /api/connections/{id}/ — Update connection
+- DELETE /api/connections/{id}/ — Delete connection
 
 Query parameters:
-- `?project={id}` - Filter by project
-- `?source_node={id}` - Filter by source node
-- `?target_node={id}` - Filter by target node
-- `?connection_type={type}` - Filter by connection type
+- project — Filter by project
+- source_node — Filter by source node
+- target_node — Filter by target node
+- connection_type — Filter by connection type
+
+---
 
 ## Models
 
 ### Project
-- `name` - Project name
-- `description` - Project description
-- `owner` - User who owns the project
-- `created_at` - Timestamp
-- `updated_at` - Timestamp
+
+- name — Project name
+- description — Project description
+- owner — User who owns the project
+- created_at — Timestamp
+- updated_at — Timestamp
 
 ### Node
-- `project` - Related project
-- `title` - Node title
-- `node_type` - Type (character, location, event, item, concept, note)
-- `content` - Node content/description
-- `position_x`, `position_y` - Canvas position
-- `color` - Visual color (hex code)
-- `created_at` - Timestamp
-- `updated_at` - Timestamp
+
+- project — Related project
+- title — Node title
+- node_type — character, location, event, item, concept, note
+- content — Node content / description
+- position_x — Canvas position
+- position_y — Canvas position
+- color — Visual color (hex code)
+- created_at — Timestamp
+- updated_at — Timestamp
 
 ### NodeConnection
-- `project` - Related project
-- `source_node` - Starting node
-- `target_node` - Ending node
-- `connection_type` - Relationship type
-- `label` - Optional connection label
-- `created_at` - Timestamp
+
+- project — Related project
+- source_node — Starting node
+- target_node — Ending node
+- connection_type — Relationship type
+- label — Optional connection label
+- created_at — Timestamp
+
+---
 
 ## Development
 
-### Running Tests
-```bash
-python manage.py test
-```
+Running tests:  
+python manage.py test  
 
-### Admin Panel
-Access the admin panel at `http://localhost:8000/admin/` with your superuser credentials.
+Admin panel:  
+http://localhost:8000/admin/  
 
-### Browsable API
-The Django REST Framework provides a browsable API interface at `http://localhost:8000/api/`
+Browsable API:  
+http://localhost:8000/api/  
+
+---
 
 ## Security Considerations
 
-⚠️ **Important**: This is a development scaffolding setup. Before deploying to production:
+Important: development-only setup.
 
-1. **Authentication & Authorization**:
-   - Current setup uses `AllowAny` permissions for all API endpoints
-   - Implement proper authentication (e.g., Token Authentication, JWT, OAuth)
-   - Add appropriate permission classes to protect endpoints
-   - Example: Change `DEFAULT_PERMISSION_CLASSES` in `settings.py` to `['rest_framework.permissions.IsAuthenticated']`
+Before deploying to production:
 
-2. **CORS Configuration**:
-   - `CORS_ALLOW_ALL_ORIGINS=True` allows any website to access your API
-   - For production, set `CORS_ALLOW_ALL_ORIGINS=False`
-   - Specify only trusted origins in `CORS_ALLOWED_ORIGINS`
+- Implement authentication (JWT, tokens, OAuth)
+- Replace AllowAny permissions with proper access control
+- Disable CORS_ALLOW_ALL_ORIGINS and whitelist origins
+- Generate a secure production SECRET_KEY
+- Never commit real credentials
+- Use strong database passwords and backups
+- Set DEBUG=False
+- Enable HTTPS and configure ALLOWED_HOSTS
 
-3. **Secret Key**:
-   - Generate a new, unique `SECRET_KEY` for production
-   - Never commit the `.env` file with real credentials
+---
 
-4. **Database**:
-   - Use strong passwords for the PostgreSQL user
-   - Configure proper database backups
+## Roadmap
 
-5. **DEBUG Mode**:
-   - Set `DEBUG=False` in production to prevent information disclosure
+- JWT authentication
+- User-based permissions
+- Realtime collaboration (WebSockets)
+- Graph validation rules
+- Versioning and history
+- Frontend integration (React or Vue)
 
-6. **HTTPS**:
-   - Use HTTPS in production to encrypt data in transit
-   - Update `ALLOWED_HOSTS` with your production domain
+---
 
 ## License
 

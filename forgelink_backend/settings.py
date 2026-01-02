@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'django_filters',
     # Local apps
     'nodes',
+    'projects',
+    'connections',
 ]
 
 MIDDLEWARE = [

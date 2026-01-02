@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Project, Node, NodeConnection
+
+from connections.models import NodeConnection
+from nodes.models import Node
+from projects.models import Project
 
 
 @admin.register(Project)
