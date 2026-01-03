@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ForgeLink MVP</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; }
+    header { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; align-items: center; }
+    header input, header select { padding: 8px; }
+    header button { padding: 8px 10px; cursor: pointer; }
+
+    .wrap { display: grid; grid-template-columns: 360px 1fr; height: calc(100vh - 56px); }
+    .panel { border-right: 1px solid #e5e7eb; padding: 12px; overflow: auto; }
+    .panel h3 { margin: 10px 0; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 12px; }
+    .row input, .row textarea, .row select { width: 100%; padding: 8px; box-sizing: border-box; }
+    .row textarea { min-height: 70px; resize: vertical; }
+
+    .canvasWrap { position: relative; overflow: auto; background: #f9fafb; }
+    .canvas { position: relative; width: 2000px; height: 1200px; }
+
+    /* Botón flotante dentro del canvas */
+    .canvasTools { position: sticky; top: 10px; z-index: 5; display: flex; justify-content: flex-end; padding: 10px; pointer-events: none; }
+    .canvasTools button { pointer-events: auto; padding: 8px 10px; cursor: pointer; border: 1px solid #e5e7eb; background: white; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+
+    .node {
+      position: absolute;
+      min-width: 140px;
+      max-width: 220px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: white;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      user-select: none;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .node .title { font-weight: 650; font-size: 14px; line-height: 1.2; }
+    .node .meta { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+    .node.selected { outline: 3px solid rgba(0,0,0,0.25); }
+
+    svg.links { position: absolute; inset: 0; pointer-events: none; }
+    .hint { font-size: 12px; color: #6b7280; margin-top: 8px; }
+
+    .listItem { padding: 8px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background: white; }
+    .listItem button { margin-top: 6px; }
+
+    .error { color: #b91c1c; font-size: 12px; white-space: pre-wrap; }
+
+    .authBar { display:flex; gap:8px; align-items:center; margin-left:auto; }
+    .authBar input { padding: 8px; }
+    .authBar button { padding: 8px 10px; }
+    .pill { font-size: 12px; color:#111827; background:#e5e7eb; padding:4px 8px; border-radius: 999px; }
+  </style>
+</head>
+<body>
+<header>
+  <strong>ForgeLink MVP</strong>
+  <label>API: <input id="apiBase" value="http://localhost:8000/api" size="28" /></label>
+  <button id="btnLoad">Cargar</button>
+  <span id="status" class="hint"></span>
+
+  <div class="authBar">
+    <span id="who" class="pill">Sin auth</span>
+    <input id="loginUser" placeholder="usuario" value="klu" size="10" />
+    <input id="loginPass" placeholder="password" value="klu" size="12" />
+    <button id="btnLogin">Login JWT</button>
+    <button id="btnLogout">Logout</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h3>1) Proyecto</h3>
+    <div class="row">
+      <select id="projectSelect"></select>
+      <input id="projectName" placeholder="Nombre del proyecto" />
+      <textarea id="projectDesc" placeholder="Descripción"></textarea>
+      <!-- owner se asigna server-side -->
+      <button id="btnCreateProject">Crear proyecto</button>
+    </div>
+
+    <h3>2) Grafo</h3>
+    <div class="row">
+      <select id="graphSelect"></select>
+      <input id="graphName" placeholder="Nombre del grafo (ej: Sistema de magia)" />
+      <textarea id="graphDesc" placeholder="Descripción"></textarea>
+      <button id="btnCreateGraph">Crear grafo</button>
+    </div>
+
+    <h3>3) Tipos de conexión</h3>
+    <div class="row">
+      <select id="ctypeSelect"></select>
+      <input id="ctypeName" placeholder="Nombre (ej: alimenta)" />
+      <input id="ctypeColor" placeholder="#A855F7" value="#A855F7" />
+      <textarea id="ctypeDesc" placeholder="Descripción"></textarea>
+      <button id="btnCreateCtype">Crear tipo</button>
+    </div>
+
+    <h3>4) Crear node (global al proyecto)</h3>
+    <div class="row">
+      <input id="nodeTitle" placeholder="Título" />
+      <select id="nodeType">
+        <option value="note">note</option>
+        <option value="concept">concept</option>
+        <option value="character">character</option>
+        <option value="location">location</option>
+        <option value="event">event</option>
+        <option value="item">item</option>
+      </select>
+      <textarea id="nodeContent" placeholder="Contenido"></textarea>
+      <button id="btnCreateNode">Crear node</button>
+    </div>
+
+    <h3>5) Agregar node al grafo (GraphNode)</h3>
+    <div id="nodesList"></div>
+
+    <h3>6) Conectar (click 2 nodos)</h3>
+    <div class="hint">
+      - Click en un nodo (selecciona origen)
+      - Click en otro nodo (selecciona destino)
+      - Elegí un tipo existente o escribí uno nuevo
+      - Presiona "Crear conexión"
+    </div>
+    <div class="row">
+      <select id="connCtypeSelect"></select>
+      <input id="connTypeCustom" placeholder="O nuevo tipo (ej: influye en)" />
+      <input id="connLabel" placeholder="Label opcional" />
+      <button id="btnCreateConn">Crear conexión</button>
+    </div>
+
+    <div id="err" class="error"></div>
+  </div>
+
+  <div class="canvasWrap" id="canvasWrap">
+    <div class="canvasTools">
+      <button id="btnCenterView" title="Centrar la vista en los nodos">Centrar vista</button>
+    </div>
+    <svg class="links" id="links" width="2000" height="1200">
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L10,3 L0,6" fill="#374151"></path>
+        </marker>
+      </defs>
+    </svg>
+    <div class="canvas" id="canvas"></div>
+  </div>
+</div>
+
+<script>
+  function qs(id){ return document.getElementById(id); }
+  function apiBase(){ return qs('apiBase').value.replace(/\/$/, ''); }
+
+  const tokenStore = {
+    get access(){ return localStorage.getItem('fl_access'); },
+    get refresh(){ return localStorage.getItem('fl_refresh'); },
+    set(access, refresh){
+      localStorage.setItem('fl_access', access);
+      localStorage.setItem('fl_refresh', refresh);
+    },
+    clear(){
+      localStorage.removeItem('fl_access');
+      localStorage.removeItem('fl_refresh');
+    }
+  };
+
+  function setWho(text){ qs('who').textContent = text; }
+
+  async function rawFetch(method, path, body, extraHeaders){
+    const url = apiBase() + path;
+    const headers = { 'Content-Type': 'application/json', ...(extraHeaders || {}) };
+    const opts = { method, headers };
+    if(body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    const txt = await res.text();
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; }
+    return { res, data };
+  }
+
+  async function refreshAccessIfNeeded(){
+    if(!tokenStore.refresh) return false;
+    const { res, data } = await rawFetch('POST', '/auth/jwt/refresh/', { refresh: tokenStore.refresh });
+    if(!res.ok) return false;
+    tokenStore.set(data.access, tokenStore.refresh);
+    return true;
+  }
+
+  async function http(method, path, body){
+    const headers = {};
+    if(tokenStore.access) headers['Authorization'] = 'Bearer ' + tokenStore.access;
+
+    let { res, data } = await rawFetch(method, path, body, headers);
+
+    // Si el access expiró, intentamos refresh 1 vez
+    if(res.status === 401 && tokenStore.refresh){
+      const ok = await refreshAccessIfNeeded();
+      if(ok){
+        const headers2 = { 'Authorization': 'Bearer ' + tokenStore.access };
+        ({ res, data } = await rawFetch(method, path, body, headers2));
+      }
+    }
+
+    if(!res.ok){
+      const msg = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+      throw new Error(method + ' ' + path + '\n' + msg);
+    }
+    return data;
+  }
+
+  async function refreshMe(){
+    try{
+      const data = await http('GET', '/auth/me/');
+      if(data?.authenticated) setWho(`@${data.user.username} (id=${data.user.id})`);
+      else setWho('Sin auth');
+    } catch {
+      setWho('Sin auth');
+    }
+  }
+
+  qs('btnLogin').onclick = async () => {
+    qs('err').textContent = '';
+    try{
+      const username = qs('loginUser').value;
+      const password = qs('loginPass').value;
+      const data = await http('POST', '/auth/jwt/login/', { username, password });
+      tokenStore.set(data.access, data.refresh);
+      await refreshMe();
+      await loadAll();
+    } catch(e){ qs('err').textContent = String(e); }
+  };
+
+  qs('btnLogout').onclick = async () => {
+    tokenStore.clear();
+    await refreshMe();
+  };
+
+  // ---- estado
+  const state = {
+    projects: [],
+    graphs: [],
+    ctypes: [],
+    nodes: [], // nodes del proyecto
+    canvas: null,
+    selectedNodeId: null,
+    selectedNode2Id: null,
+    _didAutoCenter: false,
+  };
+
+  function setError(e){ qs('err').textContent = e ? String(e) : ''; }
+
+  function setStatus(t){ qs('status').textContent = t || ''; }
+
+  function currProjectId(){
+    const v = qs('projectSelect').value;
+    return v ? Number(v) : null;
+  }
+  function currGraphId(){
+    const v = qs('graphSelect').value;
+    return v ? Number(v) : null;
+  }
+  function currCtypeId(){
+    const v = qs('ctypeSelect').value;
+    return v ? Number(v) : null;
+  }
+  function currConnCtypeId(){
+    const sel = qs('connCtypeSelect');
+    if(!sel) return null;
+    const v = sel.value;
+    return v ? Number(v) : null;
+  }
+
+  // ---- renderers select/list
+  function renderProjects(){
+    const sel = qs('projectSelect');
+    sel.innerHTML = '';
+    state.projects.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.id} - ${p.name}`;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderGraphs(){
+    const sel = qs('graphSelect');
+    sel.innerHTML = '';
+    state.graphs.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = `${g.id} - ${g.name}`;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderCtypes(){
+    const sels = [qs('ctypeSelect'), qs('connCtypeSelect')].filter(Boolean);
+    for(const sel of sels){
+      sel.innerHTML = '';
+
+      // opción vacía para que el input custom sea válido sin obligar a seleccionar
+      const empty = document.createElement('option');
+      empty.value = '';
+      empty.textContent = '-- tipo existente (opcional) --';
+      sel.appendChild(empty);
+
+      state.ctypes.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = `${t.id} - ${t.name}`;
+        sel.appendChild(opt);
+      });
+    }
+  }
+
+  // ---- nodes list + canvas rendering (faltaban)
+  function renderNodesList(){
+    const wrap = qs('nodesList');
+    if(!wrap) return;
+    wrap.innerHTML = '';
+
+    state.nodes.forEach(n => {
+      const div = document.createElement('div');
+      div.className = 'listItem';
+      div.innerHTML = `<div><strong>${n.title}</strong> <span class="hint">(${n.node_type})</span></div>`;
+
+      const btn = document.createElement('button');
+      btn.textContent = 'Agregar al grafo actual';
+      btn.onclick = async () => {
+        setError('');
+        try {
+          const graphId = currGraphId();
+          if(!graphId) throw new Error('Seleccioná un grafo');
+
+          // Posición cerca del centro visible (evita sensación de “vacío”)
+          const cw = qs('canvasWrap');
+          const baseX = cw ? (cw.scrollLeft + cw.clientWidth/2) : 400;
+          const baseY = cw ? (cw.scrollTop  + cw.clientHeight/2) : 250;
+          const x = Math.round(baseX + (-180 + Math.random()*360));
+          const y = Math.round(baseY + (-120 + Math.random()*240));
+
+          await http('POST', '/graph-nodes/', {
+            graph: graphId,
+            node: n.id,
+            position_x: Math.max(0, x),
+            position_y: Math.max(0, y),
+            color: '#3B82F6'
+          });
+
+          state._didAutoCenter = false;
+          await loadCanvas();
+          centerViewOnNodes({ smooth: true });
+        } catch(e){ setError(e); }
+      };
+
+      div.appendChild(btn);
+      wrap.appendChild(div);
+    });
+  }
+
+  function renderCanvas(){
+    const canvas = qs('canvas');
+    const svg = qs('links');
+    if(!canvas || !svg) return;
+
+    canvas.innerHTML = '';
+    // limpiar svg (mantener defs)
+    [...svg.querySelectorAll('line')].forEach(n => n.remove());
+
+    if(!state.canvas) return;
+
+    // mapa nodeId -> GraphNode
+    const byNodeId = new Map();
+    for(const gn of state.canvas.nodes){
+      byNodeId.set(gn.node, gn);
+    }
+
+    // pintar nodos
+    for(const gn of state.canvas.nodes){
+      const el = document.createElement('div');
+      el.className = 'node';
+      if(gn.node === state.selectedNodeId || gn.node === state.selectedNode2Id) el.classList.add('selected');
+      el.style.left = gn.position_x + 'px';
+      el.style.top = gn.position_y + 'px';
+      el.style.background = gn.color || '#3B82F6';
+      el.dataset.nodeId = String(gn.node);
+      el.innerHTML = `<div class="title">${gn.node_title}</div><div class="meta">${gn.node_type}</div>`;
+      el.onclick = () => {
+        const id = Number(el.dataset.nodeId);
+        if(state.selectedNodeId === null || state.selectedNodeId === id){
+          state.selectedNodeId = (state.selectedNodeId === id) ? null : id;
+          state.selectedNode2Id = null;
+        } else {
+          state.selectedNode2Id = id;
+        }
+        renderCanvas();
+      };
+      canvas.appendChild(el);
+    }
+
+    // pintar conexiones
+    for(const c of state.canvas.connections){
+      const s = byNodeId.get(c.source_node);
+      const t = byNodeId.get(c.target_node);
+      if(!s || !t) continue;
+
+      // centro aprox del nodo
+      const x1 = s.position_x + 100;
+      const y1 = s.position_y + 28;
+      const x2 = t.position_x + 100;
+      const y2 = t.position_y + 28;
+
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', String(x1));
+      line.setAttribute('y1', String(y1));
+      line.setAttribute('x2', String(x2));
+      line.setAttribute('y2', String(y2));
+      line.setAttribute('stroke', '#374151');
+      line.setAttribute('stroke-width', '2');
+      line.setAttribute('marker-end', 'url(#arrow)');
+      svg.appendChild(line);
+    }
+  }
+
+  // ---- centrar canvas
+  function getNodesBoundingBox(nodes){
+    if(!nodes || nodes.length === 0) return null;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for(const gn of nodes){
+      // tamaño aprox del nodo (coincide con renderCanvas)
+      const w = 200;
+      const h = 60;
+      const x1 = gn.position_x;
+      const y1 = gn.position_y;
+      const x2 = gn.position_x + w;
+      const y2 = gn.position_y + h;
+      minX = Math.min(minX, x1);
+      minY = Math.min(minY, y1);
+      maxX = Math.max(maxX, x2);
+      maxY = Math.max(maxY, y2);
+    }
+    return { minX, minY, maxX, maxY, cx: (minX+maxX)/2, cy: (minY+maxY)/2 };
+  }
+
+  function centerViewOnNodes({ smooth } = { smooth: true }){
+    const wrap = qs('canvasWrap');
+    if(!wrap || !state.canvas) return;
+    const box = getNodesBoundingBox(state.canvas.nodes);
+    if(!box) return;
+
+    const targetLeft = Math.max(0, Math.round(box.cx - wrap.clientWidth / 2));
+    const targetTop  = Math.max(0, Math.round(box.cy - wrap.clientHeight / 2));
+
+    wrap.scrollTo({ left: targetLeft, top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
+  }
+
+  qs('btnCenterView').onclick = () => centerViewOnNodes({ smooth: true });
+
+  // ---- load data
+  async function loadProjects(){
+    const data = await http('GET', '/projects/', null);
+    state.projects = Array.isArray(data) ? data : (data?.results || []);
+    renderProjects();
+  }
+
+  async function loadGraphs(){
+    const pid = currProjectId();
+    if(!pid){ state.graphs = []; renderGraphs(); return; }
+    const data = await http('GET', `/graphs/?project=${pid}`, null);
+    state.graphs = Array.isArray(data) ? data : (data?.results || []);
+    renderGraphs();
+  }
+
+  async function loadCtypes(){
+    const pid = currProjectId();
+    if(!pid){ state.ctypes = []; renderCtypes(); return; }
+    const data = await http('GET', `/connection-types/?project=${pid}`, null);
+    state.ctypes = Array.isArray(data) ? data : (data?.results || []);
+    renderCtypes();
+  }
+
+  async function loadNodes(){
+    const pid = currProjectId();
+    if(!pid){ state.nodes = []; renderNodesList(); return; }
+    const data = await http('GET', `/nodes/?project=${pid}`, null);
+    state.nodes = Array.isArray(data) ? data : (data?.results || []);
+    renderNodesList();
+  }
+
+  async function loadCanvas(){
+    const gid = currGraphId();
+    if(!gid){ state.canvas = null; renderCanvas(); return; }
+    state.canvas = await http('GET', `/graphs/${gid}/canvas/`, null);
+    renderCanvas();
+
+    // auto centrado una vez por carga de canvas
+    if(!state._didAutoCenter){
+      state._didAutoCenter = true;
+      // esperar al siguiente frame para que el DOM esté listo
+      requestAnimationFrame(() => centerViewOnNodes({ smooth: false }));
+    }
+  }
+
+  async function loadAll(){
+    setError('');
+    try{
+      setStatus('Cargando...');
+      await loadProjects();
+      await loadGraphs();
+      await loadCtypes();
+      await loadNodes();
+      await loadCanvas();
+      setStatus('OK');
+    } catch(e){
+      setStatus('Error');
+      setError(e);
+    }
+  }
+
+  // ---- actions
+  qs('btnLoad').onclick = loadAll;
+
+  qs('projectSelect').onchange = async () => {
+    setError('');
+    try{
+      await loadGraphs();
+      await loadCtypes();
+      await loadNodes();
+      state.canvas = null;
+      renderCanvas();
+    } catch(e){ setError(e); }
+  };
+
+  qs('graphSelect').onchange = async () => {
+    setError('');
+    try{
+      state.selectedNodeId = null;
+      state.selectedNode2Id = null;
+      state._didAutoCenter = false;
+      await loadCanvas();
+    }
+    catch(e){ setError(e); }
+  };
+
+  qs('btnCreateProject').onclick = async () => {
+    setError('');
+    try{
+      const name = qs('projectName').value.trim();
+      const description = qs('projectDesc').value.trim();
+      if(!name) throw new Error('Nombre de proyecto requerido');
+      await http('POST', '/projects/', { name, description });
+      await loadAll();
+    } catch(e){ setError(e); }
+  };
+
+  qs('btnCreateGraph').onclick = async () => {
+    setError('');
+    try{
+      const pid = currProjectId();
+      if(!pid) throw new Error('Seleccioná un proyecto');
+      const name = qs('graphName').value.trim();
+      const description = qs('graphDesc').value.trim();
+      if(!name) throw new Error('Nombre de grafo requerido');
+      await http('POST', '/graphs/', { project: pid, name, description });
+      await loadGraphs();
+      await loadCanvas();
+    } catch(e){ setError(e); }
+  };
+
+  qs('btnCreateCtype').onclick = async () => {
+    setError('');
+    try{
+      const pid = currProjectId();
+      if(!pid) throw new Error('Seleccioná un proyecto');
+      const name = qs('ctypeName').value.trim();
+      const description = qs('ctypeDesc').value.trim();
+      const color = qs('ctypeColor').value.trim() || '#6B7280';
+      if(!name) throw new Error('Nombre requerido');
+      await http('POST', '/connection-types/', { project: pid, name, description, color });
+      await loadCtypes();
+    } catch(e){ setError(e); }
+  };
+
+  qs('btnCreateNode').onclick = async () => {
+    setError('');
+    try{
+      const pid = currProjectId();
+      if(!pid) throw new Error('Seleccioná un proyecto');
+      const title = qs('nodeTitle').value.trim();
+      const node_type = qs('nodeType').value;
+      const content = qs('nodeContent').value.trim();
+      if(!title) throw new Error('Título requerido');
+      await http('POST', '/nodes/', { project: pid, title, node_type, content });
+      await loadNodes();
+    } catch(e){ setError(e); }
+  };
+
+  // ---- conectar
+  async function ensureConnectionTypeId(){
+    // primero: si eligió uno existente en el selector de conexión
+    const existingId = currConnCtypeId();
+    if(existingId) return existingId;
+
+    const customName = qs('connTypeCustom').value.trim();
+    if(!customName) return null;
+
+    // si ya existe en el listado por nombre (case-insensitive), reutilizar
+    const found = state.ctypes.find(t => String(t.name).toLowerCase() === customName.toLowerCase());
+    if(found) return found.id;
+
+    const pid = currProjectId();
+    if(!pid) throw new Error('Seleccioná un proyecto');
+
+    // crear tipo custom con color default
+    await http('POST', '/connection-types/', { project: pid, name: customName, description: '', color: '#6B7280' });
+    await loadCtypes();
+
+    const created = state.ctypes.find(t => String(t.name).toLowerCase() === customName.toLowerCase());
+    return created ? created.id : null;
+  }
+
+  qs('btnCreateConn').onclick = async () => {
+    setError('');
+    try{
+      const gid = currGraphId();
+      if(!gid) throw new Error('Seleccioná un grafo');
+
+      const ctypeId = await ensureConnectionTypeId();
+      if(!ctypeId) throw new Error('Seleccioná un tipo de conexión o escribí uno nuevo');
+
+      const a = state.selectedNodeId;
+      const b = state.selectedNode2Id;
+      if(!a || !b) throw new Error('Seleccioná 2 nodos en el canvas');
+
+      const label = qs('connLabel').value.trim();
+      await http('POST', '/connections/', { graph: gid, source_node: a, target_node: b, connection_type: ctypeId, label });
+      state.selectedNodeId = null;
+      state.selectedNode2Id = null;
+      await loadCanvas();
+    } catch(e){ setError(e); }
+  };
+
+  // auto-cargar al abrir
+  (async () => {
+    await refreshMe();
+    await loadAll();
+  })();
+</script>
+</body>
+</html>
