@@ -7,7 +7,7 @@ from .connection_types_serializers import ConnectionTypeSerializer
 
 
 class ConnectionTypeViewSet(viewsets.ModelViewSet):
-    """CRUD de tipos de conexión a nivel Project."""
+    """CRUD for connection types at the Project level."""
 
     serializer_class = ConnectionTypeSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
