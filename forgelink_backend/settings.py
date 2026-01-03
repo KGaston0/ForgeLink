@@ -155,7 +155,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# JWT settings (valores razonables para dev)
+# JWT settings (reasonable values for dev)
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
