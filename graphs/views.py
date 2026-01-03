@@ -24,7 +24,7 @@ class GraphViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def canvas(self, request, pk=None):
-        """Devuelve nodos (con layout) + conexiones del grafo en una sola respuesta."""
+        """Returns nodes (with layout) and connections for the graph in a single response."""
         graph = self.get_object()
 
         graph_nodes = graph.graph_nodes.select_related('node').all()
