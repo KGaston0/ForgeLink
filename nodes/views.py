@@ -8,23 +8,26 @@ from .serializers import NodeSerializer
 
 
 class NodeViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Node model
-    Provides CRUD operations for nodes
-    """
-    queryset = Node.objects.all()
+    """ViewSet for Node model."""
+
     serializer_class = NodeSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['project', 'node_type', 'parent_node']
+
+    # Allow filtering nodes by project and also by graph membership
+    filterset_fields = ['project', 'node_type', 'parent_node', 'graph_nodes__graph']
+
     search_fields = ['title', 'content']
     ordering_fields = ['created_at', 'updated_at', 'title']
     ordering = ['-updated_at']
 
+    def get_queryset(self):
+        user = getattr(self.request, 'user', None)
+        if not user or not user.is_authenticated:
+            return Node.objects.none()
+        return Node.objects.filter(project__owner=user)
+
     @action(detail=True, methods=['get'])
     def children(self, request, pk=None):
-        """
-        Get all child nodes for a specific node
-        """
         node = self.get_object()
         children = node.child_nodes.all()
         serializer = NodeSerializer(children, many=True)
@@ -32,9 +35,6 @@ class NodeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def connections(self, request, pk=None):
-        """
-        Get all connections (incoming and outgoing) for this node
-        """
         from connections.serializers import NodeConnectionSerializer
 
         node = self.get_object()

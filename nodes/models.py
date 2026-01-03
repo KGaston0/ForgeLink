@@ -1,14 +1,15 @@
 from django.db import models
-from django.contrib.auth.models import User
 
 from projects.models import Project
 
 
 class Node(models.Model):
     """
-    Represents a node in the project graph - can be a character, location, event, etc.
-    Can contain other nodes via parent_node (hierarchy/containment).
+    Represents an entity in a project (character, location, event, etc.).
+
+    Graph membership and per-graph layout are handled by graphs.GraphNode.
     """
+
     NODE_TYPES = [
         ('character', 'Character'),
         ('location', 'Location'),
@@ -20,7 +21,7 @@ class Node(models.Model):
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='nodes')
 
-    # Hierarchy: a node can be inside another node
+    # Hierarchy: a node can be inside another node (within the same project)
     parent_node = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
@@ -32,14 +33,7 @@ class Node(models.Model):
     title = models.CharField(max_length=255)
     node_type = models.CharField(max_length=50, choices=NODE_TYPES, default='note')
     content = models.TextField(blank=True)
-    
-    # Position on canvas
-    position_x = models.FloatField(default=0)
-    position_y = models.FloatField(default=0)
-    
-    # Visual properties
-    color = models.CharField(max_length=7, default='#3B82F6')  # Hex color code
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -49,12 +43,33 @@ class Node(models.Model):
     def __str__(self):
         return f"{self.title} ({self.node_type})"
 
-    def get_depth(self):
-        """Returns the depth level in the hierarchy (0 = root)"""
-        if self.parent_node is None:
-            return 0
-        return 1 + self.parent_node.get_depth()
+    def clean(self):
+        # Prevent invalid parent relationships
+        if self.parent_node is not None:
+            if self.parent_node_id == self.id:
+                raise models.ValidationError("A node cannot be its own parent")
+            if self.parent_node.project_id != self.project_id:
+                raise models.ValidationError("Parent node must belong to the same project")
 
-    def get_root_nodes(self):
-        """Returns all root nodes (nodes without parent) in the project"""
-        return self.project.nodes.filter(parent_node__isnull=True)
+            # Prevent cycles
+            ancestor = self.parent_node
+            seen_ids = {self.id} if self.id else set()
+            while ancestor is not None:
+                if ancestor.id in seen_ids:
+                    raise models.ValidationError("Cyclic parent relationship is not allowed")
+                seen_ids.add(ancestor.id)
+                ancestor = ancestor.parent_node
+
+    def get_depth(self):
+        """Returns the depth level in the hierarchy (0 = root)."""
+        depth = 0
+        ancestor = self.parent_node
+        seen_ids = {self.id} if self.id else set()
+        while ancestor is not None:
+            if ancestor.id in seen_ids:
+                # Defensive: avoid infinite loops if bad data exists
+                break
+            seen_ids.add(ancestor.id)
+            depth += 1
+            ancestor = ancestor.parent_node
+        return depth

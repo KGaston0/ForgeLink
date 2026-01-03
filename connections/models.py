@@ -3,12 +3,14 @@ from django.core.exceptions import ValidationError
 
 from nodes.models import Node
 from projects.models import Project
+from graphs.models import Graph
 
 
 class ConnectionType(models.Model):
     """
     User-defined connection types per project
     """
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='connection_types')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -26,13 +28,15 @@ class ConnectionType(models.Model):
 
 class NodeConnection(models.Model):
     """
-    Represents a semantic relationship/edge between two nodes in the graph.
+    Represents a semantic relationship/edge between two nodes within a graph.
+    Nodes are global to a project, but connections are graph-scoped.
     """
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='connections')
+
+    graph = models.ForeignKey(Graph, on_delete=models.CASCADE, related_name='connections')
     source_node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='outgoing_connections')
     target_node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='incoming_connections')
 
-    # Reference to user-defined connection type
+    # Reference to user-defined connection type (project-scoped)
     connection_type = models.ForeignKey(
         ConnectionType,
         on_delete=models.PROTECT,  # Prevent deletion if connections exist
@@ -44,18 +48,26 @@ class NodeConnection(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        unique_together = ['source_node', 'target_node', 'connection_type']
+        unique_together = ['graph', 'source_node', 'target_node', 'connection_type']
 
     def __str__(self):
         return f"{self.source_node.title} -> {self.target_node.title} ({self.connection_type.name})"
 
     def clean(self):
-        """Prevent self-connections"""
+        """Prevent invalid connections."""
         if self.source_node == self.target_node:
             raise ValidationError("A node cannot connect to itself")
 
-        if self.source_node.project != self.target_node.project:
-            raise ValidationError("Cannot connect nodes from different projects")
+        # Ensure all belong to the same project
+        if self.source_node.project_id != self.graph.project_id or self.target_node.project_id != self.graph.project_id:
+            raise ValidationError("Cannot connect nodes from a different project than the graph")
 
-        if self.connection_type.project != self.project:
-            raise ValidationError("Connection type must belong to the same project")
+        if self.connection_type.project_id != self.graph.project_id:
+            raise ValidationError("Connection type must belong to the same project as the graph")
+
+        # Optional: require nodes to be present in the graph
+        # (This matches a UI where you must 'add' nodes to a graph before connecting them.)
+        if not self.graph.graph_nodes.filter(node=self.source_node).exists():
+            raise ValidationError("Source node is not present in this graph")
+        if not self.graph.graph_nodes.filter(node=self.target_node).exists():
+            raise ValidationError("Target node is not present in this graph")

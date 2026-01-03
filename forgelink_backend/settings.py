@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 from decouple import config, Csv
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
     'nodes',
     'projects',
     'connections',
+    'graphs',
 ]
 
 MIDDLEWARE = [
@@ -85,12 +87,8 @@ WSGI_APPLICATION = 'forgelink_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='forgelink_db'),
-        'USER': config('DB_USER', default='forgelink_user'),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -138,10 +136,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework configuration
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # útil para admin/browsable API en dev
+        'rest_framework.authentication.SessionAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
-        # Note: Using AllowAny for development/scaffolding.
-        # For production, implement proper authentication (e.g., TokenAuthentication, SessionAuthentication)
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100,
@@ -154,13 +155,29 @@ REST_FRAMEWORK = {
     ],
 }
 
+# JWT settings (valores razonables para dev)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 # CORS settings
-# WARNING: CORS_ALLOW_ALL_ORIGINS=True allows any origin to access your API.
-# This is suitable for development only. For production, set to False and
-# specify allowed origins in CORS_ALLOWED_ORIGINS.
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:8080',
+    default='http://localhost:3000,http://localhost:8080,http://127.0.0.1:5500,http://localhost:5500',
     cast=Csv()
+)
+
+# Permitir cookies de sesión desde el front
+CORS_ALLOW_CREDENTIALS = True
+
+# Si servís el HTML en otro origen (live-server), Django necesita confiar ese origen para CSRF
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000',
+    cast=Csv(),
 )

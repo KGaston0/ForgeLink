@@ -17,8 +17,25 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from . import auth_views
+from .mvp_views import mvp_index
+
 urlpatterns = [
+    path('', mvp_index),
+    path('mvp/', mvp_index),
+    path('admin/', admin.site.urls),
+
+    # JWT
+    path('api/auth/jwt/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # helper
+    path('api/auth/me/', auth_views.me),
+
     path('api/', include('projects.urls')),
+    path('api/', include('graphs.urls')),
     path('api/', include('nodes.urls')),
     path('api/', include('connections.urls')),
 ]

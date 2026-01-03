@@ -101,49 +101,40 @@ http://localhost:8000/api/
 
 ## API Endpoints
 
-Base URL:  
+Base URL:
 http://localhost:8000/api/
 
-### Projects
+### Graphs (nuevo)
 
-- GET /api/projects/ — List all projects
-- POST /api/projects/ — Create a new project
-- GET /api/projects/{id}/ — Get project details
-- PUT/PATCH /api/projects/{id}/ — Update project
-- DELETE /api/projects/{id}/ — Delete project
-- GET /api/projects/{id}/nodes/ — Get all nodes in a project
-- GET /api/projects/{id}/connections/ — Get all connections in a project
+- GET /api/graphs/ — Listar grafos
+- POST /api/graphs/ — Crear grafo
+- GET /api/graphs/{id}/ — Detalle
+- GET /api/graphs/{id}/canvas/ — (Conveniencia) Devuelve nodos+conexiones del grafo en una sola respuesta
 
-### Nodes
+### Graph Nodes (layout por grafo)
 
-- GET /api/nodes/ — List all nodes
-- POST /api/nodes/ — Create a new node
-- GET /api/nodes/{id}/ — Get node details
-- PUT/PATCH /api/nodes/{id}/ — Update node
-- DELETE /api/nodes/{id}/ — Delete node
+- GET /api/graph-nodes/ — Listar nodos dentro de grafos
+- POST /api/graph-nodes/ — Agregar un node a un grafo con posición/color
 
-Query parameters:
-- project — Filter by project
-- node_type — Filter by node type
-- search — Search in title and content
+### Connection Types (nuevo)
+
+- GET /api/connection-types/ — Listar tipos (filtrable por project)
+- POST /api/connection-types/ — Crear tipo
 
 ### Node Connections
 
 - GET /api/connections/ — List all connections
 - POST /api/connections/ — Create a new connection
-- GET /api/connections/{id}/ — Get connection details
-- PUT/PATCH /api/connections/{id}/ — Update connection
-- DELETE /api/connections/{id}/ — Delete connection
 
 Query parameters:
-- project — Filter by project
+- graph — Filter by graph
 - source_node — Filter by source node
 - target_node — Filter by target node
 - connection_type — Filter by connection type
 
 ---
 
-## Models
+## Models (actualizado)
 
 ### Project
 
@@ -159,18 +150,21 @@ Query parameters:
 - title — Node title
 - node_type — character, location, event, item, concept, note
 - content — Node content / description
-- position_x — Canvas position
-- position_y — Canvas position
-- color — Visual color (hex code)
 - created_at — Timestamp
 - updated_at — Timestamp
 
-### NodeConnection
+### GraphNode (nuevo)
 
-- project — Related project
-- source_node — Starting node
-- target_node — Ending node
-- connection_type — Relationship type
+- graph — Related graph
+- node — Related node
+- position_x / position_y — Canvas position (por grafo)
+- color — Visual color (hex)
+
+### NodeConnection (actualizado)
+
+- graph — Related graph
+- source_node / target_node — Nodes (del mismo project del graph)
+- connection_type — Project-scoped type
 - label — Optional connection label
 - created_at — Timestamp
 
