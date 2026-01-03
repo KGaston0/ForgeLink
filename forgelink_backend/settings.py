@@ -175,7 +175,7 @@ CORS_ALLOWED_ORIGINS = config(
 # Permitir cookies de sesión desde el front
 CORS_ALLOW_CREDENTIALS = True
 
-# Si servís el HTML en otro origen (live-server), Django necesita confiar ese origen para CSRF
+# If serving HTML from another origin (live-server), Django needs to trust that origin for CSRF
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
     default='http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000',
