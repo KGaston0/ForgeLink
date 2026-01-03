@@ -17,6 +17,6 @@ Este MVP es un HTML estático que usa `fetch()` contra tu API Django.
 3. Si no coincide la URL, cambiar el campo `API` arriba
 
 ## Notas
-- Requiere que exista un usuario con id=1 para crear proyectos (o cambiar el owner).
-- No hay auth; tu backend está en AllowAny.
+- Requiere que exista al menos un usuario válido en el backend (por ejemplo, creado desde el admin de Django) para poder crear proyectos (o cambiar el owner).
+- Requiere autenticación JWT: el backend ya no está en AllowAny, debes iniciar sesión y usar el token (por ejemplo, vía cabecera `Authorization: Bearer <token>`).
 
