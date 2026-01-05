@@ -87,8 +87,12 @@ WSGI_APPLICATION = 'forgelink_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME', default='forgelink_db'),
+        'USER': config('DB_USER', default='forgelink_user'),
+        'PASSWORD': config('DB_PASSWORD', default='your-password-here'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
 
@@ -138,7 +142,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        # útil para admin/browsable API en dev
+        # useful for admin/browsable API in dev
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -155,7 +159,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-# JWT settings (valores razonables para dev)
+# JWT settings (reasonable values for dev)
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
@@ -172,10 +176,10 @@ CORS_ALLOWED_ORIGINS = config(
     cast=Csv()
 )
 
-# Permitir cookies de sesión desde el front
+# Allow session cookies from frontend
 CORS_ALLOW_CREDENTIALS = True
 
-# Si servís el HTML en otro origen (live-server), Django necesita confiar ese origen para CSRF
+# If serving HTML from another origin (live-server), Django needs to trust that origin for CSRF
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
     default='http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000',

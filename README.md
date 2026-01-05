@@ -99,38 +99,116 @@ http://localhost:8000/api/
 
 ---
 
+## URL Structure
+
+After starting the server, you can access:
+
+| Path | Description |
+|------|-------------|
+| `http://localhost:8000/` | Redirects to API root |
+| `http://localhost:8000/api/` | **API Root** - Django REST Framework browsable interface |
+| `http://localhost:8000/mvp/` | **MVP Frontend** - Development/testing UI |
+| `http://localhost:8000/admin/` | **Django Admin** - Model management interface |
+
+> 📘 **For detailed API documentation**, see [API_ENDPOINTS.md](./API_ENDPOINTS.md)
+
+---
+
 ## API Endpoints
 
 Base URL:
 http://localhost:8000/api/
 
-### Graphs (nuevo)
+> **Legend:** ✅ Implemented | ⏳ To be implemented
 
-- GET /api/graphs/ — Listar grafos
-- POST /api/graphs/ — Crear grafo
-- GET /api/graphs/{id}/ — Detalle
-- GET /api/graphs/{id}/canvas/ — (Conveniencia) Devuelve nodos+conexiones del grafo en una sola respuesta
+### Authentication
 
-### Graph Nodes (layout por grafo)
+- ✅ POST /api/auth/jwt/login/ — Obtain JWT tokens
+- ✅ POST /api/auth/jwt/refresh/ — Refresh access token
+- ✅ GET /api/auth/me/ — Get current user info
 
-- GET /api/graph-nodes/ — Listar nodos dentro de grafos
-- POST /api/graph-nodes/ — Agregar un node a un grafo con posición/color
+### Projects (Full CRUD ✅)
 
-### Connection Types (nuevo)
+- ✅ GET /api/projects/ — List all projects
+- ✅ POST /api/projects/ — Create a new project
+- ✅ GET /api/projects/{id}/ — Retrieve project details
+- ✅ PUT /api/projects/{id}/ — Update project (full)
+- ✅ PATCH /api/projects/{id}/ — Update project (partial)
+- ✅ DELETE /api/projects/{id}/ — Delete project
+- ✅ GET /api/projects/{id}/nodes/ — Get all nodes for a project
+- ✅ GET /api/projects/{id}/connections/ — Get all connections for a project
 
-- GET /api/connection-types/ — Listar tipos (filtrable por project)
-- POST /api/connection-types/ — Crear tipo
+### Graphs (Full CRUD ✅)
 
-### Node Connections
+- ✅ GET /api/graphs/ — List graphs
+- ✅ POST /api/graphs/ — Create graph
+- ✅ GET /api/graphs/{id}/ — Graph details
+- ✅ PUT /api/graphs/{id}/ — Update graph (full)
+- ✅ PATCH /api/graphs/{id}/ — Update graph (partial)
+- ✅ DELETE /api/graphs/{id}/ — Delete graph
+- ✅ GET /api/graphs/{id}/canvas/ — Get graph canvas data (nodes + connections)
 
-- GET /api/connections/ — List all connections
-- POST /api/connections/ — Create a new connection
+### Graph Nodes (Full CRUD ✅)
 
-Query parameters:
-- graph — Filter by graph
-- source_node — Filter by source node
-- target_node — Filter by target node
-- connection_type — Filter by connection type
+- ✅ GET /api/graph-nodes/ — List nodes within graphs
+- ✅ POST /api/graph-nodes/ — Add a node to a graph with position/color
+- ✅ GET /api/graph-nodes/{id}/ — Get specific graph node
+- ✅ PUT /api/graph-nodes/{id}/ — Update graph node (full)
+- ✅ PATCH /api/graph-nodes/{id}/ — Update graph node (partial)
+- ✅ DELETE /api/graph-nodes/{id}/ — Remove node from graph
+
+### Nodes (Full CRUD ✅)
+
+- ✅ GET /api/nodes/ — List all nodes
+- ✅ POST /api/nodes/ — Create a new node
+- ✅ GET /api/nodes/{id}/ — Get specific node
+- ✅ PUT /api/nodes/{id}/ — Update node (full)
+- ✅ PATCH /api/nodes/{id}/ — Update node (partial)
+- ✅ DELETE /api/nodes/{id}/ — Delete node
+- ✅ GET /api/nodes/{id}/children/ — Get child nodes
+- ✅ GET /api/nodes/{id}/connections/ — Get all connections for a node
+
+### Connection Types (Full CRUD ✅)
+
+- ✅ GET /api/connection-types/ — List connection types (filterable by project)
+- ✅ POST /api/connection-types/ — Create connection type
+- ✅ GET /api/connection-types/{id}/ — Get specific connection type
+- ✅ PUT /api/connection-types/{id}/ — Update connection type (full)
+- ✅ PATCH /api/connection-types/{id}/ — Update connection type (partial)
+- ✅ DELETE /api/connection-types/{id}/ — Delete connection type
+
+### Node Connections (Full CRUD ✅)
+
+- ✅ GET /api/connections/ — List all connections
+- ✅ POST /api/connections/ — Create a new connection
+- ✅ GET /api/connections/{id}/ — Get specific connection
+- ✅ PUT /api/connections/{id}/ — Update connection (full)
+- ✅ PATCH /api/connections/{id}/ — Update connection (partial)
+- ✅ DELETE /api/connections/{id}/ — Delete connection
+
+### Query Parameters (Available on list endpoints)
+
+- ✅ `?project={id}` — Filter by project
+- ✅ `?graph={id}` — Filter by graph
+- ✅ `?search={query}` — Search in specified fields
+- ✅ `?ordering={field}` — Order results (use `-field` for descending)
+- ✅ `?page={number}` — Pagination (100 items per page)
+
+---
+
+## TODO / Future Endpoints
+
+These endpoints could be added in future iterations:
+
+- ⏳ GET /api/projects/{id}/graphs/ — Get all graphs for a project
+- ⏳ GET /api/graphs/{id}/statistics/ — Get graph statistics (node count, connection count, etc.)
+- ⏳ POST /api/nodes/{id}/duplicate/ — Duplicate a node
+- ⏳ GET /api/nodes/{id}/descendants/ — Get all descendants (recursive children)
+- ⏳ GET /api/nodes/{id}/ancestors/ — Get all ancestors (recursive parents)
+- ⏳ POST /api/graphs/{id}/export/ — Export graph data
+- ⏳ POST /api/graphs/{id}/import/ — Import graph data
+- ⏳ GET /api/connections/validate/ — Validate connection before creating
+- ⏳ POST /api/projects/{id}/clone/ — Clone entire project
 
 ---
 

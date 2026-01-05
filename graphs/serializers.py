@@ -4,6 +4,8 @@ from .models import Graph, GraphNode
 
 
 class GraphSerializer(serializers.ModelSerializer):
+    """Serializer for Graph model."""
+
     node_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -16,6 +18,8 @@ class GraphSerializer(serializers.ModelSerializer):
 
 
 class GraphNodeSerializer(serializers.ModelSerializer):
+    """Serializer for GraphNode model (node membership and layout in a graph)."""
+
     node_title = serializers.CharField(source='node.title', read_only=True)
     node_type = serializers.CharField(source='node.node_type', read_only=True)
 
@@ -30,21 +34,16 @@ class GraphNodeSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at', 'node_title', 'node_type']
 
     def validate(self, attrs):
-        graph = attrs.get('graph') or getattr(self.instance, 'graph', None)
-        node = attrs.get('node') or getattr(self.instance, 'node', None)
-        if graph and node and node.project_id != graph.project_id:
-            raise serializers.ValidationError('Node must belong to the same project as the graph')
+        """
+        Perform model-level validation by calling the model's clean() method.
+        This ensures consistency between serializer and model validations.
+        """
+        # Create a temporary instance to validate
+        instance = GraphNode(**attrs) if not self.instance else self.instance
+        if self.instance:
+            for attr, value in attrs.items():
+                setattr(instance, attr, value)
+
+        # Run model validation
+        instance.clean()
         return attrs
-
-    def create(self, validated_data):
-        obj = super().create(validated_data)
-        obj.full_clean()
-        obj.save()
-        return obj
-
-    def update(self, instance, validated_data):
-        obj = super().update(instance, validated_data)
-        obj.full_clean()
-        obj.save()
-        return obj
-

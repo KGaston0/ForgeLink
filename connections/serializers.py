@@ -19,38 +19,16 @@ class NodeConnectionSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at']
 
     def validate(self, attrs):
-        graph = attrs.get('graph') or getattr(self.instance, 'graph', None)
-        source = attrs.get('source_node') or getattr(self.instance, 'source_node', None)
-        target = attrs.get('target_node') or getattr(self.instance, 'target_node', None)
-        ctype = attrs.get('connection_type') or getattr(self.instance, 'connection_type', None)
+        """
+        Perform model-level validation by calling the model's clean() method.
+        This ensures consistency between serializer and model validations.
+        """
+        # Create a temporary instance to validate
+        instance = NodeConnection(**attrs) if not self.instance else self.instance
+        if self.instance:
+            for attr, value in attrs.items():
+                setattr(instance, attr, value)
 
-        if source is not None and target is not None and source == target:
-            raise serializers.ValidationError("A node cannot connect to itself")
-
-        if graph and source and source.project_id != graph.project_id:
-            raise serializers.ValidationError("Source node must belong to the same project as the graph")
-        if graph and target and target.project_id != graph.project_id:
-            raise serializers.ValidationError("Target node must belong to the same project as the graph")
-
-        if graph and ctype and ctype.project_id != graph.project_id:
-            raise serializers.ValidationError("Connection type must belong to the same project as the graph")
-
-        # Require nodes to be present in the graph
-        if graph and source and not graph.graph_nodes.filter(node=source).exists():
-            raise serializers.ValidationError("Source node is not present in this graph")
-        if graph and target and not graph.graph_nodes.filter(node=target).exists():
-            raise serializers.ValidationError("Target node is not present in this graph")
-
+        # Run model validation
+        instance.clean()
         return attrs
-
-    def create(self, validated_data):
-        obj = super().create(validated_data)
-        obj.full_clean()
-        obj.save()
-        return obj
-
-    def update(self, instance, validated_data):
-        obj = super().update(instance, validated_data)
-        obj.full_clean()
-        obj.save()
-        return obj

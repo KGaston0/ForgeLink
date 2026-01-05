@@ -7,7 +7,7 @@ from rest_framework import status
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def me(request):
-    """Devuelve info del usuario actual si el token JWT es válido."""
+    """Returns current user info if JWT token is valid."""
     if not request.user or not request.user.is_authenticated:
         return Response({'authenticated': False}, status=status.HTTP_200_OK)
-    return Response({'authenticated': True, 'user': {'id': request.user.id, 'username': request.user.username}})
+    return Response({'authenticated': True, 'user': {'username': request.user.username}})
