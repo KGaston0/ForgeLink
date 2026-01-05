@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 from decouple import config, Csv
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
     'nodes',
     'projects',
     'connections',
+    'graphs',
 ]
 
 MIDDLEWARE = [
@@ -88,7 +90,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('DB_NAME', default='forgelink_db'),
         'USER': config('DB_USER', default='forgelink_user'),
-        'PASSWORD': config('DB_PASSWORD', default=''),
+        'PASSWORD': config('DB_PASSWORD', default='your-password-here'),
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='5432'),
     }
@@ -138,10 +140,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST Framework configuration
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # useful for admin/browsable API in dev
+        'rest_framework.authentication.SessionAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
-        # Note: Using AllowAny for development/scaffolding.
-        # For production, implement proper authentication (e.g., TokenAuthentication, SessionAuthentication)
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100,
@@ -154,13 +159,29 @@ REST_FRAMEWORK = {
     ],
 }
 
+# JWT settings (reasonable values for dev)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 # CORS settings
-# WARNING: CORS_ALLOW_ALL_ORIGINS=True allows any origin to access your API.
-# This is suitable for development only. For production, set to False and
-# specify allowed origins in CORS_ALLOWED_ORIGINS.
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:8080',
+    default='http://localhost:3000,http://localhost:8080,http://127.0.0.1:5500,http://localhost:5500',
     cast=Csv()
+)
+
+# Allow session cookies from frontend
+CORS_ALLOW_CREDENTIALS = True
+
+# If serving HTML from another origin (live-server), Django needs to trust that origin for CSRF
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000',
+    cast=Csv(),
 )

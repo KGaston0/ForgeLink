@@ -16,9 +16,34 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
+
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from . import auth_views
+from .mvp_views import mvp_index
 
 urlpatterns = [
-    path('api/', include('projects.urls')),
-    path('api/', include('nodes.urls')),
-    path('api/', include('connections.urls')),
+    # Root redirects to API (DRF browsable API)
+    path('', RedirectView.as_view(url='/api/', permanent=False)),
+
+    # MVP Frontend
+    path('mvp/', mvp_index, name='mvp_frontend'),
+
+    # Django Admin
+    path('admin/', admin.site.urls),
+
+    # API endpoints
+    path('api/', include([
+        # Authentication
+        path('auth/jwt/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+        path('auth/jwt/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+        path('auth/me/', auth_views.me, name='auth_me'),
+
+        # App endpoints
+        path('', include('projects.urls')),
+        path('', include('graphs.urls')),
+        path('', include('nodes.urls')),
+        path('', include('connections.urls')),
+    ])),
 ]

@@ -1,6 +1,7 @@
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import NotAuthenticated
 
 from .models import Project
 from .serializers import ProjectSerializer, ProjectListSerializer
@@ -18,10 +19,23 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'updated_at', 'name']
     ordering = ['-updated_at']
 
+    def get_queryset(self):
+        # Only projects from authenticated user
+        user = getattr(self.request, 'user', None)
+        if not user or not user.is_authenticated:
+            return Project.objects.none()
+        return Project.objects.filter(owner=user)
+
     def get_serializer_class(self):
         if self.action == 'list':
             return ProjectListSerializer
         return ProjectSerializer
+
+    def perform_create(self, serializer):
+        # Owner is always set from authenticated user
+        if not self.request.user or not self.request.user.is_authenticated:
+            raise NotAuthenticated('You must be logged in to create a project.')
+        serializer.save(owner=self.request.user)
 
     @action(detail=True, methods=['get'])
     def nodes(self, request, pk=None):
@@ -41,8 +55,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
         Get all connections for a specific project
         """
         from connections.serializers import NodeConnectionSerializer
+        from connections.models import NodeConnection
 
         project = self.get_object()
-        connections = project.connections.all()
-        serializer = NodeConnectionSerializer(connections, many=True)
+
+        # Legacy endpoint: returns connections from all project graphs
+        # Avoid N+1: single query filtering by project via graph.
+        connections_qs = (
+            NodeConnection.objects
+            .filter(graph__project=project)
+            .select_related('graph', 'source_node', 'target_node', 'connection_type')
+        )
+
+        serializer = NodeConnectionSerializer(connections_qs, many=True)
         return Response(serializer.data)

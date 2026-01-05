@@ -99,51 +99,120 @@ http://localhost:8000/api/
 
 ---
 
-## API Endpoints
+## URL Structure
 
-Base URL:  
-http://localhost:8000/api/
+After starting the server, you can access:
 
-### Projects
+| Path | Description |
+|------|-------------|
+| `http://localhost:8000/` | Redirects to API root |
+| `http://localhost:8000/api/` | **API Root** - Django REST Framework browsable interface |
+| `http://localhost:8000/mvp/` | **MVP Frontend** - Development/testing UI |
+| `http://localhost:8000/admin/` | **Django Admin** - Model management interface |
 
-- GET /api/projects/ — List all projects
-- POST /api/projects/ — Create a new project
-- GET /api/projects/{id}/ — Get project details
-- PUT/PATCH /api/projects/{id}/ — Update project
-- DELETE /api/projects/{id}/ — Delete project
-- GET /api/projects/{id}/nodes/ — Get all nodes in a project
-- GET /api/projects/{id}/connections/ — Get all connections in a project
-
-### Nodes
-
-- GET /api/nodes/ — List all nodes
-- POST /api/nodes/ — Create a new node
-- GET /api/nodes/{id}/ — Get node details
-- PUT/PATCH /api/nodes/{id}/ — Update node
-- DELETE /api/nodes/{id}/ — Delete node
-
-Query parameters:
-- project — Filter by project
-- node_type — Filter by node type
-- search — Search in title and content
-
-### Node Connections
-
-- GET /api/connections/ — List all connections
-- POST /api/connections/ — Create a new connection
-- GET /api/connections/{id}/ — Get connection details
-- PUT/PATCH /api/connections/{id}/ — Update connection
-- DELETE /api/connections/{id}/ — Delete connection
-
-Query parameters:
-- project — Filter by project
-- source_node — Filter by source node
-- target_node — Filter by target node
-- connection_type — Filter by connection type
+> 📘 **For detailed API documentation**, see [API_ENDPOINTS.md](./API_ENDPOINTS.md)
 
 ---
 
-## Models
+## API Endpoints
+
+Base URL:
+http://localhost:8000/api/
+
+> **Legend:** ✅ Implemented | ⏳ To be implemented
+
+### Authentication
+
+- ✅ POST /api/auth/jwt/login/ — Obtain JWT tokens
+- ✅ POST /api/auth/jwt/refresh/ — Refresh access token
+- ✅ GET /api/auth/me/ — Get current user info
+
+### Projects (Full CRUD ✅)
+
+- ✅ GET /api/projects/ — List all projects
+- ✅ POST /api/projects/ — Create a new project
+- ✅ GET /api/projects/{id}/ — Retrieve project details
+- ✅ PUT /api/projects/{id}/ — Update project (full)
+- ✅ PATCH /api/projects/{id}/ — Update project (partial)
+- ✅ DELETE /api/projects/{id}/ — Delete project
+- ✅ GET /api/projects/{id}/nodes/ — Get all nodes for a project
+- ✅ GET /api/projects/{id}/connections/ — Get all connections for a project
+
+### Graphs (Full CRUD ✅)
+
+- ✅ GET /api/graphs/ — List graphs
+- ✅ POST /api/graphs/ — Create graph
+- ✅ GET /api/graphs/{id}/ — Graph details
+- ✅ PUT /api/graphs/{id}/ — Update graph (full)
+- ✅ PATCH /api/graphs/{id}/ — Update graph (partial)
+- ✅ DELETE /api/graphs/{id}/ — Delete graph
+- ✅ GET /api/graphs/{id}/canvas/ — Get graph canvas data (nodes + connections)
+
+### Graph Nodes (Full CRUD ✅)
+
+- ✅ GET /api/graph-nodes/ — List nodes within graphs
+- ✅ POST /api/graph-nodes/ — Add a node to a graph with position/color
+- ✅ GET /api/graph-nodes/{id}/ — Get specific graph node
+- ✅ PUT /api/graph-nodes/{id}/ — Update graph node (full)
+- ✅ PATCH /api/graph-nodes/{id}/ — Update graph node (partial)
+- ✅ DELETE /api/graph-nodes/{id}/ — Remove node from graph
+
+### Nodes (Full CRUD ✅)
+
+- ✅ GET /api/nodes/ — List all nodes
+- ✅ POST /api/nodes/ — Create a new node
+- ✅ GET /api/nodes/{id}/ — Get specific node
+- ✅ PUT /api/nodes/{id}/ — Update node (full)
+- ✅ PATCH /api/nodes/{id}/ — Update node (partial)
+- ✅ DELETE /api/nodes/{id}/ — Delete node
+- ✅ GET /api/nodes/{id}/children/ — Get child nodes
+- ✅ GET /api/nodes/{id}/connections/ — Get all connections for a node
+
+### Connection Types (Full CRUD ✅)
+
+- ✅ GET /api/connection-types/ — List connection types (filterable by project)
+- ✅ POST /api/connection-types/ — Create connection type
+- ✅ GET /api/connection-types/{id}/ — Get specific connection type
+- ✅ PUT /api/connection-types/{id}/ — Update connection type (full)
+- ✅ PATCH /api/connection-types/{id}/ — Update connection type (partial)
+- ✅ DELETE /api/connection-types/{id}/ — Delete connection type
+
+### Node Connections (Full CRUD ✅)
+
+- ✅ GET /api/connections/ — List all connections
+- ✅ POST /api/connections/ — Create a new connection
+- ✅ GET /api/connections/{id}/ — Get specific connection
+- ✅ PUT /api/connections/{id}/ — Update connection (full)
+- ✅ PATCH /api/connections/{id}/ — Update connection (partial)
+- ✅ DELETE /api/connections/{id}/ — Delete connection
+
+### Query Parameters (Available on list endpoints)
+
+- ✅ `?project={id}` — Filter by project
+- ✅ `?graph={id}` — Filter by graph
+- ✅ `?search={query}` — Search in specified fields
+- ✅ `?ordering={field}` — Order results (use `-field` for descending)
+- ✅ `?page={number}` — Pagination (100 items per page)
+
+---
+
+## TODO / Future Endpoints
+
+These endpoints could be added in future iterations:
+
+- ⏳ GET /api/projects/{id}/graphs/ — Get all graphs for a project
+- ⏳ GET /api/graphs/{id}/statistics/ — Get graph statistics (node count, connection count, etc.)
+- ⏳ POST /api/nodes/{id}/duplicate/ — Duplicate a node
+- ⏳ GET /api/nodes/{id}/descendants/ — Get all descendants (recursive children)
+- ⏳ GET /api/nodes/{id}/ancestors/ — Get all ancestors (recursive parents)
+- ⏳ POST /api/graphs/{id}/export/ — Export graph data
+- ⏳ POST /api/graphs/{id}/import/ — Import graph data
+- ⏳ GET /api/connections/validate/ — Validate connection before creating
+- ⏳ POST /api/projects/{id}/clone/ — Clone entire project
+
+---
+
+## Models (actualizado)
 
 ### Project
 
@@ -159,18 +228,21 @@ Query parameters:
 - title — Node title
 - node_type — character, location, event, item, concept, note
 - content — Node content / description
-- position_x — Canvas position
-- position_y — Canvas position
-- color — Visual color (hex code)
 - created_at — Timestamp
 - updated_at — Timestamp
 
-### NodeConnection
+### GraphNode (nuevo)
 
-- project — Related project
-- source_node — Starting node
-- target_node — Ending node
-- connection_type — Relationship type
+- graph — Related graph
+- node — Related node
+- position_x / position_y — Canvas position (por grafo)
+- color — Visual color (hex)
+
+### NodeConnection (actualizado)
+
+- graph — Related graph
+- source_node / target_node — Nodes (del mismo project del graph)
+- connection_type — Project-scoped type
 - label — Optional connection label
 - created_at — Timestamp
 
