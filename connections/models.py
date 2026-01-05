@@ -67,7 +67,14 @@ class NodeConnection(models.Model):
 
         # Optional: require nodes to be present in the graph
         # (This matches a UI where you must 'add' nodes to a graph before connecting them.)
-        if not self.graph.graph_nodes.filter(node=self.source_node).exists():
+        # Optimized: use a single query to check both nodes instead of two separate queries
+        nodes_in_graph = set(
+            self.graph.graph_nodes.filter(
+                node__in=[self.source_node, self.target_node]
+            ).values_list('node_id', flat=True)
+        )
+
+        if self.source_node.id not in nodes_in_graph:
             raise ValidationError("Source node is not present in this graph")
-        if not self.graph.graph_nodes.filter(node=self.target_node).exists():
+        if self.target_node.id not in nodes_in_graph:
             raise ValidationError("Target node is not present in this graph")

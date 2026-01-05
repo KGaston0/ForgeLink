@@ -20,7 +20,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering = ['-updated_at']
 
     def get_queryset(self):
-        # Solo proyectos del usuario autenticado
+        # Only projects from authenticated user
         user = getattr(self.request, 'user', None)
         if not user or not user.is_authenticated:
             return Project.objects.none()
@@ -32,9 +32,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return ProjectSerializer
 
     def perform_create(self, serializer):
-        # Owner siempre sale del usuario autenticado.
+        # Owner is always set from authenticated user
         if not self.request.user or not self.request.user.is_authenticated:
-            raise NotAuthenticated('Debes iniciar sesión para crear un proyecto.')
+            raise NotAuthenticated('You must be logged in to create a project.')
         serializer.save(owner=self.request.user)
 
     @action(detail=True, methods=['get'])
@@ -55,12 +55,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
         Get all connections for a specific project
         """
         from connections.serializers import NodeConnectionSerializer
+        from connections.models import NodeConnection
 
         project = self.get_object()
-        # Legacy endpoint: devolvemos conexiones de todos los grafos del proyecto
-        connections = []
-        for graph in project.graphs.all():
-            connections.extend(list(graph.connections.all()))
 
-        serializer = NodeConnectionSerializer(connections, many=True)
+        # Legacy endpoint: returns connections from all project graphs
+        # Avoid N+1: single query filtering by project via graph.
+        connections_qs = (
+            NodeConnection.objects
+            .filter(graph__project=project)
+            .select_related('graph', 'source_node', 'target_node', 'connection_type')
+        )
+
+        serializer = NodeConnectionSerializer(connections_qs, many=True)
         return Response(serializer.data)

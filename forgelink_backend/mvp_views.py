@@ -5,7 +5,7 @@ from django.http import FileResponse, Http404
 
 
 def mvp_index(request):
-    """Sirve el frontend MVP (HTML estático) desde Django."""
+    """Serves the MVP frontend (static HTML) from Django."""
     base_dir = Path(settings.BASE_DIR)
     index_path = base_dir / 'frontend_mvp' / 'index.html'
     if not index_path.exists():

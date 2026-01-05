@@ -19,38 +19,59 @@ class NodeConnectionSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at']
 
     def validate(self, attrs):
-        graph = attrs.get('graph') or getattr(self.instance, 'graph', None)
-        source = attrs.get('source_node') or getattr(self.instance, 'source_node', None)
-        target = attrs.get('target_node') or getattr(self.instance, 'target_node', None)
-        ctype = attrs.get('connection_type') or getattr(self.instance, 'connection_type', None)
+        """
+        Perform model-level validation by calling the model's clean() method.
+        This ensures consistency between serializer and model validations.
+        """
+        from django.core.exceptions import ObjectDoesNotExist, ValidationError as DjangoValidationError
+        from rest_framework.exceptions import ValidationError
+        from graphs.models import Graph
+        from nodes.models import Node
+        from .models import ConnectionType
 
-        if source is not None and target is not None and source == target:
-            raise serializers.ValidationError("A node cannot connect to itself")
+        # For updates, start with existing instance
+        if self.instance:
+            instance = self.instance
+            for attr, value in attrs.items():
+                setattr(instance, attr, value)
+        else:
+            # For creates, build a temporary instance
+            instance = NodeConnection(**attrs)
 
-        if graph and source and source.project_id != graph.project_id:
-            raise serializers.ValidationError("Source node must belong to the same project as the graph")
-        if graph and target and target.project_id != graph.project_id:
-            raise serializers.ValidationError("Target node must belong to the same project as the graph")
+        # Ensure all related objects are loaded before calling clean()
+        # This prevents errors when clean() accesses FK properties like node.project_id
+        try:
+            # Load graph if needed
+            if 'graph' in attrs:
+                instance.graph = attrs['graph']
+            elif instance.graph_id is not None and (not hasattr(instance, 'graph') or instance.graph is None):
+                instance.graph = Graph.objects.get(pk=instance.graph_id)
 
-        if graph and ctype and ctype.project_id != graph.project_id:
-            raise serializers.ValidationError("Connection type must belong to the same project as the graph")
+            # Load source_node if needed
+            if 'source_node' in attrs:
+                instance.source_node = attrs['source_node']
+            elif instance.source_node_id is not None and (not hasattr(instance, 'source_node') or instance.source_node is None):
+                instance.source_node = Node.objects.get(pk=instance.source_node_id)
 
-        # Require nodes to be present in the graph
-        if graph and source and not graph.graph_nodes.filter(node=source).exists():
-            raise serializers.ValidationError("Source node is not present in this graph")
-        if graph and target and not graph.graph_nodes.filter(node=target).exists():
-            raise serializers.ValidationError("Target node is not present in this graph")
+            # Load target_node if needed
+            if 'target_node' in attrs:
+                instance.target_node = attrs['target_node']
+            elif instance.target_node_id is not None and (not hasattr(instance, 'target_node') or instance.target_node is None):
+                instance.target_node = Node.objects.get(pk=instance.target_node_id)
+
+            # Load connection_type if needed
+            if 'connection_type' in attrs:
+                instance.connection_type = attrs['connection_type']
+            elif instance.connection_type_id is not None and (not hasattr(instance, 'connection_type') or instance.connection_type is None):
+                instance.connection_type = ConnectionType.objects.get(pk=instance.connection_type_id)
+        except ObjectDoesNotExist as e:
+            raise ValidationError(f"Related object does not exist: {str(e)}")
+
+        # Run model validation
+        try:
+            instance.clean()
+        except DjangoValidationError as e:
+            # Convert Django ValidationError to DRF ValidationError
+            raise ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
 
         return attrs
-
-    def create(self, validated_data):
-        obj = super().create(validated_data)
-        obj.full_clean()
-        obj.save()
-        return obj
-
-    def update(self, instance, validated_data):
-        obj = super().update(instance, validated_data)
-        obj.full_clean()
-        obj.save()
-        return obj

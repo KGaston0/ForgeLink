@@ -87,8 +87,12 @@ WSGI_APPLICATION = 'forgelink_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME', default='forgelink_db'),
+        'USER': config('DB_USER', default='forgelink_user'),
+        'PASSWORD': config('DB_PASSWORD', default='your-password-here'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
 
@@ -138,7 +142,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        # útil para admin/browsable API en dev
+        # useful for admin/browsable API in dev
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -172,7 +176,7 @@ CORS_ALLOWED_ORIGINS = config(
     cast=Csv()
 )
 
-# Permitir cookies de sesión desde el front
+# Allow session cookies from frontend
 CORS_ALLOW_CREDENTIALS = True
 
 # If serving HTML from another origin (live-server), Django needs to trust that origin for CSRF

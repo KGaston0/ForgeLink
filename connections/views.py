@@ -7,7 +7,7 @@ from .connection_types_serializers import ConnectionTypeSerializer
 
 
 class ConnectionTypeViewSet(viewsets.ModelViewSet):
-    """CRUD for connection types at the Project level."""
+    """CRUD for connection types at Project level."""
 
     serializer_class = ConnectionTypeSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -36,4 +36,9 @@ class NodeConnectionViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, 'user', None)
         if not user or not user.is_authenticated:
             return NodeConnection.objects.none()
-        return NodeConnection.objects.filter(graph__project__owner=user)
+        return (
+            NodeConnection.objects
+            .filter(graph__project__owner=user)
+            .select_related('graph', 'source_node', 'target_node', 'connection_type')
+            .prefetch_related('graph__graph_nodes')
+        )

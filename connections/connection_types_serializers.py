@@ -4,6 +4,8 @@ from .models import ConnectionType
 
 
 class ConnectionTypeSerializer(serializers.ModelSerializer):
+    """Serializer for ConnectionType model (project-scoped connection types)."""
+
     class Meta:
         model = ConnectionType
         fields = ['id', 'project', 'name', 'description', 'color', 'created_at']

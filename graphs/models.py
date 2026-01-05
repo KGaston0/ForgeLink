@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from projects.models import Project
 from nodes.models import Node
@@ -45,3 +46,7 @@ class GraphNode(models.Model):
     def __str__(self) -> str:
         return f"{self.graph} -> {self.node.title}"
 
+    def clean(self):
+        """Domain validations to maintain consistency between projects."""
+        if self.graph_id and self.node_id and self.node.project_id != self.graph.project_id:
+            raise ValidationError("Node must belong to the same project as the graph")

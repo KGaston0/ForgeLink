@@ -76,7 +76,7 @@
       <select id="projectSelect"></select>
       <input id="projectName" placeholder="Nombre del proyecto" />
       <textarea id="projectDesc" placeholder="Descripción"></textarea>
-      <!-- owner se asigna server-side -->
+      <!-- owner is assigned server-side -->
       <button id="btnCreateProject">Crear proyecto</button>
     </div>
 
@@ -211,7 +211,7 @@
   async function refreshMe(){
     try{
       const data = await http('GET', '/auth/me/');
-      if(data?.authenticated) setWho(`@${data.user.username} (id=${data.user.id})`);
+      if(data?.authenticated) setWho(`@${data.user.username}`);
       else setWho('Sin auth');
     } catch {
       setWho('Sin auth');
@@ -298,7 +298,7 @@
     for(const sel of sels){
       sel.innerHTML = '';
 
-      // opción vacía para que el input custom sea válido sin obligar a seleccionar
+      // empty option so custom input is valid without requiring a selection
       const empty = document.createElement('option');
       empty.value = '';
       empty.textContent = '-- tipo existente (opcional) --';
@@ -369,7 +369,7 @@
 
     if(!state.canvas) return;
 
-    // mapa nodeId -> GraphNode
+    // map nodeId -> GraphNode
     const byNodeId = new Map();
     for(const gn of state.canvas.nodes){
       byNodeId.set(gn.node, gn);
@@ -597,7 +597,7 @@
 
   // ---- conectar
   async function ensureConnectionTypeId(){
-    // primero: si eligió uno existente en el selector de conexión
+    // first: if user selected an existing one in connection selector
     const existingId = currConnCtypeId();
     if(existingId) return existingId;
 
@@ -640,7 +640,7 @@
     } catch(e){ setError(e); }
   };
 
-  // auto-cargar al abrir
+  // auto-load on open
   (async () => {
     await refreshMe();
     await loadAll();
