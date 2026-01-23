@@ -21,15 +21,25 @@ ForgeLink provides a system for modeling knowledge as graphs, with isolated proj
 
 ## Tech Stack
 
+### Backend
 - Language: Python 3.10+
-- Backend:
-  - Django 4.2+
-  - Django REST Framework
+- Framework: Django 4.2+
+- API: Django REST Framework
 - Database: PostgreSQL
 - Libraries:
   - django-cors-headers
   - django-filter
-  - python-dotenv
+  - python-decouple
+  - djangorestframework-simplejwt
+
+### Frontend (React - In Development)
+- Framework: React 18+
+- Language: JavaScript/TypeScript
+- Router: React Router v6
+- State Management: Context API / Zustand
+- HTTP Client: Axios
+- Styling: TailwindCSS / Material-UI (TBD)
+- Graph Visualization: React Flow / D3.js (TBD)
 
 ---
 
@@ -107,7 +117,9 @@ After starting the server, you can access:
 |------|-------------|
 | `http://localhost:8000/` | Redirects to API root |
 | `http://localhost:8000/api/` | **API Root** - Django REST Framework browsable interface |
-| `http://localhost:8000/mvp/` | **MVP Frontend** - Development/testing UI |
+| `http://localhost:8000/mvp/` | **MVP Frontend** - Development/testing UI (legacy) |
+| `http://localhost:8000/admin/` | **Django Admin** - Administration interface |
+| `http://localhost:3000/` | **React Frontend** - Main application (when running) |
 | `http://localhost:8000/admin/` | **Django Admin** - Model management interface |
 
 > 📘 **For detailed API documentation**, see [API_ENDPOINTS.md](./API_ENDPOINTS.md)
@@ -280,12 +292,59 @@ Before deploying to production:
 
 ## Roadmap
 
-- JWT authentication
-- User-based permissions
-- Realtime collaboration (WebSockets)
-- Graph validation rules
-- Versioning and history
-- Frontend integration (React or Vue)
+- ✅ JWT authentication
+- ✅ User-based permissions
+- ✅ Project structure reorganization (apps/ folder)
+- ✅ Frontend structure setup (React)
+- ⏳ Frontend implementation (React components)
+- ⏳ Graph visualization with React Flow
+- 🔮 Realtime collaboration (WebSockets)
+- 🔮 Graph validation rules
+- 🔮 Versioning and history
+- 🔮 Advanced search and filtering
+
+**Legend**: ✅ Complete | ⏳ In Progress | 🔮 Planned
+
+---
+
+## Frontend Development
+
+The React frontend is located in the `/frontend` directory with a well-organized structure following modern best practices.
+
+### Quick Start
+
+```bash
+cd frontend
+
+# Install dependencies (first time)
+npm install
+
+# Start development server
+npm start
+```
+
+### Frontend Structure
+
+```
+frontend/
+├── src/
+│   ├── components/    # Reusable UI components
+│   ├── pages/         # Page components (routes)
+│   ├── features/      # Feature modules (auth, projects, graphs, etc.)
+│   ├── services/      # API client and services
+│   ├── hooks/         # Custom React hooks
+│   ├── context/       # React Context providers
+│   ├── utils/         # Utility functions
+│   └── styles/        # Global styles and themes
+├── public/            # Static files
+└── tests/             # Test files
+```
+
+For detailed frontend documentation, see:
+- [Frontend README](./frontend/README.md)
+- [Frontend Structure Guide](./frontend/STRUCTURE.md)
+- [Components Guide](./frontend/src/components/README.md)
+- [Features Guide](./frontend/src/features/README.md)
 
 ---
 
