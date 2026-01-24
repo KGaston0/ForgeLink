@@ -26,7 +26,7 @@ class NodeConnectionSerializer(serializers.ModelSerializer):
         from django.core.exceptions import ObjectDoesNotExist, ValidationError as DjangoValidationError
         from rest_framework.exceptions import ValidationError
         from apps.graphs.models import Graph
-        from apps.nodes.models import Node
+        from nodes.models import Node
         from .models import ConnectionType
 
         # For updates, start with existing instance

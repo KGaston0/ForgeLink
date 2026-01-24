@@ -150,52 +150,19 @@ ForgeLink/
 
 ### Frontend Setup
 
-The frontend structure is ready, but React needs to be initialized.
-
-#### Option 1: Create React App (Recommended)
+Frontend is already configured with **Vite** and ready to use.
 
 ```bash
 cd frontend
 
-# Initialize React app
-npx create-react-app .
-
-# Install core dependencies
-npm install react-router-dom axios zustand
-
-# Install UI library (choose one)
-npm install @mui/material @emotion/react @emotion/styled @mui/icons-material
-
-# Install form handling
-npm install react-hook-form zod @hookform/resolvers
-
-# Install graph visualization
-npm install reactflow
-
-# Setup environment
-cp .env.example .env
-
-# Start dev server
-npm start
-```
-
-**Frontend will run at:** http://localhost:3000/
-
-#### Option 2: Vite (Faster alternative)
-
-```bash
-cd frontend
-
-# Initialize with Vite
-npm create vite@latest . -- --template react
-
-# Install dependencies
+# Install dependencies (if not done)
 npm install
-npm install react-router-dom axios zustand
 
-# Start dev server
+# Start development server
 npm run dev
 ```
+
+**Frontend runs at:** http://localhost:5173/ (Vite default port)
 
 ---
 
@@ -222,7 +189,7 @@ Pre-created users for testing:
 | Backend API | http://localhost:8000/api/ | - |
 | Admin Panel | http://localhost:8000/admin/ | admin / admin123 |
 | MVP Frontend | http://localhost:8000/mvp/ | testuser / test123 |
-| React Frontend | http://localhost:3000/ | (after setup) |
+| React Frontend | http://localhost:5173/ | (Vite dev server) |
 
 ---
 
@@ -260,15 +227,20 @@ python manage.py check
 python manage.py collectstatic
 ```
 
-### Frontend (after initialization)
+### Frontend
 
 ```bash
+# Change to frontend directory
+cd frontend
+
 # Start development server
-npm start           # Create React App
-npm run dev         # Vite
+npm run dev
 
 # Build for production
 npm run build
+
+# Preview production build
+npm run preview
 
 # Run tests
 npm test
@@ -289,8 +261,8 @@ npm update
 ```
 frontend/src/
 ├── components/          # Reusable UI components
-│   ├── common/         # Generic components (Button, Input, Modal)
-│   └── layout/         # Layout components (Header, Sidebar, Footer)
+│   ├── common/         # Generic components (Button, Input, Modal, Card, Badge)
+│   └── layout/         # Layout components (Header, Sidebar, Footer, Navigation)
 │
 ├── pages/              # Page components (one per route)
 │   ├── auth/          # Login, Register pages
@@ -323,15 +295,25 @@ frontend/src/
 │
 ├── context/            # React Context providers
 │   ├── AuthContext.jsx
-│   ├── ThemeContext.jsx
+│   ├── ThemeContext.jsx    # 🎨 Theme/Dark mode
 │   └── ToastContext.jsx
+│
+├── styles/             # 🎨 Design System
+│   ├── variables.css      # CSS Variables (colors, fonts, spacing)
+│   ├── globals.css        # Global styles and resets
+│   └── theme/            # Theme system
+│       ├── colors.css       # Color palettes
+│       ├── typography.css   # Font system
+│       ├── spacing.css      # Spacing scale
+│       ├── breakpoints.css  # Responsive breakpoints
+│       └── index.css        # Theme exports
 │
 ├── routes/             # Route configuration
 ├── utils/              # Utility functions
 ├── types/              # TypeScript types (if using TS)
 ├── config/             # App configuration
 ├── assets/             # Static assets
-└── styles/             # Global styles
+└── App.jsx             # Main app component
 ```
 
 ### Architecture Principles
@@ -341,6 +323,172 @@ frontend/src/
 3. **Component Reusability**: Generic components in `common/`, specific ones in features
 4. **Modular Design**: Easy to add, remove, or modify features
 5. **Testing Ready**: Clear structure makes testing easier
+
+---
+
+## 🎨 Design System & Theming
+
+### CSS Variables System
+
+All design tokens are centralized in `styles/variables.css`:
+
+```css
+:root {
+  /* ========== COLORS - LIGHT MODE ========== */
+  --color-bg: #ffffff;
+  --color-surface: #f8f9fa;
+  --color-surface-hover: #e9ecef;
+  --color-text: #1a1a1f;
+  --color-text-secondary: #6b7280;
+  --color-border: rgba(0, 0, 0, 0.08);
+  
+  /* ========== COLORS - ACCENTS ========== */
+  --color-cyan: #06b6d4;
+  --color-teal: #14b8a6;
+  --color-pink: #ec4899;
+  --color-purple: #a855f7;
+  
+  /* ========== TYPOGRAPHY ========== */
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
+  --font-size-4xl: 3rem;
+  
+  /* ========== SPACING (8pt Grid) ========== */
+  --space-xs: 0.5rem;    /* 8px */
+  --space-sm: 1rem;      /* 16px */
+  --space-md: 1.5rem;    /* 24px */
+  --space-lg: 2rem;      /* 32px */
+  --space-xl: 3rem;      /* 48px */
+  --space-2xl: 4rem;     /* 64px */
+  --space-3xl: 6rem;     /* 96px */
+  
+  /* ========== LAYOUT ========== */
+  --container-max-width: 1280px;
+  --section-padding: 6rem 1.5rem;
+  
+  /* ========== EFFECTS ========== */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.2);
+  
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  
+  --transition-fast: 150ms;
+  --transition-base: 300ms;
+  --transition-slow: 500ms;
+}
+
+/* ========== DARK MODE ========== */
+[data-theme="dark"] {
+  --color-bg: #0a0a0f;
+  --color-surface: #13131a;
+  --color-surface-hover: #1a1a24;
+  --color-text: #e4e4e7;
+  --color-text-secondary: #a1a1aa;
+  --color-border: rgba(255, 255, 255, 0.08);
+  
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+```
+
+### Theme Context
+
+The `ThemeContext` is already implemented in `frontend/src/context/ThemeContext.jsx`.
+
+**Key features:**
+- Reads theme from localStorage
+- Detects system preference (`prefers-color-scheme`)
+- Provides `theme`, `toggleTheme`, `isDark`, `isLight`
+
+**Usage:**
+
+```jsx
+import { useTheme } from '../../context/ThemeContext';
+
+function Header() {
+  const { theme, toggleTheme } = useTheme();
+  
+  return (
+    <header>
+      <button onClick={toggleTheme} className="theme-toggle">
+        {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
+      </button>
+    </header>
+  );
+}
+```
+
+### Reusable Components
+
+Components are located in `frontend/src/components/`:
+
+- **Common components** (`common/`): Button, Card, Badge, ThemeToggle
+- **Layout components** (`layout/`): Navigation, Footer, Container
+- **Landing components** (`landing/`): HeroSection, BentoGrid, PricingSection, etc.
+
+**Example usage:**
+```jsx
+import { Button } from '@/components/common/Button/Button';
+import { ThemeToggle } from '@/components/common/ThemeToggle/ThemeToggle';
+
+<Button variant="primary" size="lg">Click me</Button>
+<ThemeToggle />
+```
+
+### Component Structure
+
+```
+ComponentName/
+├── ComponentName.jsx    # Component logic
+├── ComponentName.css    # Component styles (uses CSS variables)
+└── index.js             # Export (optional)
+```
+
+All components use CSS variables from `styles/variables.css` for theming.
+
+### Landing Page Modularization
+
+The landing page is split into reusable sections:
+
+- `<Navigation />` - Top navigation bar (reusable in all pages)
+- `<HeroSection />` - Hero with animated node canvas
+- `<BentoGrid />` - Feature showcase in bento layout
+- `<DualPurpose />` - Use cases section
+- `<PricingSection />` - Pricing table
+- `<CTASection />` - Call to action
+- `<Footer />` - Footer (reusable in all pages)
+
+Each section is independent and can be used in other pages.
+
+### Global Styles Setup
+
+**Import order in `main.jsx`:**
+
+1. `./styles/variables.css` - Variables first
+2. `./styles/globals.css` - Reset and base
+3. Wrap app with `<ThemeProvider>`
+
+### Benefits
+
+1. ✅ **Consistency** - Same design across all pages
+2. ✅ **Reusability** - Navigation & Footer in all pages
+3. ✅ **Maintainability** - Change once, update everywhere
+4. ✅ **Dark mode** - Theme switching built-in
+5. ✅ **Scalability** - Easy to add new components
 
 ---
 
@@ -596,35 +744,46 @@ PORT=3001 npm start
 - [Main README](./README.md) - Project overview
 - [API Endpoints](./API_ENDPOINTS.md) - Complete API documentation
 - [Frontend README](./frontend/README.md) - Frontend setup guide
-- [Frontend Structure](./frontend/STRUCTURE.md) - Architecture details
-- [Components Guide](./frontend/src/components/README.md)
-- [Features Guide](./frontend/src/features/README.md)
-- [Services Guide](./frontend/src/services/README.md)
-- [Hooks Guide](./frontend/src/hooks/README.md)
-- [Context Guide](./frontend/src/context/README.md)
-- [Utils Guide](./frontend/src/utils/README.md)
+- [Design System](./frontend/src/styles/README.md) - CSS Variables and theming
 
 ---
 
-## ✅ Next Steps
+## ✅ Next Steps & Roadmap
 
-### Priority 1: Initialize Frontend
-1. Choose React setup (CRA or Vite)
-2. Install dependencies
-3. Configure API client
-4. Setup routing
+### Phase 1: Foundation ✅ COMPLETED
+- [x] Landing page working
+- [x] Create `/styles` directory
+- [x] Setup CSS variables
+- [x] Implement ThemeContext
+- [x] Test dark/light mode
 
-### Priority 2: Implement Authentication
-1. Login page
-2. Auth context
-3. Protected routes
-4. Token management
+### Phase 2: Component Extraction (Current)
+- [ ] Extract Navigation component
+- [ ] Extract Footer component
+- [ ] Extract Button component with variants
+- [ ] Extract Card component
+- [ ] Extract Badge component
 
-### Priority 3: Core Features
-1. Projects CRUD
-2. Graphs visualization
-3. Nodes management
-4. Connections handling
+### Phase 3: Landing Modularization
+- [ ] Split HeroSection
+- [ ] Split BentoGrid
+- [ ] Split DualPurpose
+- [ ] Split PricingSection
+- [ ] Split CTASection
+
+### Phase 4: Global Application
+- [ ] Use Navigation in all pages
+- [ ] Use Footer in all pages
+- [ ] Apply design system to Dashboard
+- [ ] Apply design system to Editor
+- [ ] Ensure consistency across all features
+
+### Phase 5: Core Features
+- [ ] Projects CRUD
+- [ ] Graphs visualization
+- [ ] Nodes management
+- [ ] Connections handling
+- [ ] Authentication & Protected routes
 
 ---
 

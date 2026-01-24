@@ -35,7 +35,7 @@ class NodeViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def connections(self, request, pk=None):
-        from apps.connections.serializers import NodeConnectionSerializer
+        from connections.serializers import NodeConnectionSerializer
 
         node = self.get_object()
         outgoing = node.outgoing_connections.all()

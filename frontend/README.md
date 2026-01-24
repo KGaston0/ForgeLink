@@ -1,113 +1,169 @@
 # ForgeLink Frontend
+React frontend for ForgeLink - Node-based project management and worldbuilding system.
+---
+## 🚀 Quick Start
+### Installation
 
-React application for ForgeLink - A worldbuilding and knowledge graph management system.
+```bash
+cd frontend
+npm install
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+Frontend available at: **http://localhost:5173/**
+
+### Production Build
+
+```bash
+npm run build
+npm run preview
+```
+
+---
 
 ## 📁 Project Structure
 
 ```
 frontend/
-├── public/                 # Static files (index.html, favicon, etc.)
 ├── src/
-│   ├── components/        # Reusable UI components
-│   │   ├── common/       # Generic components (Button, Input, Modal, etc.)
-│   │   └── layout/       # Layout components (Header, Footer, Sidebar, etc.)
-│   ├── pages/            # Page components (one per route)
-│   │   ├── auth/         # Authentication pages (Login, Register, etc.)
-│   │   ├── home/         # Home/Dashboard page
-│   │   ├── projects/     # Project-related pages
-│   │   ├── graphs/       # Graph visualization pages
-│   │   └── nodes/        # Node management pages
-│   ├── features/         # Feature-based modules (business logic + components)
-│   │   ├── auth/         # Authentication logic, hooks, components
-│   │   ├── projects/     # Project management feature
-│   │   ├── graphs/       # Graph feature
-│   │   ├── nodes/        # Node management feature
-│   │   └── connections/  # Connection management feature
-│   ├── services/         # External services and API calls
-│   │   └── api/          # API client and endpoints
-│   ├── hooks/            # Custom React hooks
-│   ├── context/          # React Context providers (Auth, Theme, etc.)
-│   ├── routes/           # Route configuration
-│   ├── utils/            # Utility functions and helpers
-│   ├── types/            # TypeScript type definitions (if using TS)
-│   ├── config/           # Configuration files
-│   ├── assets/           # Images, icons, fonts
-│   │   ├── images/
-│   │   ├── icons/
-│   │   └── fonts/
-│   └── styles/           # Global styles and theme
-│       ├── themes/
-│       └── global/
-└── tests/                # Test files
-    ├── unit/            # Unit tests
-    ├── integration/     # Integration tests
-    └── e2e/             # End-to-end tests
-
+│   ├── components/         # Reusable UI components
+│   │   ├── common/         #   Generic components (Button, Card, Badge)
+│   │   ├── layout/         #   Layout components (Navigation, Footer)
+│   │   └── landing/        #   Landing page sections
+│   ├── pages/              # Page components (one per route)
+│   │   ├── auth/           #   Login, Register pages
+│   │   ├── home/           #   Dashboard/Home
+│   │   ├── projects/       #   Projects pages
+│   │   ├── graphs/         #   Graphs pages
+│   │   └── nodes/          #   Nodes pages
+│   ├── features/           # Feature modules (business logic)
+│   │   ├── auth/           #   Authentication feature
+│   │   │   ├── components/ #     Feature-specific components
+│   │   │   ├── hooks/      #     Feature hooks
+│   │   │   └── api/        #     API calls
+│   │   ├── projects/
+│   │   ├── graphs/
+│   │   ├── nodes/
+│   │   └── connections/
+│   ├── services/           # External services
+│   │   └── api/            #   API client configuration
+│   ├── hooks/              # Custom React hooks
+│   ├── context/            # React Context providers (Theme, Auth)
+│   ├── routes/             # Route configuration
+│   ├── styles/             # Design system and global styles
+│   │   ├── variables.css   #   CSS variables (colors, typography, spacing)
+│   │   ├── globals.css     #   Global reset and base styles
+│   │   └── theme/          #   Theme system files
+│   ├── utils/              # Utility functions
+│   ├── types/              # TypeScript types (if using TS)
+│   ├── config/             # App configuration
+│   └── assets/             # Static assets (images, icons)
+├── public/                 # Static files
+└── README.md               # This file
 ```
 
-## 🏗️ Architecture Principles
-
-### Feature-Based Structure
-- Each feature module contains its own components, hooks, and logic
-- Promotes modularity and maintainability
-- Easy to test and scale
-
-### Separation of Concerns
-- **Components**: Pure UI components, reusable
-- **Pages**: Compose components for specific routes
-- **Features**: Business logic + feature-specific components
-- **Services**: API calls and external integrations
-- **Hooks**: Reusable stateful logic
-- **Context**: Global state management
-
-### Best Practices
-- Atomic design principles for components
-- Single Responsibility Principle
-- DRY (Don't Repeat Yourself)
-- Proper error handling and loading states
-- Accessibility (a11y) first
-- Responsive design
-- Performance optimization (lazy loading, memoization)
-
-## 🚀 Getting Started
+> **Note:** See [DEVELOPMENT.md](../DEVELOPMENT.md) for detailed architecture documentation.
+---
+## 📚 Documentation
+- **Components:** See [src/components/README.md](./src/components/README.md)
+- **Design System:** See [src/styles/README.md](./src/styles/README.md)
+- **Backend API:** See [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
+---
+## 🎨 Tech Stack
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Styling:** Native CSS with CSS variables
+- **State Management:** React Context API
+- **Routing:** React Router (future)
+- **HTTP Client:** Native fetch API
+- **Dark Mode:** Theme system with CSS variables
+---
+## 🏗️ Development Progress
+### ✅ Completed
+- [x] Complete landing page
+- [x] Reusable component system (10 components)
+- [x] Design system with CSS variables
+- [x] Dark mode / Light mode
+- [x] Modular and scalable architecture
+- [x] Navigation and footer
+- [x] Landing sections: Hero, Bento Grid, Dual Purpose, Pricing, CTA
+### 🚧 In Development
+- [ ] Authentication system (JWT)
+- [ ] Main dashboard
+- [ ] Project management
+- [ ] Node canvas (graph editor)
+- [ ] Node and connection CRUD
+### 📋 Roadmap
+- [ ] Complete authentication
+- [ ] Visual graph editor
+- [ ] Node and connection management
+- [ ] Real-time collaboration
+- [ ] Data export/import
+- [ ] Customizable themes
+- [ ] Unit tests
+- [ ] Component Storybook
+---
+## 🔗 Backend
+Frontend connects to Django REST API backend:
+- **Backend URL:** http://localhost:8000/api/
+- **Documentation:** [../README.md](../README.md)
+- **API Endpoints:** [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
+---
+## 🛠️ Useful Commands
 
 ```bash
-# Install dependencies
-npm install
+# Development
+npm run dev
 
-# Start development server
-npm start
-
-# Build for production
+# Build
 npm run build
 
-# Run tests
-npm test
+# Preview build
+npm run preview
+
+# Linting
+npm run lint
 ```
 
-## 📦 Recommended Dependencies
+---
 
-- **React Router** - Navigation
-- **Axios** or **React Query** - API calls
-- **Zustand** or **Redux Toolkit** - State management (if needed)
-- **Tailwind CSS** or **Material-UI** - Styling
-- **React Hook Form** - Form handling
-- **Zod** or **Yup** - Validation
-- **React Flow** or **D3.js** - Graph visualization
-- **React Testing Library** - Testing
+## 📦 Available Components
 
-## 🔐 Environment Variables
+Total: **10  components**
 
-Create a `.env` file in the frontend root:
+### Layout (2):
+- `Navigation` - Navbar with dark mode toggle
+- `Footer` - Site footer
 
-```
-REACT_APP_API_URL=http://localhost:8000/api
-REACT_APP_ENV=development
-```
+### Common (3):
+- `Button` - Button with variants (primary/secondary) and sizes
+- `Card` - Card with spotlight effect
+- `Badge` - Labels with 5 variants
 
-## 📝 Notes
-
-- This structure follows modern React best practices
-- Easily scalable for large applications
-- Supports both JavaScript and TypeScript
-- Ready for testing implementation
+### Landing (5):
+- `HeroSection` - Hero with animated node canvas
+- `BentoGrid` - Feature grid
+- `DualPurpose` - Use cases (PM + Creative)
+- `PricingSection` - Pricing table
+- `CTASection` - Final call to action
+**See complete documentation:** [src/components/README.md](./src/components/README.md)
+---
+## 🎨 Design System
+Centralized design system with CSS variables:
+- **Colors:** Auto light/dark mode
+- **Typography:** 3 font families
+- **Spacing:** 8pt grid system
+- **Shadows:** 7 elevation levels
+- **Border Radius:** 5 predefined sizes
+- **Transitions:** 3 speeds
+**See documentation:** [src/styles/README.md](./src/styles/README.md)
+---
+## 📄 License
+MIT License - See [../LICENSE](../LICENSE)
+---
+**Last Updated:** 2026-01-24
