@@ -31,26 +31,21 @@ function LandingPage() {
     };
   }, []);
   return (
-    <>
+    <div className="landing-page">
       {/* Grain Texture Overlay */}
       <div className="grain"></div>
+
       {/* Mouse Glow Cursor */}
       <div id="mouse-glow"></div>
 
       <Navigation />
-
       <HeroSection />
-
       <BentoGrid />
-
       <DualPurpose />
-
       <PricingSection />
-
       <CTASection />
-
       <Footer />
-    </>
+    </div>
   );
 }
 export default LandingPage;

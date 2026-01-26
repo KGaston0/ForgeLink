@@ -110,7 +110,7 @@ ForgeLink/
   - python-dotenv
 
 ### Frontend
-- **Framework:** React 18
+- **Framework:** React 19.2.0
 - **Build Tool:** Vite
 - **Styling:** Native CSS with CSS variables
 - **Components:** 10 modular reusable components

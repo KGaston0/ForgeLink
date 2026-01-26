@@ -75,7 +75,7 @@ frontend/
 - **Backend API:** See [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
 ---
 ## 🎨 Tech Stack
-- **Framework:** React 18
+- **Framework:** React 19.2.0
 - **Build Tool:** Vite
 - **Styling:** Native CSS with CSS variables
 - **State Management:** React Context API

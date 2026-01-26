@@ -52,14 +52,14 @@ styles/
 /* Sizes */
 --font-size-xs       /* 12px */
 --font-size-sm       /* 14px */
---font-size-base     /* 16px */
+--font-size-md       /* 16px - base */
 --font-size-lg       /* 18px */
 --font-size-xl       /* 20px */
 --font-size-2xl      /* 24px */
---font-size-3xl      /* 30px */
---font-size-4xl      /* 36px */
+--font-size-3xl      /* 32px */
+--font-size-4xl      /* 40px */
 --font-size-5xl      /* 48px */
---font-size-6xl      /* 60px */
+--font-size-6xl      /* 64px */
 
 /* Weights */
 --font-weight-light      /* 300 */
@@ -73,14 +73,15 @@ styles/
 ### Spacing (8pt Grid)
 
 ```css
+--space-0       /* 0px */
 --space-xs      /* 8px */
 --space-sm      /* 16px */
 --space-md      /* 24px */
 --space-lg      /* 32px */
---space-xl      /* 48px */
---space-2xl     /* 64px */
---space-3xl     /* 80px */
---space-4xl     /* 88px */
+--space-xl      /* 40px */
+--space-2xl     /* 48px */
+--space-3xl     /* 64px */
+--space-4xl     /* 80px */
 --space-5xl     /* 96px */
 ```
 
