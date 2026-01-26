@@ -13,6 +13,11 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext(undefined);
 
 export function ThemeProvider({ children }) {
+  // Track if user has manually set theme (vs auto-detected)
+  const [isManuallySet, setIsManuallySet] = useState(() => {
+    return localStorage.getItem('forgelink-theme') !== null;
+  });
+
   const [theme, setTheme] = useState(() => {
     // 1. Check localStorage first
     const savedTheme = localStorage.getItem('forgelink-theme');
@@ -20,7 +25,7 @@ export function ThemeProvider({ children }) {
       return savedTheme;
     }
 
-    // 2. Detect system preference
+    // 2. Detect system preference (don't save yet)
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
@@ -39,8 +44,10 @@ export function ThemeProvider({ children }) {
     // Set data-theme attribute
     root.setAttribute('data-theme', theme);
 
-    // Save to localStorage
-    localStorage.setItem('forgelink-theme', theme);
+    // Only save to localStorage if user manually set it
+    if (isManuallySet) {
+      localStorage.setItem('forgelink-theme', theme);
+    }
 
     // Remove transitioning class after a brief delay
     const timer = setTimeout(() => {
@@ -48,7 +55,7 @@ export function ThemeProvider({ children }) {
     }, 50);
 
     return () => clearTimeout(timer);
-  }, [theme]);
+  }, [theme, isManuallySet]);
 
   // Listen for system theme changes
   useEffect(() => {
@@ -56,8 +63,7 @@ export function ThemeProvider({ children }) {
 
     const handleChange = (e) => {
       // Only update if user hasn't manually set a theme
-      const savedTheme = localStorage.getItem('forgelink-theme');
-      if (!savedTheme) {
+      if (!isManuallySet) {
         setTheme(e.matches ? 'dark' : 'light');
       }
     };
@@ -72,22 +78,40 @@ export function ThemeProvider({ children }) {
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
-  }, []);
+  }, [isManuallySet]);
 
   const toggleTheme = () => {
+    setIsManuallySet(true); // Mark as manually set
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
-  const setLightTheme = () => setTheme('light');
-  const setDarkTheme = () => setTheme('dark');
+  const setLightTheme = () => {
+    setIsManuallySet(true); // Mark as manually set
+    setTheme('light');
+  };
+
+  const setDarkTheme = () => {
+    setIsManuallySet(true); // Mark as manually set
+    setTheme('dark');
+  };
+
+  // Reset to system preference
+  const resetToSystem = () => {
+    setIsManuallySet(false);
+    localStorage.removeItem('forgelink-theme');
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    setTheme(systemTheme);
+  };
 
   const value = {
     theme,
     toggleTheme,
     setLightTheme,
     setDarkTheme,
+    resetToSystem,
     isDark: theme === 'dark',
     isLight: theme === 'light',
+    isManuallySet,
   };
 
   return (
