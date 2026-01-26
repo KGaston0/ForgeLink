@@ -45,10 +45,10 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     # Local apps
-    'nodes',
-    'projects',
-    'connections',
-    'graphs',
+    'apps.nodes',
+    'apps.projects',
+    'apps.connections',
+    'apps.graphs',
 ]
 
 MIDDLEWARE = [

@@ -1,8 +1,86 @@
 # ForgeLink
 
-Django backend for a node-based project management and worldbuilding application.
+Node and graph-based project management and worldbuilding system.
 
-ForgeLink provides a system for modeling knowledge as graphs, with isolated projects, typed relationships, and evolution over time. Suitable for worldbuilding, story design, and complex knowledge systems.
+ForgeLink provides a system for modeling knowledge as graphs, with isolated projects, typed relationships, and evolution over time. Ideal for worldbuilding, story design, and complex knowledge systems.
+
+---
+
+## 🏗️ Architecture
+
+- **Backend:** Django REST Framework API
+- **Frontend:** React + Vite with modular design system
+- **Database:** PostgreSQL
+- **Auth:** JWT (in development)
+
+---
+
+## 📁 Project Structure
+
+```
+ForgeLink/
+├── .env                      # Environment variables (PostgreSQL config)
+├── .env.example             # Environment template
+├── .gitignore               # Git ignore rules
+├── README.md                # Main project documentation
+├── API_ENDPOINTS.md         # API documentation
+├── DEVELOPMENT.md           # Development guide
+├── requirements.txt         # Python dependencies
+├── manage.py                # Django management script
+├── db.sqlite3               # SQLite DB (for development)
+│
+├── forgelink_backend/       # Django project settings
+│   ├── settings.py          # Main settings
+│   ├── urls.py              # URL configuration
+│   ├── auth_views.py        # JWT authentication views
+│   └── mvp_views.py         # MVP frontend view
+│
+├── apps/                    # Django apps
+│   ├── __init__.py
+│   ├── projects/            # Project management
+│   ├── nodes/               # Node management
+│   ├── connections/         # Connection management
+│   └── graphs/              # Graph management
+│
+├── frontend/                # React + Vite Frontend
+│   ├── src/
+│   │   ├── components/      # Reusable UI components
+│   │   │   ├── common/      # Button, Card, Badge, ThemeToggle
+│   │   │   ├── layout/      # Navigation, Footer
+│   │   │   └── landing/     # Landing page sections
+│   │   ├── pages/           # Page components (one per route)
+│   │   │   ├── auth/        # Login, Register pages
+│   │   │   ├── home/        # Dashboard/Home
+│   │   │   ├── projects/    # Projects pages
+│   │   │   ├── graphs/      # Graphs pages
+│   │   │   └── nodes/       # Nodes pages
+│   │   ├── features/        # Feature modules (business logic)
+│   │   │   ├── auth/        # Authentication feature
+│   │   │   ├── projects/    # Projects feature
+│   │   │   ├── graphs/      # Graphs feature
+│   │   │   ├── nodes/       # Nodes feature
+│   │   │   └── connections/ # Connections feature
+│   │   ├── services/        # External services (API client)
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── context/         # React Context providers (Theme, Auth)
+│   │   ├── routes/          # Route configuration
+│   │   ├── styles/          # Design system (CSS variables)
+│   │   ├── utils/           # Utility functions
+│   │   ├── types/           # TypeScript types
+│   │   ├── config/          # App configuration
+│   │   └── assets/          # Static assets
+│   ├── public/              # Static files
+│   └── README.md            # Frontend documentation
+│
+└── frontend_mvp/            # Legacy MVP (HTML/JS)
+    ├── index.html
+    └── README.md
+```
+
+> **See detailed documentation:**
+> - Frontend: [frontend/README.md](./frontend/README.md)
+> - Development: [DEVELOPMENT.md](./DEVELOPMENT.md)
+> - API: [API_ENDPOINTS.md](./API_ENDPOINTS.md)
 
 ---
 
@@ -21,15 +99,108 @@ ForgeLink provides a system for modeling knowledge as graphs, with isolated proj
 
 ## Tech Stack
 
-- Language: Python 3.10+
-- Backend:
-  - Django 4.2+
-  - Django REST Framework
-- Database: PostgreSQL
-- Libraries:
+### Backend
+- **Language:** Python 3.10+
+- **Framework:** Django 4.2+ with Django REST Framework
+- **Database:** PostgreSQL
+- **Auth:** JWT (in development)
+- **Libraries:**
   - django-cors-headers
   - django-filter
   - python-dotenv
+
+### Frontend
+- **Framework:** React 19.2.0
+- **Build Tool:** Vite
+- **Styling:** Native CSS with CSS variables
+- **Components:** 10 modular reusable components
+- **Theme:** Dark/Light mode with design system
+- **State:** React Context API
+
+### DevOps
+- **Version Control:** Git
+- **Package Manager:** pip (backend), npm (frontend)
+- **Development:** Hot reload on both (Django + Vite)
+
+---
+
+## 📚 Documentation
+
+- **Frontend:** [frontend/README.md](./frontend/README.md)
+- **Components:** [frontend/src/components/README.md](./frontend/src/components/README.md)
+- **Design System:** [frontend/src/styles/README.md](./frontend/src/styles/README.md)
+- **API Endpoints:** [API_ENDPOINTS.md](./API_ENDPOINTS.md)
+- **Development Guide:** [DEVELOPMENT.md](./DEVELOPMENT.md)
+
+---
+
+## 🚀 Quick Start
+
+### Backend (Django)
+
+1. **Clone repository**
+```bash
+git clone https://github.com/KGaston0/ForgeLink.git
+cd ForgeLink
+```
+
+2. **Create virtual environment**
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. **Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+4. **Configure environment variables**
+```bash
+cp .env.example .env
+# Edit .env with your credentials
+```
+
+5. **Setup PostgreSQL**
+```bash
+createdb forgelink_db
+createuser forgelink_user
+# See Installation section for more details
+```
+
+6. **Run migrations**
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+7. **Start server**
+```bash
+python manage.py runserver
+```
+
+**Backend available at:** http://localhost:8000/api/
+
+### Frontend (React)
+
+1. **Go to frontend folder**
+```bash
+cd frontend
+```
+
+2. **Install dependencies**
+```bash
+npm install
+```
+
+3. **Start development server**
+```bash
+npm run dev
+```
+
+**Frontend available at:** http://localhost:5173/
+
+> 📘 **See complete frontend documentation:** [frontend/README.md](./frontend/README.md)
 
 ---
 
@@ -101,14 +272,24 @@ http://localhost:8000/api/
 
 ## URL Structure
 
-After starting the server, you can access:
+### Backend (Django)
+After starting backend server (`python manage.py runserver`):
 
 | Path | Description |
 |------|-------------|
 | `http://localhost:8000/` | Redirects to API root |
 | `http://localhost:8000/api/` | **API Root** - Django REST Framework browsable interface |
-| `http://localhost:8000/mvp/` | **MVP Frontend** - Development/testing UI |
 | `http://localhost:8000/admin/` | **Django Admin** - Model management interface |
+| `http://localhost:8000/mvp/` | **MVP Frontend** - Legacy testing UI (optional) |
+
+### Frontend (React)
+After starting frontend server (`npm run dev`):
+
+| Path | Description |
+|------|-------------|
+| `http://localhost:5173/` | **Landing Page** - Main page with React |
+| `http://localhost:5173/dashboard` | **Dashboard** - Main panel (in development) |
+| `http://localhost:5173/projects` | **Projects** - Project management (in development) |
 
 > 📘 **For detailed API documentation**, see [API_ENDPOINTS.md](./API_ENDPOINTS.md)
 
@@ -280,12 +461,35 @@ Before deploying to production:
 
 ## Roadmap
 
-- JWT authentication
-- User-based permissions
-- Realtime collaboration (WebSockets)
-- Graph validation rules
-- Versioning and history
-- Frontend integration (React or Vue)
+### Backend
+- [x] API REST completa con Django REST Framework
+- [x] Modelos: Projects, Nodes, Graphs, Connections
+- [x] CRUD completo para todos los modelos
+- [ ] JWT authentication (en desarrollo)
+- [ ] User-based permissions
+- [ ] Graph validation rules
+- [ ] Versioning and history
+- [ ] Realtime collaboration (WebSockets)
+
+### Frontend
+- [x] **Landing page completa** (10 componentes modulares)
+- [x] **Design system con dark/light mode**
+- [x] **Arquitectura de componentes reutilizables**
+- [ ] Sistema de autenticación (JWT)
+- [ ] Dashboard principal
+- [ ] Editor visual de grafos (canvas interactivo)
+- [ ] CRUD de nodos y conexiones
+- [ ] Gestión de proyectos
+- [ ] Colaboración en tiempo real
+- [ ] Export/Import de datos
+- [ ] Tests unitarios
+- [ ] Storybook de componentes
+
+### DevOps
+- [ ] Docker setup
+- [ ] CI/CD pipeline
+- [ ] Production deployment
+- [ ] Monitoring y analytics
 
 ---
 
