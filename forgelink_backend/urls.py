@@ -41,6 +41,7 @@ urlpatterns = [
         path('auth/me/', auth_views.me, name='auth_me'),
 
         # App endpoints
+        path('', include('apps.users.urls')),
         path('', include('apps.projects.urls')),
         path('', include('apps.graphs.urls')),
         path('', include('apps.nodes.urls')),

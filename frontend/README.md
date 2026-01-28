@@ -1,58 +1,34 @@
-# ForgeLink Frontend
-React frontend for ForgeLink - Node-based project management and worldbuilding system.
+\`\`\`bash
+## Expanding the ESLint configuration
+\`\`\`
+## React Compiler
+\`\`\`bash
+\`\`\`
+Currently, two official plugins are available:
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# React + Vite
 ---
 ## 🚀 Quick Start
-### Installation
 
 ```bash
 cd frontend
-npm install
+\`\`\`bash
 ```
 
 ### Development
 
 ```bash
-npm run dev
-```
+\`\`\`
 
-Frontend available at: **http://localhost:5173/**
+\`\`\`
 
 ### Production Build
 
 ```bash
-npm run build
-npm run preview
-```
-
----
-
-## 📁 Project Structure
-
-```
-frontend/
-├── src/
-│   ├── components/         # Reusable UI components
-│   │   ├── common/         #   Generic components (Button, Card, Badge)
-│   │   ├── layout/         #   Layout components (Navigation, Footer)
-│   │   └── landing/        #   Landing page sections
-│   ├── pages/              # Page components (one per route)
-│   │   ├── auth/           #   Login, Register pages
-│   │   ├── home/           #   Dashboard/Home
-│   │   ├── projects/       #   Projects pages
-│   │   ├── graphs/         #   Graphs pages
-│   │   └── nodes/          #   Nodes pages
-│   ├── features/           # Feature modules (business logic)
-│   │   ├── auth/           #   Authentication feature
-│   │   │   ├── components/ #     Feature-specific components
-│   │   │   ├── hooks/      #     Feature hooks
-│   │   │   └── api/        #     API calls
-│   │   ├── projects/
-│   │   ├── graphs/
-│   │   ├── nodes/
-│   │   └── connections/
-│   ├── services/           # External services
-│   │   └── api/            #   API client configuration
-│   ├── hooks/              # Custom React hooks
+│   ├── components/         # Reusable components
+│   │   ├── layout/         # Navigation, Footer
+│   │   ├── common/         # Button, Card, Badge
+│   │   └── landing/        # Landing page sections
 │   ├── context/            # React Context providers (Theme, Auth)
 │   ├── routes/             # Route configuration
 │   ├── styles/             # Design system and global styles
@@ -75,23 +51,17 @@ frontend/
 - **Backend API:** See [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
 ---
 ## 🎨 Tech Stack
-- **Framework:** React 19.2.0
-- **Build Tool:** Vite
-- **Styling:** Native CSS with CSS variables
-- **State Management:** React Context API
-- **Routing:** React Router (future)
-- **HTTP Client:** Native fetch API
-- **Dark Mode:** Theme system with CSS variables
----
-## 🏗️ Development Progress
-### ✅ Completed
-- [x] Complete landing page
-- [x] Reusable component system (10 components)
-- [x] Design system with CSS variables
-- [x] Dark mode / Light mode
+│   │   ├── variables.css   # CSS variables (colors, typography, spacing)
+│   │   ├── globals.css     # Global reset and base styles
+│   │   └── README.md       # Design system documentation
+│   ├── context/            # React contexts (Theme, Auth)
+│   ├── pages/              # Application pages
+│   ├── services/           # API calls and services
+│   └── utils/              # Utilities and helpers
+├── public/                 # Static assets
 - [x] Modular and scalable architecture
 - [x] Navigation and footer
-- [x] Landing sections: Hero, Bento Grid, Dual Purpose, Pricing, CTA
+\`\`\`
 ### 🚧 In Development
 - [ ] Authentication system (JWT)
 - [ ] Main dashboard
@@ -128,6 +98,7 @@ npm run preview
 
 # Linting
 npm run lint
+\`\`\`
 ```
 
 ---
@@ -137,15 +108,25 @@ npm run lint
 Total: **10  components**
 
 ### Layout (2):
+- \`Navigation\` - Navbar with dark mode toggle
+- \`Footer\` - Site footer
 - `Navigation` - Navbar with dark mode toggle
 - `Footer` - Site footer
 
 ### Common (3):
+- \`Button\` - Button with variants (primary/secondary) and sizes
+- \`Card\` - Card with spotlight effect
+- \`Badge\` - Labels with 5 variants
 - `Button` - Button with variants (primary/secondary) and sizes
 - `Card` - Card with spotlight effect
 - `Badge` - Labels with 5 variants
 
 ### Landing (5):
+- \`HeroSection\` - Hero with animated node canvas
+- \`BentoGrid\` - Feature grid
+- \`DualPurpose\` - Use cases (PM + Creative)
+- \`PricingSection\` - Pricing table
+- \`CTASection\` - Final call to action
 - `HeroSection` - Hero with animated node canvas
 - `BentoGrid` - Feature grid
 - `DualPurpose` - Use cases (PM + Creative)
@@ -159,11 +140,9 @@ Centralized design system with CSS variables:
 - **Typography:** 3 font families
 - **Spacing:** 8pt grid system
 - **Shadows:** 7 elevation levels
-- **Border Radius:** 5 predefined sizes
+\`\`\`bash
 - **Transitions:** 3 speeds
-**See documentation:** [src/styles/README.md](./src/styles/README.md)
 ---
 ## 📄 License
-MIT License - See [../LICENSE](../LICENSE)
 ---
 **Last Updated:** 2026-01-24

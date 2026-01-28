@@ -1,12 +1,7 @@
+| `http://localhost:8000/mvp/` | **MVP Frontend** - Development/testing UI |
 # ForgeLink
 
-Node and graph-based project management and worldbuilding system.
-
-ForgeLink provides a system for modeling knowledge as graphs, with isolated projects, typed relationships, and evolution over time. Ideal for worldbuilding, story design, and complex knowledge systems.
-
----
-
-## 🏗️ Architecture
+Django backend for a node-based project management and worldbuilding application.
 
 - **Backend:** Django REST Framework API
 - **Frontend:** React + Vite with modular design system
@@ -19,76 +14,7 @@ ForgeLink provides a system for modeling knowledge as graphs, with isolated proj
 
 ```
 ForgeLink/
-├── .env                      # Environment variables (PostgreSQL config)
-├── .env.example             # Environment template
-├── .gitignore               # Git ignore rules
-├── README.md                # Main project documentation
-├── API_ENDPOINTS.md         # API documentation
-├── DEVELOPMENT.md           # Development guide
-├── requirements.txt         # Python dependencies
-├── manage.py                # Django management script
-├── db.sqlite3               # SQLite DB (for development)
-│
-├── forgelink_backend/       # Django project settings
-│   ├── settings.py          # Main settings
-│   ├── urls.py              # URL configuration
-│   ├── auth_views.py        # JWT authentication views
-│   └── mvp_views.py         # MVP frontend view
-│
-├── apps/                    # Django apps
-│   ├── __init__.py
-│   ├── projects/            # Project management
-│   ├── nodes/               # Node management
-│   ├── connections/         # Connection management
-│   └── graphs/              # Graph management
-│
-├── frontend/                # React + Vite Frontend
-│   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   │   ├── common/      # Button, Card, Badge, ThemeToggle
-│   │   │   ├── layout/      # Navigation, Footer
-│   │   │   └── landing/     # Landing page sections
-│   │   ├── pages/           # Page components (one per route)
-│   │   │   ├── auth/        # Login, Register pages
-│   │   │   ├── home/        # Dashboard/Home
-│   │   │   ├── projects/    # Projects pages
-│   │   │   ├── graphs/      # Graphs pages
-│   │   │   └── nodes/       # Nodes pages
-│   │   ├── features/        # Feature modules (business logic)
-│   │   │   ├── auth/        # Authentication feature
-│   │   │   ├── projects/    # Projects feature
-│   │   │   ├── graphs/      # Graphs feature
-│   │   │   ├── nodes/       # Nodes feature
-│   │   │   └── connections/ # Connections feature
-│   │   ├── services/        # External services (API client)
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── context/         # React Context providers (Theme, Auth)
-│   │   ├── routes/          # Route configuration
-│   │   ├── styles/          # Design system (CSS variables)
-│   │   ├── utils/           # Utility functions
-│   │   ├── types/           # TypeScript types
-│   │   ├── config/          # App configuration
-│   │   └── assets/          # Static assets
-│   ├── public/              # Static files
-│   └── README.md            # Frontend documentation
-│
-└── frontend_mvp/            # Legacy MVP (HTML/JS)
-    ├── index.html
-    └── README.md
-```
-
-> **See detailed documentation:**
-> - Frontend: [frontend/README.md](./frontend/README.md)
-> - Development: [DEVELOPMENT.md](./DEVELOPMENT.md)
-> - API: [API_ENDPOINTS.md](./API_ENDPOINTS.md)
-
----
-
-## Features
-
-- Django REST Framework API for managing projects, nodes, and connections
-- PostgreSQL database support
-- Node-based graph structure for flexible project organization
+ForgeLink provides a system for modeling knowledge as graphs, with isolated projects, typed relationships, and evolution over time. Suitable for worldbuilding, story design, and complex knowledge systems.
 - Multiple node types: characters, locations, events, items, concepts, and notes
 - Node connections with various relationship types
 - Project-scoped isolation
@@ -247,15 +173,12 @@ npm run dev
 
    SQL:
 ```bash
-   ALTER USER forgelink_user WITH PASSWORD 'strongpassword';  
-   GRANT ALL PRIVILEGES ON DATABASE forgelink_db TO forgelink_user;  
-```
-
-6. Run migrations  
-```bash
-   python manage.py migrate  
-```
-7. Create a superuser
+- Language: Python 3.10+
+- Backend:
+  - Django 4.2+
+  - Django REST Framework
+- Database: PostgreSQL
+- Libraries:
 ```bash
    python manage.py createsuperuser  
 ```
@@ -266,66 +189,6 @@ npm run dev
 ```
 
 The API will be available at:  
-http://localhost:8000/api/
-
----
-
-## URL Structure
-
-### Backend (Django)
-After starting backend server (`python manage.py runserver`):
-
-| Path | Description |
-|------|-------------|
-| `http://localhost:8000/` | Redirects to API root |
-| `http://localhost:8000/api/` | **API Root** - Django REST Framework browsable interface |
-| `http://localhost:8000/admin/` | **Django Admin** - Model management interface |
-| `http://localhost:8000/mvp/` | **MVP Frontend** - Legacy testing UI (optional) |
-
-### Frontend (React)
-After starting frontend server (`npm run dev`):
-
-| Path | Description |
-|------|-------------|
-| `http://localhost:5173/` | **Landing Page** - Main page with React |
-| `http://localhost:5173/dashboard` | **Dashboard** - Main panel (in development) |
-| `http://localhost:5173/projects` | **Projects** - Project management (in development) |
-
-> 📘 **For detailed API documentation**, see [API_ENDPOINTS.md](./API_ENDPOINTS.md)
-
----
-
-## API Endpoints
-
-Base URL:
-http://localhost:8000/api/
-
-> **Legend:** ✅ Implemented | ⏳ To be implemented
-
-### Authentication
-
-- ✅ POST /api/auth/jwt/login/ — Obtain JWT tokens
-- ✅ POST /api/auth/jwt/refresh/ — Refresh access token
-- ✅ GET /api/auth/me/ — Get current user info
-
-### Projects (Full CRUD ✅)
-
-- ✅ GET /api/projects/ — List all projects
-- ✅ POST /api/projects/ — Create a new project
-- ✅ GET /api/projects/{id}/ — Retrieve project details
-- ✅ PUT /api/projects/{id}/ — Update project (full)
-- ✅ PATCH /api/projects/{id}/ — Update project (partial)
-- ✅ DELETE /api/projects/{id}/ — Delete project
-- ✅ GET /api/projects/{id}/nodes/ — Get all nodes for a project
-- ✅ GET /api/projects/{id}/connections/ — Get all connections for a project
-
-### Graphs (Full CRUD ✅)
-
-- ✅ GET /api/graphs/ — List graphs
-- ✅ POST /api/graphs/ — Create graph
-- ✅ GET /api/graphs/{id}/ — Graph details
-- ✅ PUT /api/graphs/{id}/ — Update graph (full)
-- ✅ PATCH /api/graphs/{id}/ — Update graph (partial)
 - ✅ DELETE /api/graphs/{id}/ — Delete graph
 - ✅ GET /api/graphs/{id}/canvas/ — Get graph canvas data (nodes + connections)
 
@@ -410,9 +273,7 @@ These endpoints could be added in future iterations:
 - node_type — character, location, event, item, concept, note
 - content — Node content / description
 - created_at — Timestamp
-- updated_at — Timestamp
-
-### GraphNode (nuevo)
+After starting the server, you can access:
 
 - graph — Related graph
 - node — Related node
@@ -422,31 +283,6 @@ These endpoints could be added in future iterations:
 ### NodeConnection (actualizado)
 
 - graph — Related graph
-- source_node / target_node — Nodes (del mismo project del graph)
-- connection_type — Project-scoped type
-- label — Optional connection label
-- created_at — Timestamp
-
----
-
-## Development
-
-Running tests:  
-python manage.py test  
-
-Admin panel:  
-http://localhost:8000/admin/  
-
-Browsable API:  
-http://localhost:8000/api/  
-
----
-
-## Security Considerations
-
-Important: development-only setup.
-
-Before deploying to production:
 
 - Implement authentication (JWT, tokens, OAuth)
 - Replace AllowAny permissions with proper access control
@@ -461,6 +297,12 @@ Before deploying to production:
 
 ## Roadmap
 
+- JWT authentication
+- User-based permissions
+- Realtime collaboration (WebSockets)
+- Graph validation rules
+- Versioning and history
+- Frontend integration (React or Vue)
 ### Backend
 - [x] API REST completa con Django REST Framework
 - [x] Modelos: Projects, Nodes, Graphs, Connections

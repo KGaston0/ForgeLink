@@ -230,22 +230,13 @@ python manage.py collectstatic
 ### Frontend
 
 ```bash
-# Change to frontend directory
-cd frontend
-
 # Start development server
 npm run dev
 
 # Build for production
-npm run build
+npm run dev         # Vite
 
 # Preview production build
-npm run preview
-
-# Run tests
-npm test
-
-# Install new package
 npm install package-name
 
 # Update dependencies
