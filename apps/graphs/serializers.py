@@ -41,7 +41,7 @@ class GraphNodeSerializer(serializers.ModelSerializer):
         from django.core.exceptions import ObjectDoesNotExist, ValidationError as DjangoValidationError
         from rest_framework.exceptions import ValidationError
         from apps.graphs.models import Graph
-        from nodes.models import Node
+        from apps.nodes.models import Node
 
         # For updates, start with existing instance
         if self.instance:

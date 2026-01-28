@@ -13,11 +13,6 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext(undefined);
 
 export function ThemeProvider({ children }) {
-  // Track if user has manually set theme (vs auto-detected)
-  const [isManuallySet, setIsManuallySet] = useState(() => {
-    return localStorage.getItem('forgelink-theme') !== null;
-  });
-
   const [theme, setTheme] = useState(() => {
     // 1. Check localStorage first
     const savedTheme = localStorage.getItem('forgelink-theme');
@@ -30,7 +25,7 @@ export function ThemeProvider({ children }) {
       return 'dark';
     }
 
-    // 3. Default to light
+    // 2. Detect system preference
     return 'light';
   });
 
@@ -49,12 +44,8 @@ export function ThemeProvider({ children }) {
       localStorage.setItem('forgelink-theme', theme);
     }
 
-    // Remove transitioning class after a brief delay
-    const timer = setTimeout(() => {
-      root.classList.remove('theme-transitioning');
-    }, 50);
-
-    return () => clearTimeout(timer);
+    // Save to localStorage
+    localStorage.setItem('forgelink-theme', theme);
   }, [theme, isManuallySet]);
 
   // Listen for system theme changes
@@ -64,7 +55,7 @@ export function ThemeProvider({ children }) {
     const handleChange = (e) => {
       // Only update if user hasn't manually set a theme
       if (!isManuallySet) {
-        setTheme(e.matches ? 'dark' : 'light');
+  }, [theme]);
       }
     };
 
@@ -74,7 +65,8 @@ export function ThemeProvider({ children }) {
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
     // Older browsers
-    else if (mediaQuery.addListener) {
+      const savedTheme = localStorage.getItem('forgelink-theme');
+      if (!savedTheme) {
       mediaQuery.addListener(handleChange);
       return () => mediaQuery.removeListener(handleChange);
     }
@@ -87,44 +79,18 @@ export function ThemeProvider({ children }) {
 
   const setLightTheme = () => {
     setIsManuallySet(true); // Mark as manually set
-    setTheme('light');
+  }, []);
   };
 
   const setDarkTheme = () => {
-    setIsManuallySet(true); // Mark as manually set
     setTheme('dark');
   };
 
   // Reset to system preference
   const resetToSystem = () => {
     setIsManuallySet(false);
-    localStorage.removeItem('forgelink-theme');
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    setTheme(systemTheme);
-  };
-
-  const value = {
-    theme,
-    toggleTheme,
-    setLightTheme,
-    setDarkTheme,
-    resetToSystem,
-    isDark: theme === 'dark',
-    isLight: theme === 'light',
-    isManuallySet,
-  };
-
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
-}
-
-/**
- * useTheme Hook
- *
- * Access theme state and controls from any component
+  const setLightTheme = () => setTheme('light');
+  const setDarkTheme = () => setTheme('dark');
  *
  * @returns {Object} Theme state and controls
  * @example

@@ -1,3 +1,4 @@
+\`\`\`
 # ForgeLink Components
 Component library for ForgeLink project with reusable, modular architecture.
 ---
@@ -19,16 +20,13 @@ Component library for ForgeLink project with reusable, modular architecture.
 ---
 ## 🚀 Quick Start
 ### Basic Usage
-
-```jsx
+\`\`\`jsx
 // Layout
-import { Navigation, Footer } from '@/components/layout';
 
 // Common
 import { Button, Card, Badge, ThemeToggle } from '@/components/common';
 
 // Landing
-import { HeroSection, BentoGrid, DualPurpose, PricingSection, CTASection } from '@/components/landing';
 
 function App() {
   return (
@@ -43,54 +41,53 @@ function App() {
 ```
 ### Component Props
 
-#### Button
 ```jsx
 <Button variant="primary" size="lg" onClick={handleClick}>
   Click Me
 </Button>
 ```
-**Props:** `variant` (primary/secondary), `size` (sm/md/lg), `onClick`, `disabled`, `className`
+\`\`\`
 
 #### Card
 ```jsx
 <Card spotlight={true}>
-  <h3>Card Title</h3>
   <p>Card content</p>
 </Card>
-```
+\`\`\`jsx
 **Props:** `spotlight` (boolean), `className`, `children`
 
 #### Badge
 ```jsx
-<Badge variant="success">Active</Badge>
-```
-**Props:** `variant` (default/primary/success/warning/error), `className`, `children`
-
+\`\`\`
+**Props:** \`variant\` (primary/secondary), \`size\` (sm/md/lg), \`onClick\`, \`disabled\`, \`className\`
+\`\`\`jsx
 #### ThemeToggle
 ```jsx
 <ThemeToggle />
 ```
-Uses ThemeContext to toggle between light/dark modes.
----
-## 📁 Structure
-
-```
-components/
-├── layout/          # Navigation, Footer
-├── common/          # Button, Card, Badge, ThemeToggle
-└── landing/         # HeroSection, BentoGrid, DualPurpose, PricingSection, CTASection
-```
-
-> **Note:** Feature-specific components (e.g., ProjectCard, NodeEditor) are located in their respective feature folders: `src/features/{feature}/components/`
+\`\`\`
+**Props:** \`spotlight\` (boolean), \`className\`, \`children\`
+\`\`\`jsx
+\`\`\`
+**Props:** \`variant\` (default/primary/success/warning/error), \`className\`, \`children\`
 
 Each component folder contains:
+- \`Component.jsx\` - Component code
+- \`Component.css\` - Styles (optional)
+- \`index.js\` - Export
 - `Component.jsx` - Component code
-- `Component.css` - Styles (optional)
+\`\`\`jsx
 - `index.js` - Export
----
+\`\`\`
 ## 🎨 Design System
 
-All components use CSS variables from the design system:
+- Colors: \`--color-*\`
+- Fonts: \`--font-*\`
+- Spacing: \`--space-*\`
+- Shadows: \`--shadow-*\`
+- Radius: \`--radius-*\`
+- Transitions: \`--transition-*\`
+\`\`\`
 - Colors: `--color-*`
 - Fonts: `--font-*`
 - Spacing: `--space-*`
