@@ -10,7 +10,8 @@ from .serializers import (
     UserCreateSerializer,
     UserUpdateSerializer,
     UserPasswordChangeSerializer,
-    UserAdminSerializer
+    UserAdminSerializer,
+    MembershipUpgradeSerializer
 )
 
 
@@ -155,26 +156,20 @@ class UserViewSet(viewsets.ModelViewSet):
         """
         user = self.get_object()
 
-        membership_type = request.data.get('membership_type')
-        membership_start_date = request.data.get('membership_start_date')
-        membership_end_date = request.data.get('membership_end_date')
+        serializer = MembershipUpgradeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if membership_type not in dict(MembershipType.choices):
-            return Response(
-                {"detail": "Invalid membership type."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        validated_data = serializer.validated_data
+        user.membership_type = validated_data['membership_type']
 
-        user.membership_type = membership_type
-        if membership_start_date:
-            user.membership_start_date = membership_start_date
-        if membership_end_date:
-            user.membership_end_date = membership_end_date
+        if 'membership_start_date' in validated_data:
+            user.membership_start_date = validated_data['membership_start_date']
+        if 'membership_end_date' in validated_data:
+            user.membership_end_date = validated_data['membership_end_date']
 
         user.save()
 
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
+        return Response(UserSerializer(user).data)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
     def stats(self, request):

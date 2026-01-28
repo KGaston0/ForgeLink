@@ -137,5 +137,16 @@ class UserAdminSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'date_joined', 'created_at', 'updated_at', 'last_login']
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True, 'required': False}
         }
+
+
+class MembershipUpgradeSerializer(serializers.Serializer):
+    """Serializer for upgrading user membership (admin only)"""
+
+    membership_type = serializers.ChoiceField(choices=MembershipType.choices, required=True)
+    membership_start_date = serializers.DateTimeField(required=False, allow_null=True)
+    membership_end_date = serializers.DateTimeField(required=False, allow_null=True)
+
+
+

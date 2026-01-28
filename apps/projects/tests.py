@@ -76,8 +76,8 @@ class ProjectAPITest(APITestCase):
         """Test listing projects without authentication"""
         url = reverse('project-list')
         response = self.client.get(url)
-        # Should return empty list or error depending on configuration
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED])
+        # Should return 401 with IsAuthenticated permission class
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_projects_authenticated(self):
         """Test listing projects when authenticated"""

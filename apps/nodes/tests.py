@@ -112,10 +112,10 @@ class NodeAPITest(APITestCase):
         self.assertEqual(len(data), 1)
 
     def test_list_nodes_unauthenticated(self):
-        """Test for listing nodos without authentication"""
+        """Test for listing nodes without authentication"""
         url = reverse('node-list')
         response = self.client.get(url)
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_401_UNAUTHORIZED])
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_only_own_nodes(self):
         """Test that only own nodos propios"""

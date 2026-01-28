@@ -181,8 +181,6 @@ class ConnectionTypeAPITest(APITestCase):
 
     def test_delete_connection_type_with_connections(self):
         """Test for deleting connection type with existing connections"""
-        from django.db.models.deletion import ProtectedError
-
         # Create a connection using this type
         graph = Graph.objects.create(project=self.project, name='Test Graph')
         node1 = Node.objects.create(project=self.project, title='Node 1')
@@ -199,10 +197,9 @@ class ConnectionTypeAPITest(APITestCase):
         self.client.force_authenticate(user=self.user)
         url = reverse('connectiontype-detail', kwargs={'pk': self.connection_type.pk})
 
-        # Should raise a ProtectedError because there are connections using it
-        # The endpoint should catch this and return an appropriate error
-        with self.assertRaises(ProtectedError):
-            response = self.client.delete(url)
+        # Should return 400 or 409 when trying to delete a connection type in use
+        response = self.client.delete(url)
+        self.assertIn(response.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_409_CONFLICT])
 
 
 class NodeConnectionAPITest(APITestCase):
