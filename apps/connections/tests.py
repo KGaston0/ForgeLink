@@ -180,10 +180,10 @@ class ConnectionTypeAPITest(APITestCase):
         self.assertEqual(self.connection_type.color, '#00FF00')
 
     def test_delete_connection_type_with_connections(self):
-        """Test for deleting connection type con existing connections"""
+        """Test for deleting connection type with existing connections"""
         from django.db.models.deletion import ProtectedError
 
-        # Crear una conexión que use este tipo
+        # Create a connection using this type
         graph = Graph.objects.create(project=self.project, name='Test Graph')
         node1 = Node.objects.create(project=self.project, title='Node 1')
         node2 = Node.objects.create(project=self.project, title='Node 2')
@@ -199,8 +199,8 @@ class ConnectionTypeAPITest(APITestCase):
         self.client.force_authenticate(user=self.user)
         url = reverse('connectiontype-detail', kwargs={'pk': self.connection_type.pk})
 
-        # Debería lanzar un ProtectedError porque hay conexiones que lo usan
-        # El endpoint debería capturar esto y retornar un error apropiado
+        # Should raise a ProtectedError because there are connections using it
+        # The endpoint should catch this and return an appropriate error
         with self.assertRaises(ProtectedError):
             response = self.client.delete(url)
 

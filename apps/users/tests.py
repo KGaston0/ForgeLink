@@ -101,13 +101,13 @@ class UserAPITest(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Verificar que la nueva contraseña funciona
+        # Verify that the new password works
         self.regular_user.refresh_from_db()
         self.assertTrue(self.regular_user.check_password('newpass123!'))
 
     def test_list_users_admin_only(self):
-        """Test that only admin can listar usuarios"""
-        # Usuario regular no puede listar
+        """Test that only admin can list users"""
+        # Regular user cannot list
         self.client.force_authenticate(user=self.regular_user)
         url = reverse('user-list')
         response = self.client.get(url)
@@ -119,7 +119,7 @@ class UserAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_upgrade_membership(self):
-        """Test de actualización de membresía (only admin)"""
+        """Test for membership update (only admin)"""
         self.client.force_authenticate(user=self.admin_user)
         url = reverse('user-upgrade-membership', kwargs={'pk': self.regular_user.pk})
         data = {

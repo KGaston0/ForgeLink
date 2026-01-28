@@ -49,7 +49,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    """Serializer para creación de usuarios"""
+    """Serializer for user creation"""
 
     password = serializers.CharField(
         write_only=True,
@@ -74,7 +74,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError(
-                {"password": "Las contraseñas no coinciden."}
+                {"password": "Passwords do not match."}
             )
         return attrs
 
@@ -85,7 +85,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    """Serializer para actualización de usuarios"""
+    """Serializer for user update"""
 
     class Meta:
         model = User
@@ -100,7 +100,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserPasswordChangeSerializer(serializers.Serializer):
-    """Serializer para cambio de contraseña"""
+    """Serializer for password change"""
 
     old_password = serializers.CharField(required=True, write_only=True)
     new_password = serializers.CharField(
@@ -113,19 +113,19 @@ class UserPasswordChangeSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password_confirm']:
             raise serializers.ValidationError(
-                {"new_password": "Las contraseñas no coinciden."}
+                {"new_password": "Passwords do not match."}
             )
         return attrs
 
     def validate_old_password(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
-            raise serializers.ValidationError("La contraseña actual es incorrecta.")
+            raise serializers.ValidationError("Current password is incorrect.")
         return value
 
 
 class UserAdminSerializer(serializers.ModelSerializer):
-    """Serializer para administradores (incluye más campos)"""
+    """Serializer for administrators (includes more fields)"""
 
     membership_type_display = serializers.CharField(
         source='get_membership_type_display',

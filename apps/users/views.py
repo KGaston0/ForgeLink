@@ -16,18 +16,19 @@ from .serializers import (
 
 class UserViewSet(viewsets.ModelViewSet):
     """
-    ViewSet para gestionar usuarios.
+    ViewSet to manage users.
 
     Endpoints:
-    - GET /users/ - Listar usuarios (admin only)
-    - POST /users/ - Crear usuario (público)
-    - GET /users/{id}/ - Obtener usuario específico
-    - PUT/PATCH /users/{id}/ - Actualizar usuario
-    - DELETE /users/{id}/ - Eliminar usuario (admin only)
-    - GET /users/me/ - Obtener perfil del usuario actual
-    - PUT/PATCH /users/me/ - Actualizar perfil del usuario actual
-    - POST /users/change_password/ - Cambiar contraseña
-    - POST /users/{id}/upgrade_membership/ - Actualizar membresía (admin only)
+    - GET /users/ - List users (admin only)
+    - POST /users/ - Create user (public)
+    - GET /users/{id}/ - Get specific user
+    - PUT/PATCH /users/{id}/ - Update user
+    - DELETE /users/{id}/ - Delete user (admin only)
+    - GET /users/me/ - Get current user profile
+    - PUT/PATCH /users/me/ - Update current user profile
+    - POST /users/change_password/ - Change password
+    - POST /users/{id}/upgrade_membership/ - Update membership (admin only)
+    - GET /users/stats/ - Get user statistics (admin only)
     """
 
     queryset = User.objects.all()
@@ -50,23 +51,23 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
 
     def get_permissions(self):
-        """Definir permisos según la acción"""
+        """Define permissions based on action"""
         if self.action == 'create':
-            # Permitir registro público
+            # Allow public registration
             permission_classes = [AllowAny]
         elif self.action in ['list', 'destroy', 'upgrade_membership']:
-            # Solo administradores pueden listar todos los usuarios y eliminar
+            # Only admins can list all users and delete
             permission_classes = [IsAdminUser]
         else:
-            # Usuarios autenticados para el resto
+            # Authenticated users for the rest
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        """Filtrar queryset según el usuario"""
+        """Filter queryset based on user"""
         queryset = super().get_queryset()
 
-        # Los usuarios regulares solo pueden ver su propio perfil
+        # Regular users can only see their own profile
         if not self.request.user.is_staff:
             if self.action == 'list':
                 # Los no-admin no pueden listar usuarios
@@ -87,7 +88,7 @@ class UserViewSet(viewsets.ModelViewSet):
         # Verificar que el usuario solo pueda actualizar su propio perfil (excepto admin)
         if not request.user.is_staff and instance.id != request.user.id:
             return Response(
-                {"detail": "No tienes permiso para actualizar este usuario."},
+                {"detail": "You don't have permission to update this user."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -96,9 +97,9 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get', 'put', 'patch'], permission_classes=[IsAuthenticated])
     def me(self, request):
         """
-        Obtener o actualizar el perfil del usuario actual.
-        GET /users/me/ - Obtener perfil
-        PUT/PATCH /users/me/ - Actualizar perfil
+        Get or update current user profile.
+        GET /users/me/ - Get profile
+        PUT/PATCH /users/me/ - Update profile
         """
         user = request.user
 
@@ -106,18 +107,18 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = UserSerializer(user)
             return Response(serializer.data)
 
-        # Para PUT/PATCH
+        # For PUT/PATCH
         serializer = UserUpdateSerializer(user, data=request.data, partial=request.method == 'PATCH')
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        # Retornar con el serializer completo
+        # Return with complete serializer
         return Response(UserSerializer(user).data)
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def change_password(self, request):
         """
-        Cambiar la contraseña del usuario actual.
+        Change current user password.
         POST /users/change_password/
         Body: {
             "old_password": "...",
@@ -128,23 +129,23 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = UserPasswordChangeSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
-        # Cambiar la contraseña
+        # Change password
         user = request.user
         user.set_password(serializer.validated_data['new_password'])
         user.save()
 
-        # Mantener la sesión activa después del cambio de contraseña
+        # Keep session active after password change
         update_session_auth_hash(request, user)
 
         return Response(
-            {"detail": "Contraseña actualizada correctamente."},
+            {"detail": "Password updated successfully."},
             status=status.HTTP_200_OK
         )
 
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def upgrade_membership(self, request, pk=None):
         """
-        Actualizar la membresía de un usuario (solo admin).
+        Update user membership (admin only).
         POST /users/{id}/upgrade_membership/
         Body: {
             "membership_type": "premium",
@@ -160,7 +161,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if membership_type not in dict(MembershipType.choices):
             return Response(
-                {"detail": "Tipo de membresía inválido."},
+                {"detail": "Invalid membership type."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -178,7 +179,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
     def stats(self, request):
         """
-        Obtener estadísticas de usuarios (solo admin).
+        Get user statistics (admin only).
         GET /users/stats/
         """
         total_users = User.objects.count()
