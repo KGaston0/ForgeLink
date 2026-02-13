@@ -85,16 +85,27 @@ WSGI_APPLICATION = 'forgelink_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='forgelink_db'),
-        'USER': config('DB_USER', default='forgelink_user'),
-        'PASSWORD': config('DB_PASSWORD', default='your-password-here'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+db_engine = config('DB_ENGINE', default='sqlite3')
+
+if db_engine == 'sqlite3':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / config('DB_NAME', default='db.sqlite3'),
+        }
     }
-}
+else:
+    # PostgreSQL configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='forgelink_db'),
+            'USER': config('DB_USER', default='forgelink_user'),
+            'PASSWORD': config('DB_PASSWORD', default='your-password-here'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
 
 
 # Password validation
