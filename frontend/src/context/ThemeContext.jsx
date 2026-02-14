@@ -38,10 +38,9 @@ export function ThemeProvider({ children }) {
     root.classList.add('theme-transitioning');
     root.setAttribute('data-theme', theme);
 
-    // Save to localStorage
-    localStorage.setItem('forgelink-theme', theme);
-
+    // Only save to localStorage if user manually set it
     if (isManuallySet) {
+      localStorage.setItem('forgelink-theme', theme);
       localStorage.setItem('forgelink-theme-manual', 'true');
     }
 
@@ -57,8 +56,8 @@ export function ThemeProvider({ children }) {
 
     const handleChange = (e) => {
       // Only update if user hasn't manually set a theme
-      const savedTheme = localStorage.getItem('forgelink-theme');
-      if (!savedTheme) {
+      const isManual = localStorage.getItem('forgelink-theme-manual') === 'true';
+      if (!isManual) {
         setTheme(e.matches ? 'dark' : 'light');
       }
     };
@@ -71,7 +70,7 @@ export function ThemeProvider({ children }) {
     // Older browsers
     mediaQuery.addListener(handleChange);
     return () => mediaQuery.removeListener(handleChange);
-  }, []);
+  }, [isManuallySet]);
 
   const toggleTheme = () => {
     setIsManuallySet(true);
