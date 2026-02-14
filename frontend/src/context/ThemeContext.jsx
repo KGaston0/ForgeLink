@@ -56,7 +56,8 @@ export function ThemeProvider({ children }) {
 
     const handleChange = (e) => {
       // Only update if user hasn't manually set a theme
-      if (!isManuallySet) {
+      const isManual = localStorage.getItem('forgelink-theme-manual') === 'true';
+      if (!isManual) {
         setTheme(e.matches ? 'dark' : 'light');
       }
     };
