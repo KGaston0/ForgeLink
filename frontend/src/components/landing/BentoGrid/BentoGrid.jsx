@@ -1,3 +1,5 @@
+import './BentoGrid.css';
+
 export function BentoGrid() {
   return (
     <section id="gallery" className="bento-section">

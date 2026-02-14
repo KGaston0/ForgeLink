@@ -1,54 +1,72 @@
+import './DualPurpose.css';
+
+/**
+ * DualPurpose Component
+ *
+ * Showcases the two main use cases of ForgeLink
+ * Features:
+ * - Project Management panel
+ * - Creative Writing panel
+ * - Alternating layouts
+ * - Visual diagrams
+ * - Statistics
+ */
 export function DualPurpose() {
   return (
     <section className="dual-purpose-section">
+      {/* Project Management Panel */}
       <div className="purpose-panel">
         <div className="panel-content-wrapper">
-          <div className="panel-text">
+          <div className="panel-content">
             <div className="panel-eyebrow">
-              <span className="eyebrow-line"></span>
-              <span className="eyebrow-text">For Project Management</span>
+              <span className="pulse-dot"></span>
+              <span className="eyebrow-text">For Project Managers</span>
             </div>
             <h2 className="panel-title">
-              ORGANIZE<br/>
-              <span className="title-accent">ANYTHING.</span>
+              Track Dependencies.<br/>
+              Visualize Progress.
             </h2>
             <p className="panel-description">
-              Build custom workflows for any project. Create Project nodes with Tasks, Milestones, and Dependencies.
-              Organize story research with Chapters and Scenes. Plan campaigns with Objectives and Events. The same flexible
-              system adapts to any workflow—from agile sprints to creative outlines.
+              Build your project structure with custom task nodes. Link dependencies,
+              track progress, and see the entire project landscape at a glance.
+              No rigid templates—just your workflow, visualized.
             </p>
             <div className="panel-stats">
               <div className="stat-item">
-                <span className="stat-value">Custom</span>
-                <span className="stat-label">Workflows</span>
+                <span className="stat-value">40%</span>
+                <span className="stat-label">Faster Planning</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">Real-Time</span>
-                <span className="stat-label">Collaboration</span>
+                <span className="stat-value">100%</span>
+                <span className="stat-label">Customizable</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-value">∞</span>
+                <span className="stat-label">Node Types</span>
               </div>
             </div>
           </div>
           <div className="panel-visual">
-            <div className="visual-card task-flow-visual">
+            <div className="visual-card">
               <div className="flow-diagram">
-                <div className="flow-node node-start">
-                  <div className="flow-icon">📋</div>
-                  <div className="flow-label">Project A</div>
+                <div className="flow-node">
+                  <span className="flow-icon">📋</span>
+                  <span className="flow-label">Planning</span>
                 </div>
-                <div className="flow-arrow">→</div>
-                <div className="flow-node node-task">
-                  <div className="flow-icon">✓</div>
-                  <div className="flow-label">Task 1</div>
+                <span className="flow-arrow">→</span>
+                <div className="flow-node">
+                  <span className="flow-icon">⚙️</span>
+                  <span className="flow-label">Development</span>
                 </div>
-                <div className="flow-arrow">→</div>
-                <div className="flow-node node-task">
-                  <div className="flow-icon">✓</div>
-                  <div className="flow-label">Subtask A</div>
+                <span className="flow-arrow">→</span>
+                <div className="flow-node">
+                  <span className="flow-icon">✅</span>
+                  <span className="flow-label">Testing</span>
                 </div>
-                <div className="flow-arrow">→</div>
-                <div className="flow-node node-end">
-                  <div className="flow-icon">🎯</div>
-                  <div className="flow-label">Complete</div>
+                <span className="flow-arrow">→</span>
+                <div className="flow-node">
+                  <span className="flow-icon">🚀</span>
+                  <span className="flow-label">Deploy</span>
                 </div>
               </div>
             </div>
@@ -56,48 +74,57 @@ export function DualPurpose() {
         </div>
       </div>
 
+      {/* Creative Writing Panel */}
       <div className="purpose-panel panel-alternate">
         <div className="panel-content-wrapper panel-reverse">
-          <div className="panel-visual">
-            <div className="visual-card world-building-visual">
-              <div className="visual-grid">
-                <div className="grid-item item-character">
-                  <div className="item-icon">👤</div>
-                  <div className="item-label">Characters</div>
-                </div>
-                <div className="grid-item item-location">
-                  <div className="item-icon">🗺️</div>
-                  <div className="item-label">Locations</div>
-                </div>
-                <div className="grid-item item-plot">
-                  <div className="item-icon">📖</div>
-                  <div className="item-label">Plot Lines</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="panel-text">
+          <div className="panel-content">
             <div className="panel-eyebrow">
-              <span className="eyebrow-line"></span>
-              <span className="eyebrow-text">For Creative Projects</span>
+              <span className="pulse-dot"></span>
+              <span className="eyebrow-text">For Creative Writers</span>
             </div>
             <h2 className="panel-title">
-              BUILD WORLDS<br/>
-              <span className="title-accent">& STORIES.</span>
+              Build Worlds.<br/>
+              Connect Stories.
             </h2>
             <p className="panel-description">
-              Writing a novel? Create workspaces for Characters, Locations, and Plot Arcs—each with detailed nodes inside.
-              Building a game world? Map out Factions, Histories, and Relationships. From fantasy epics to sci-fi universes,
-              LinkForge adapts to your creative vision.
+              Craft characters, locations, and plot points as interconnected nodes.
+              Visualize relationships, track story arcs, and discover hidden connections
+              in your narrative universe.
             </p>
             <div className="panel-stats">
               <div className="stat-item">
-                <span className="stat-value">Unlimited</span>
-                <span className="stat-label">Node Types</span>
+                <span className="stat-value">∞</span>
+                <span className="stat-label">Characters</span>
               </div>
               <div className="stat-item">
-                <span className="stat-value">Infinite</span>
-                <span className="stat-label">Nesting Depth</span>
+                <span className="stat-value">100%</span>
+                <span className="stat-label">Your Canon</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-value">0</span>
+                <span className="stat-label">Limitations</span>
+              </div>
+            </div>
+          </div>
+          <div className="panel-visual">
+            <div className="visual-card">
+              <div className="visual-grid">
+                <div className="grid-item">
+                  <span className="item-icon">👤</span>
+                  <span className="item-label">Characters</span>
+                </div>
+                <div className="grid-item">
+                  <span className="item-icon">🗺️</span>
+                  <span className="item-label">Locations</span>
+                </div>
+                <div className="grid-item">
+                  <span className="item-icon">📖</span>
+                  <span className="item-label">Chapters</span>
+                </div>
+                <div className="grid-item">
+                  <span className="item-icon">⚔️</span>
+                  <span className="item-label">Events</span>
+                </div>
               </div>
             </div>
           </div>
@@ -106,3 +133,4 @@ export function DualPurpose() {
     </section>
   );
 }
+

@@ -7,6 +7,7 @@ import { DualPurpose } from '../components/landing/DualPurpose/DualPurpose';
 import { PricingSection } from '../components/landing/PricingSection/PricingSection';
 import { CTASection } from '../components/landing/CTASection/CTASection';
 import './LandingPage.css';
+
 function LandingPage() {
   useEffect(() => {
     // Mouse glow effect
@@ -30,6 +31,7 @@ function LandingPage() {
       document.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, []);
+
   return (
     <div className="landing-page">
       {/* Grain Texture Overlay */}
@@ -39,13 +41,20 @@ function LandingPage() {
       <div id="mouse-glow"></div>
 
       <Navigation />
+
       <HeroSection />
+
       <BentoGrid />
+
       <DualPurpose />
+
       <PricingSection />
+
       <CTASection />
+
       <Footer />
     </div>
   );
 }
+
 export default LandingPage;

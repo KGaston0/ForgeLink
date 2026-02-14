@@ -96,7 +96,22 @@ ForgeLink/
 
 ## 🚀 Quick Start
 
-### Backend Setup
+### ⚡ Fastest Way (Using Helper Scripts)
+
+If dependencies are already installed, use these automated scripts:
+
+```bash
+# Start both backend and frontend with one command
+./dev.sh
+
+# Or use helpers for specific tasks
+./helpers.sh check           # Verify system status
+./helpers.sh reset-db        # Reset database
+./helpers.sh shell           # Open Django shell
+./helpers.sh migrations      # Create and apply migrations
+```
+
+### Manual Setup
 
 #### Prerequisites
 - Python 3.10+
@@ -111,36 +126,33 @@ ForgeLink/
    cd ForgeLink
    ```
 
-2. **Create and activate virtual environment**
+2. **Run automated setup** (Recommended)
    ```bash
+   chmod +x setup.sh
+   ./setup.sh
+   ```
+
+3. **Or manually:**
+   ```bash
+   # Create and activate virtual environment
    python -m venv .venv
    source .venv/bin/activate  # Linux/Mac
    .venv\Scripts\activate     # Windows
-   ```
 
-3. **Install dependencies**
-   ```bash
+   # Install dependencies
    pip install -r requirements.txt
-   ```
 
-4. **Setup environment variables**
-   ```bash
+   # Setup environment
    cp .env.example .env
    # Edit .env with your database credentials
-   ```
 
-5. **Run migrations**
-   ```bash
+   # Apply migrations
    python manage.py migrate
-   ```
 
-6. **Create superuser**
-   ```bash
+   # Create superuser
    python manage.py createsuperuser
-   ```
 
-7. **Start development server**
-   ```bash
+   # Start development server
    python manage.py runserver
    ```
 
@@ -163,6 +175,28 @@ npm run dev
 ```
 
 **Frontend runs at:** http://localhost:5173/ (Vite default port)
+
+---
+
+### 🔧 Helper Scripts Reference
+
+Three helper scripts are available in the project root:
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `setup.sh` | Initial project setup (install deps, create venv) | `./setup.sh` |
+| `dev.sh` | Start both backend and frontend servers | `./dev.sh` |
+| `helpers.sh` | Common development commands | `./helpers.sh [command]` |
+
+**Available helpers.sh commands:**
+- `./helpers.sh check` - Check system status
+- `./helpers.sh create-user` - Create new superuser
+- `./helpers.sh reset-db` - Reset database (⚠️ deletes data)
+- `./helpers.sh shell` - Open Django shell
+- `./helpers.sh migrations` - Create and apply migrations
+- `./helpers.sh static` - Collect static files
+- `./helpers.sh test-backend` - Run backend tests
+- `./helpers.sh urls` - Show all URL patterns
 
 ---
 
@@ -230,22 +264,13 @@ python manage.py collectstatic
 ### Frontend
 
 ```bash
-# Change to frontend directory
-cd frontend
-
 # Start development server
 npm run dev
 
 # Build for production
-npm run build
+npm run dev         # Vite
 
 # Preview production build
-npm run preview
-
-# Run tests
-npm test
-
-# Install new package
 npm install package-name
 
 # Update dependencies
@@ -482,13 +507,6 @@ Each section is independent and can be used in other pages.
 2. `./styles/globals.css` - Reset and base
 3. Wrap app with `<ThemeProvider>`
 
-### Benefits
-
-1. ✅ **Consistency** - Same design across all pages
-2. ✅ **Reusability** - Navigation & Footer in all pages
-3. ✅ **Maintainability** - Change once, update everywhere
-4. ✅ **Dark mode** - Theme switching built-in
-5. ✅ **Scalability** - Easy to add new components
 
 ---
 

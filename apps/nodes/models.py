@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from apps.projects.models import Project
 
@@ -47,9 +48,9 @@ class Node(models.Model):
         # Prevent invalid parent relationships
         if self.parent_node is not None:
             if self.parent_node_id == self.id:
-                raise models.ValidationError("A node cannot be its own parent")
+                raise ValidationError("A node cannot be its own parent")
             if self.parent_node.project_id != self.project_id:
-                raise models.ValidationError("Parent node must belong to the same project")
+                raise ValidationError("Parent node must belong to the same project")
 
             # Prevent cycles
             ancestor = self.parent_node

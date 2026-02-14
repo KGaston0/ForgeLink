@@ -1,0 +1,7 @@
+# GitGuardian configuration
+# Ignore dev.sh test credentials
+paths-ignore:
+  - dev.sh  # Contains test credentials for local development only
+  - setup.sh  # Setup script with example credentials
+  - helpers.sh  # Helper script with no real secrets
+

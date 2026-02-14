@@ -13,48 +13,41 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const ThemeContext = createContext(undefined);
 
 export function ThemeProvider({ children }) {
-  // Track if user has manually set theme (vs auto-detected)
-  const [isManuallySet, setIsManuallySet] = useState(() => {
-    return localStorage.getItem('forgelink-theme') !== null;
-  });
-
   const [theme, setTheme] = useState(() => {
-    // 1. Check localStorage first
+    // Check localStorage first
     const savedTheme = localStorage.getItem('forgelink-theme');
     if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
       return savedTheme;
     }
 
-    // 2. Detect system preference (don't save yet)
+    // Detect system preference
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
 
-    // 3. Default to light
     return 'light';
+  });
+
+  const [isManuallySet, setIsManuallySet] = useState(() => {
+    return localStorage.getItem('forgelink-theme-manual') === 'true';
   });
 
   useEffect(() => {
     // Apply theme to document
     const root = document.documentElement;
-
-    // Add transitioning class to prevent flash
     root.classList.add('theme-transitioning');
-
-    // Set data-theme attribute
     root.setAttribute('data-theme', theme);
 
     // Only save to localStorage if user manually set it
     if (isManuallySet) {
       localStorage.setItem('forgelink-theme', theme);
+      localStorage.setItem('forgelink-theme-manual', 'true');
     }
 
-    // Remove transitioning class after a brief delay
-    const timer = setTimeout(() => {
+    // Remove transition class after a short delay
+    setTimeout(() => {
       root.classList.remove('theme-transitioning');
-    }, 50);
-
-    return () => clearTimeout(timer);
+    }, 100);
   }, [theme, isManuallySet]);
 
   // Listen for system theme changes
@@ -63,7 +56,8 @@ export function ThemeProvider({ children }) {
 
     const handleChange = (e) => {
       // Only update if user hasn't manually set a theme
-      if (!isManuallySet) {
+      const isManual = localStorage.getItem('forgelink-theme-manual') === 'true';
+      if (!isManual) {
         setTheme(e.matches ? 'dark' : 'light');
       }
     };
@@ -74,44 +68,44 @@ export function ThemeProvider({ children }) {
       return () => mediaQuery.removeEventListener('change', handleChange);
     }
     // Older browsers
-    else if (mediaQuery.addListener) {
-      mediaQuery.addListener(handleChange);
-      return () => mediaQuery.removeListener(handleChange);
-    }
+    mediaQuery.addListener(handleChange);
+    return () => mediaQuery.removeListener(handleChange);
   }, [isManuallySet]);
 
   const toggleTheme = () => {
-    setIsManuallySet(true); // Mark as manually set
+    setIsManuallySet(true);
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
   const setLightTheme = () => {
-    setIsManuallySet(true); // Mark as manually set
+    setIsManuallySet(true);
     setTheme('light');
   };
 
   const setDarkTheme = () => {
-    setIsManuallySet(true); // Mark as manually set
+    setIsManuallySet(true);
     setTheme('dark');
   };
 
-  // Reset to system preference
   const resetToSystem = () => {
     setIsManuallySet(false);
     localStorage.removeItem('forgelink-theme');
-    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    localStorage.removeItem('forgelink-theme-manual');
+    
+    // Recompute and apply the system theme preference
+    const systemTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
     setTheme(systemTheme);
   };
 
   const value = {
     theme,
+    isDark: theme === 'dark',
     toggleTheme,
     setLightTheme,
     setDarkTheme,
     resetToSystem,
-    isDark: theme === 'dark',
-    isLight: theme === 'light',
-    isManuallySet,
   };
 
   return (
@@ -122,9 +116,7 @@ export function ThemeProvider({ children }) {
 }
 
 /**
- * useTheme Hook
- *
- * Access theme state and controls from any component
+ * useTheme hook
  *
  * @returns {Object} Theme state and controls
  * @example

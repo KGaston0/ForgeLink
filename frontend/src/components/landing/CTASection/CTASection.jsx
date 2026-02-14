@@ -1,26 +1,42 @@
-import { Button } from '../../common/Button/Button';
+import './CTASection.css';
+import '../common.css';
 
+/**
+ * CTASection Component
+ *
+ * Final call-to-action section
+ * Features:
+ * - Bold title with gradient accent
+ * - Description text
+ * - CTA buttons
+ * - Additional note
+ * - Centered layout
+ */
 export function CTASection() {
   return (
     <section className="cta-section">
       <div className="cta-container">
         <h2 className="cta-title">
-          READY TO BUILD<br/>
-          <span className="cta-title-accent">YOUR SYSTEM?</span>
+          Ready to <span className="cta-title-accent">Forge Your Links?</span>
         </h2>
         <p className="cta-description">
-          Join thousands of creators using LinkForge to organize their ideas, projects, and knowledge—their way.
+          Start building your knowledge network today. No credit card required.
+          Create unlimited custom nodes and connections from day one.
         </p>
         <div className="cta-buttons">
-          <Button variant="primary" size="lg" className="magnetic-btn">
-            Start Building Free
-          </Button>
-          <Button variant="secondary" size="lg">
-            Watch Demo
-          </Button>
+          <button className="btn btn-primary btn-large">
+            Start Free Now
+          </button>
+          <button className="btn btn-secondary btn-large">
+            Schedule Demo
+          </button>
         </div>
-        <p className="cta-note">No credit card required • 3 projects free forever</p>
+        <p className="cta-note">
+          Free forever. Upgrade when you need more.
+        </p>
       </div>
     </section>
   );
 }
+
+
