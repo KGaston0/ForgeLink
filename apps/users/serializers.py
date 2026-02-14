@@ -140,6 +140,22 @@ class UserAdminSerializer(serializers.ModelSerializer):
             'password': {'write_only': True, 'required': False}
         }
 
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = super().create(validated_data)
+        if password:
+            user.set_password(password)
+            user.save(update_fields=['password'])
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        user = super().update(instance, validated_data)
+        if password:
+            user.set_password(password)
+            user.save(update_fields=['password'])
+        return user
+
 
 class MembershipUpgradeSerializer(serializers.Serializer):
     """Serializer for upgrading user membership (admin only)"""

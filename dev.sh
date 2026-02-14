@@ -59,6 +59,6 @@ echo -e "  Admin Panel:  ${BLUE}http://localhost:8000/admin/${NC}"
 echo -e "  Frontend:     ${BLUE}http://localhost:5173/${NC}"
 echo -e "\n${YELLOW}Credentials:${NC}"
 echo -e "  Username: admin"
-echo -e "  Password: admin123"
+echo -e "  Password: admin123"  # ggignore: test credentials for local development
 echo -e "${BLUE}========================================${NC}"
 

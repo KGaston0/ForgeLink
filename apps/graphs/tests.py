@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+
+from django.db import IntegrityError
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -50,7 +52,7 @@ class GraphModelTest(TestCase):
 
     def test_unique_graph_name_per_project(self):
         """Test that graph name is unique per project"""
-        with self.assertRaises(Exception):  # IntegrityError
+        with self.assertRaises(IntegrityError):
             Graph.objects.create(
                 project=self.project,
                 name='Test Graph'
@@ -100,7 +102,7 @@ class GraphNodeModelTest(TestCase):
 
     def test_graph_node_unique_per_graph(self):
         """Test that un nodo can only be once in a graph"""
-        with self.assertRaises(Exception):  # IntegrityError
+        with self.assertRaises(IntegrityError):
             GraphNode.objects.create(
                 graph=self.graph,
                 node=self.node

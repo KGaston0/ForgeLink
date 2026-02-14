@@ -216,12 +216,12 @@ class NodeAPITest(APITestCase):
 
     def test_get_node_children(self):
         """Test for getting hijos de un nodo"""
-        child1 = Node.objects.create(
+        Node.objects.create(
             project=self.project,
             title='Child 1',
             parent_node=self.node
         )
-        child2 = Node.objects.create(
+        Node.objects.create(
             project=self.project,
             title='Child 2',
             parent_node=self.node

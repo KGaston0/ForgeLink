@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -52,7 +53,7 @@ class ConnectionTypeModelTest(TestCase):
 
     def test_unique_name_per_project(self):
         """Test that name is unique per project"""
-        with self.assertRaises(Exception):  # IntegrityError
+        with self.assertRaises(IntegrityError):
             ConnectionType.objects.create(
                 project=self.project,
                 name='Friend'
@@ -197,9 +198,10 @@ class ConnectionTypeAPITest(APITestCase):
         self.client.force_authenticate(user=self.user)
         url = reverse('connectiontype-detail', kwargs={'pk': self.connection_type.pk})
 
-        # Should return 400 or 409 when trying to delete a connection type in use
+        # Should return 400 when trying to delete a connection type in use
         response = self.client.delete(url)
-        self.assertIn(response.status_code, [status.HTTP_400_BAD_REQUEST, status.HTTP_409_CONFLICT])
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Cannot delete connection type', response.data['detail'])
 
 
 class NodeConnectionAPITest(APITestCase):
