@@ -1,148 +1,146 @@
-\`\`\`bash
-## Expanding the ESLint configuration
-\`\`\`
-## React Compiler
-\`\`\`bash
-\`\`\`
-Currently, two official plugins are available:
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-# React + Vite
+# ForgeLink Frontend
+
+React + Vite frontend for ForgeLink with modular design system.
+
 ---
+
 ## 🚀 Quick Start
 
 ```bash
 cd frontend
-\`\`\`bash
+npm install
+npm run dev
 ```
 
-### Development
+Frontend available at: http://localhost:5173/
 
-```bash
-\`\`\`
+---
 
-\`\`\`
+## 📁 Structure
 
-### Production Build
-
-```bash
+```
+frontend/
+├── src/
 │   ├── components/         # Reusable components
 │   │   ├── layout/         # Navigation, Footer
-│   │   ├── common/         # Button, Card, Badge
+│   │   ├── common/         # Button, Card, Badge, LoadingSpinner
 │   │   └── landing/        # Landing page sections
+│   ├── pages/              # Application pages
+│   │   ├── auth/           # Login, Register
+│   │   └── ...
 │   ├── context/            # React Context providers (Theme, Auth)
+│   ├── services/           # API client and services
 │   ├── routes/             # Route configuration
 │   ├── styles/             # Design system and global styles
-│   │   ├── variables.css   #   CSS variables (colors, typography, spacing)
-│   │   ├── globals.css     #   Global reset and base styles
-│   │   └── theme/          #   Theme system files
-│   ├── utils/              # Utility functions
-│   ├── types/              # TypeScript types (if using TS)
 │   ├── config/             # App configuration
-│   └── assets/             # Static assets (images, icons)
+│   └── assets/             # Static assets
 ├── public/                 # Static files
-└── README.md               # This file
+└── package.json
 ```
 
-> **Note:** See [DEVELOPMENT.md](../DEVELOPMENT.md) for detailed architecture documentation.
 ---
+
 ## 📚 Documentation
-- **Components:** See [src/components/README.md](./src/components/README.md)
-- **Design System:** See [src/styles/README.md](./src/styles/README.md)
-- **Backend API:** See [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
+
+- **Components:** [src/components/README.md](./src/components/README.md)
+- **Design System:** [src/styles/README.md](./src/styles/README.md)
+- **Backend API:** [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
+- **Development:** [../DEVELOPMENT.md](../DEVELOPMENT.md)
+
 ---
+
 ## 🎨 Tech Stack
-│   │   ├── variables.css   # CSS variables (colors, typography, spacing)
-│   │   ├── globals.css     # Global reset and base styles
-│   │   └── README.md       # Design system documentation
-│   ├── context/            # React contexts (Theme, Auth)
-│   ├── pages/              # Application pages
-│   ├── services/           # API calls and services
-│   └── utils/              # Utilities and helpers
-├── public/                 # Static assets
-- [x] Modular and scalable architecture
-- [x] Navigation and footer
-\`\`\`
-### 🚧 In Development
-- [ ] Authentication system (JWT)
-- [ ] Main dashboard
-- [ ] Project management
-- [ ] Node canvas (graph editor)
-- [ ] Node and connection CRUD
-### 📋 Roadmap
-- [ ] Complete authentication
-- [ ] Visual graph editor
-- [ ] Node and connection management
-- [ ] Real-time collaboration
-- [ ] Data export/import
-- [ ] Customizable themes
-- [ ] Unit tests
-- [ ] Component Storybook
----
-## 🔗 Backend
-Frontend connects to Django REST API backend:
-- **Backend URL:** http://localhost:8000/api/
-- **Documentation:** [../README.md](../README.md)
-- **API Endpoints:** [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
----
-## 🛠️ Useful Commands
 
-```bash
-# Development
-npm run dev
-
-# Build
-npm run build
-
-# Preview build
-npm run preview
-
-# Linting
-npm run lint
-\`\`\`
-```
+- **Framework:** React 19.2.0
+- **Build Tool:** Vite
+- **Styling:** Native CSS with CSS variables
+- **Theme:** Dark/Light mode
+- **State:** React Context API
+- **Auth:** JWT with httpOnly cookies
 
 ---
 
-## 📦 Available Components
+## 📦 Components
 
-Total: **10  components**
+Total: **11 components**
 
-### Layout (2):
-- \`Navigation\` - Navbar with dark mode toggle
-- \`Footer\` - Site footer
+### Layout (2)
 - `Navigation` - Navbar with dark mode toggle
 - `Footer` - Site footer
 
-### Common (3):
-- \`Button\` - Button with variants (primary/secondary) and sizes
-- \`Card\` - Card with spotlight effect
-- \`Badge\` - Labels with 5 variants
-- `Button` - Button with variants (primary/secondary) and sizes
+### Common (5)
+- `Button` - Button with variants and sizes
 - `Card` - Card with spotlight effect
 - `Badge` - Labels with 5 variants
+- `ThemeToggle` - Dark/Light mode switcher
+- `LoadingSpinner` - Loading overlay
 
-### Landing (5):
-- \`HeroSection\` - Hero with animated node canvas
-- \`BentoGrid\` - Feature grid
-- \`DualPurpose\` - Use cases (PM + Creative)
-- \`PricingSection\` - Pricing table
-- \`CTASection\` - Final call to action
+### Landing (5)
 - `HeroSection` - Hero with animated node canvas
 - `BentoGrid` - Feature grid
 - `DualPurpose` - Use cases (PM + Creative)
 - `PricingSection` - Pricing table
 - `CTASection` - Final call to action
-**See complete documentation:** [src/components/README.md](./src/components/README.md)
+
+See complete documentation: [src/components/README.md](./src/components/README.md)
+
 ---
+
+## ✅ Completed Features
+
+- [x] Landing page with 11 modular components
+- [x] Design system with dark/light mode
+- [x] Authentication system (JWT)
+- [x] Login/Register pages with validation
+- [x] Protected routes
+- [x] AuthContext and authService
+- [x] LoadingSpinner with overlay
+
+---
+
+## 🚧 In Development
+
+- [ ] Main dashboard
+- [ ] Project management
+- [ ] Visual graph editor (canvas)
+- [ ] Node and connection CRUD
+
+---
+
 ## 🎨 Design System
+
 Centralized design system with CSS variables:
+
 - **Colors:** Auto light/dark mode
 - **Typography:** 3 font families
 - **Spacing:** 8pt grid system
 - **Shadows:** 7 elevation levels
-\`\`\`bash
 - **Transitions:** 3 speeds
+
+See: [src/styles/README.md](./src/styles/README.md)
+
 ---
-## 📄 License
+
+## 🛠️ Commands
+
+```bash
+npm run dev       # Start dev server
+npm run build     # Build for production
+npm run preview   # Preview production build
+npm run lint      # Lint code
+```
+
 ---
-**Last Updated:** 2026-01-24
+
+## 🔗 Backend
+
+Frontend connects to Django REST API:
+
+- **Backend URL:** http://localhost:8000/api/
+- **Documentation:** [../README.md](../README.md)
+- **API Endpoints:** [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
+
+---
+
+**Last Updated:** 2026-02-14
+

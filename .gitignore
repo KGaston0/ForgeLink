@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Copilot personal instructions
+.copilot-instructions.md
+
 # C extensions
 *.so
 

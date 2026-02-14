@@ -183,6 +183,12 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_COOKIE': 'access_token',  # Name of cookie for access token
+    'AUTH_COOKIE_REFRESH': 'refresh_token',  # Name of cookie for refresh token
+    'AUTH_COOKIE_SECURE': config('JWT_COOKIE_SECURE', default=False, cast=bool),  # Set to True in production (HTTPS)
+    'AUTH_COOKIE_HTTP_ONLY': True,  # Prevent XSS attacks
+    'AUTH_COOKIE_SAMESITE': 'Lax',  # CSRF protection
+    'AUTH_COOKIE_PATH': '/',
 }
 
 # CORS settings
@@ -202,3 +208,14 @@ CSRF_TRUSTED_ORIGINS = config(
     default='http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000',
     cast=Csv(),
 )
+
+# Security Headers - XSS Protection
+SECURE_BROWSER_XSS_FILTER = True  # Enable browser's XSS filter
+X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
+SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME sniffing
+
+# Production security (requires HTTPS) - uncomment in production:
+# SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+# SECURE_SSL_REDIRECT = True
+

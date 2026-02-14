@@ -96,7 +96,7 @@ ForgeLink provides a system for modeling knowledge as graphs, with isolated proj
 - **Language:** Python 3.10+
 - **Framework:** Django 4.2+ with Django REST Framework
 - **Database:** PostgreSQL
-- **Auth:** JWT (in development)
+- **Auth:** JWT + httpOnly cookies
 - **Libraries:**
   - django-cors-headers
   - django-filter
@@ -106,7 +106,7 @@ ForgeLink provides a system for modeling knowledge as graphs, with isolated proj
 - **Framework:** React 19.2.0
 - **Build Tool:** Vite
 - **Styling:** Native CSS with CSS variables
-- **Components:** 10 modular reusable components
+- **Components:** 11 modular reusable components
 - **Theme:** Dark/Light mode with design system
 - **State:** React Context API
 
@@ -343,19 +343,32 @@ These endpoints could be added in future iterations:
 - node_type — character, location, event, item, concept, note
 - content — Node content / description
 - created_at — Timestamp
-After starting the server, you can access:
+- updated_at — Timestamp
+
+### Graph
+
+- project — Related project
+- name — Graph name
+- created_at — Timestamp
+- updated_at — Timestamp
+
+### GraphNode
 
 - graph — Related graph
 - node — Related node
-- position_x / position_y — Canvas position (por grafo)
+- position_x / position_y — Canvas position
 - color — Visual color (hex)
 
-### NodeConnection (actualizado)
+### NodeConnection
 
 - graph — Related graph
 
-- Implement authentication (JWT, tokens, OAuth)
-- Replace AllowAny permissions with proper access control
+## Security Recommendations
+
+**For production deployment:**
+
+- ✅ JWT authentication with httpOnly cookies (implemented)
+- ✅ XSS protection headers configured
 - Disable CORS_ALLOW_ALL_ORIGINS and whitelist origins
 - Generate a secure production SECRET_KEY
 - Never commit real credentials
@@ -367,27 +380,26 @@ After starting the server, you can access:
 
 ## Roadmap
 
-- JWT authentication
-- User-based permissions
-- Realtime collaboration (WebSockets)
-- Graph validation rules
-- Versioning and history
-- Frontend integration (React or Vue)
 ### Backend
 - [x] API REST completa con Django REST Framework
 - [x] Modelos: Projects, Nodes, Graphs, Connections
 - [x] CRUD completo para todos los modelos
-- [ ] JWT authentication (en desarrollo)
+- [x] JWT authentication con httpOnly cookies
+- [x] Custom User model
+- [x] Security headers (XSS protection)
 - [ ] User-based permissions
 - [ ] Graph validation rules
 - [ ] Versioning and history
 - [ ] Realtime collaboration (WebSockets)
 
 ### Frontend
-- [x] **Landing page completa** (10 componentes modulares)
-- [x] **Design system con dark/light mode**
-- [x] **Arquitectura de componentes reutilizables**
-- [ ] Sistema de autenticación (JWT)
+- [x] Landing page completa (11 componentes modulares)
+- [x] Design system con dark/light mode
+- [x] Arquitectura de componentes reutilizables
+- [x] Sistema de autenticación (JWT)
+- [x] Login/Register pages con validación completa
+- [x] Protected routes y AuthContext
+- [x] LoadingSpinner y manejo de estados
 - [ ] Dashboard principal
 - [ ] Editor visual de grafos (canvas interactivo)
 - [ ] CRUD de nodos y conexiones

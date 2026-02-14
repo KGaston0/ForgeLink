@@ -1,32 +1,16 @@
-- [ ] Crear componentes reutilizables
-- [ ] Documentar patrones comunes
-- [ ] Agregar más temas (opcional)
-\`\`\`
-El modo oscuro se activa automáticamente con el atributo `[data-theme="dark"]`.
-- Sombras: `--shadow-xs` hasta `--shadow-2xl`
-- Radius: `--radius-sm` hasta `--radius-full`
-\`\`\`
-\`\`\`css
-- Tamaños: `--font-size-xs` hasta `--font-size-6xl`
-- Pesos: `--font-weight-light` hasta `--font-weight-extrabold`
-- `--color-bg`, `--color-surface`, `--color-text`
-- `--color-primary`, `--color-secondary`
-- Semantic: `--color-success`, `--color-error`, `--color-warning`, `--color-info`
-├── globals.css      # Estilos globales y reset
-└── theme/           # Sistema de temas (futuro)
-Sistema de diseño centralizado para todo el proyecto.
 # ForgeLink Design System
 
-\`\`\`
+Centralized design system with CSS variables for consistent styling across the project.
 
 ---
 
 ## 📁 Structure
 
 ```
-\`\`\`css
+styles/
 ├── variables.css    # CSS variables (colors, typography, spacing)
 ├── globals.css      # Global styles and reset
+└── theme/           # Theme system (future expansion)
 ```
 
 ---
@@ -38,17 +22,19 @@ Sistema de diseño centralizado para todo el proyecto.
 ```css
 /* Base */
 --color-bg           /* Background */
---font-size-base     /* 16px */
+--color-surface      /* Surface/Card background */
 --color-text         /* Primary text */
 --color-text-muted   /* Secondary text */
 
 /* Brand */
---font-size-3xl      /* 30px */
---font-size-4xl      /* 36px */
+--color-primary      /* Primary brand color */
+--color-secondary    /* Secondary brand color */
 --color-cyan
 --color-teal
 --color-pink
---font-size-6xl      /* 60px */
+
+/* Semantic */
+--color-success      /* Green */
 --color-error        /* Red */
 --color-warning      /* Yellow */
 --color-info         /* Blue */
@@ -60,26 +46,26 @@ Sistema de diseño centralizado para todo el proyecto.
 /* Families */
 --font-heading       /* Outfit */
 --font-body          /* Plus Jakarta Sans */
-\`\`\`
+--font-mono          /* JetBrains Mono */
 
 /* Sizes */
-\`\`\`css
+--font-size-xs       /* 12px */
 --font-size-sm       /* 14px */
---font-size-md       /* 16px - base */
+--font-size-base     /* 16px */
 --font-size-lg       /* 18px */
 --font-size-xl       /* 20px */
---space-xl      /* 48px */
---space-2xl     /* 64px */
---space-3xl     /* 80px */
---space-4xl     /* 88px */
+--font-size-2xl      /* 24px */
+--font-size-3xl      /* 30px */
+--font-size-4xl      /* 36px */
 --font-size-5xl      /* 48px */
-\`\`\`
+--font-size-6xl      /* 60px */
 
 /* Weights */
-\`\`\`css
+--font-weight-light      /* 300 */
 --font-weight-normal     /* 400 */
 --font-weight-medium     /* 500 */
 --font-weight-semibold   /* 600 */
+--font-weight-bold       /* 700 */
 --font-weight-extrabold  /* 800 */
 ```
 
@@ -89,47 +75,58 @@ Sistema de diseño centralizado para todo el proyecto.
 --space-0       /* 0px */
 --space-xs      /* 8px */
 --space-sm      /* 16px */
+--space-md      /* 24px */
 --space-lg      /* 32px */
 --space-xl      /* 40px */
 --space-2xl     /* 48px */
 --space-3xl     /* 64px */
-\`\`\`
+--space-4xl     /* 80px */
 ```
 
 ### Effects
 
 ```css
-Activated automatically with \`[data-theme="dark"]\` on \`<html>\` element.
-\`\`\`css
+/* Shadows */
+--shadow-xs      /* Subtle shadow */
+--shadow-sm
+--shadow-md
+--shadow-lg
+--shadow-xl
+--shadow-2xl     /* Strong shadow */
+
 /* Border Radius */
 --radius-sm      /* 4px */
 --radius-md      /* 8px */
+--radius-lg      /* 12px */
 --radius-xl      /* 16px */
+--radius-2xl     /* 24px */
 --radius-full    /* 9999px */
 
 /* Transitions */
 --transition-fast    /* 150ms */
-\`\`\`
+--transition-base    /* 200ms */
+--transition-slow    /* 300ms */
 ```
 
 ---
 
 ## 🌗 Dark Mode
 
+Dark mode is activated automatically with the `[data-theme="dark"]` attribute on the `<html>` element.
 
 ```css
-\`\`\`css
 :root {
   --color-bg: #fafafa;
   --color-text: #1e1e1e;
 }
 
-/* Dark Mode */
 [data-theme="dark"] {
   --color-bg: #0a0a0f;
   --color-text: #e4e4e7;
 }
 ```
+
+All colors adapt automatically to the theme.
 
 ---
 
@@ -139,9 +136,9 @@ Activated automatically with \`[data-theme="dark"]\` on \`<html>\` element.
 
 ```css
 .my-component {
-\`\`\`
+  background: var(--color-surface);
   color: var(--color-text);
-\`\`\`css
+  padding: var(--space-lg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   transition: all var(--transition-base);
@@ -158,11 +155,10 @@ Activated automatically with \`[data-theme="dark"]\` on \`<html>\` element.
   border-radius: var(--radius-md);
   font-family: var(--font-body);
   font-weight: var(--font-weight-semibold);
-\`\`\`
+  transition: transform var(--transition-fast);
 }
 
 .btn-primary:hover {
-\`\`\`css
   transform: translateY(-2px);
 }
 ```
@@ -174,6 +170,7 @@ Activated automatically with \`[data-theme="dark"]\` on \`<html>\` element.
   position: relative;
   background: var(--color-surface);
   padding: var(--space-lg);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
 }
 
@@ -181,12 +178,14 @@ Activated automatically with \`[data-theme="dark"]\` on \`<html>\` element.
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   background: radial-gradient(
     circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
     rgba(6, 182, 212, 0.15),
     transparent 50%
   );
   opacity: 0;
+  transition: opacity var(--transition-base);
 }
 
 .card:hover::before {
@@ -196,11 +195,9 @@ Activated automatically with \`[data-theme="dark"]\` on \`<html>\` element.
 
 ---
 
-\`\`\`
+## 📚 References
 
+- **Components:** [../components/README.md](../components/README.md)
 - **Frontend:** [../../README.md](../../README.md)
 - **Project:** [../../../README.md](../../../README.md)
 
----
-
-**Last Updated:** 2026-01-24

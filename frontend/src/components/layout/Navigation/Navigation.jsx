@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../../common/ThemeToggle/ThemeToggle';
 import './Navigation.css';
 
@@ -17,7 +18,7 @@ export function Navigation() {
   return (
     <nav className="nav">
       <div className="nav-container">
-        <a href="/" className="logo-link">
+        <Link to="/" className="logo-link">
           <div className="logo-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="6" cy="6" r="3" fill="currentColor" opacity="0.6"/>
@@ -26,8 +27,8 @@ export function Navigation() {
               <path d="M6 6L12 18M18 6L12 18" stroke="currentColor" strokeWidth="2" opacity="0.4"/>
             </svg>
           </div>
-          <span className="logo-text">LinkForge</span>
-        </a>
+          <span className="logo-text">ForgeLink</span>
+        </Link>
 
         <div className="nav-links">
           <a href="#gallery" className="nav-link">Gallery</a>
@@ -37,8 +38,12 @@ export function Navigation() {
 
         <div className="nav-actions">
           <ThemeToggle />
-          <button className="btn-secondary">Login</button>
-          <button className="btn-primary">Start Free</button>
+          <Link to="/login">
+            <button className="btn-secondary">Login</button>
+          </Link>
+          <Link to="/register">
+            <button className="btn-primary">Start Free</button>
+          </Link>
         </div>
       </div>
     </nav>
