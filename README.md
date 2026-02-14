@@ -240,12 +240,15 @@ npm run dev
 
    SQL:
 ```bash
-- Language: Python 3.10+
-- Backend:
-  - Django 4.2+
-  - Django REST Framework
-- Database: PostgreSQL
-- Libraries:
+   ALTER USER forgelink_user WITH PASSWORD 'strongpassword';  
+   GRANT ALL PRIVILEGES ON DATABASE forgelink_db TO forgelink_user;  
+```
+
+6. Run migrations  
+```bash
+   python manage.py migrate  
+```
+7. Create a superuser
 ```bash
    python manage.py createsuperuser  
 ```
