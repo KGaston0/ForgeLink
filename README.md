@@ -1,4 +1,3 @@
-| `http://localhost:8000/mvp/` | **MVP Frontend** - Development/testing UI |
 # ForgeLink
 
 Django backend for a node-based project management and worldbuilding application.
@@ -14,7 +13,75 @@ Django backend for a node-based project management and worldbuilding application
 
 ```
 ForgeLink/
+├── .env                      # Environment variables (PostgreSQL config)
+├── .env.example             # Environment template
+├── .gitignore               # Git ignore rules
+├── README.md                # Main project documentation
+├── API_ENDPOINTS.md         # API documentation
+├── DEVELOPMENT.md           # Development guide
+├── requirements.txt         # Python dependencies
+├── manage.py                # Django management script
+├── db.sqlite3               # SQLite DB (for development)
+│
+├── forgelink_backend/       # Django project settings
+│   ├── settings.py          # Main settings
+│   ├── urls.py              # URL configuration
+│   ├── auth_views.py        # JWT authentication views
+│   └── mvp_views.py         # MVP frontend view
+│
+├── apps/                    # Django apps
+│   ├── __init__.py
+│   ├── projects/            # Project management
+│   ├── nodes/               # Node management
+│   ├── connections/         # Connection management
+│   └── graphs/              # Graph management
+│
+├── frontend/                # React + Vite Frontend
+│   ├── src/
+│   │   ├── components/      # Reusable UI components
+│   │   │   ├── common/      # Button, Card, Badge, ThemeToggle
+│   │   │   ├── layout/      # Navigation, Footer
+│   │   │   └── landing/     # Landing page sections
+│   │   ├── pages/           # Page components (one per route)
+│   │   │   ├── auth/        # Login, Register pages
+│   │   │   ├── home/        # Dashboard/Home
+│   │   │   ├── projects/    # Projects pages
+│   │   │   ├── graphs/      # Graphs pages
+│   │   │   └── nodes/       # Nodes pages
+│   │   ├── features/        # Feature modules (business logic)
+│   │   │   ├── auth/        # Authentication feature
+│   │   │   ├── projects/    # Projects feature
+│   │   │   ├── graphs/      # Graphs feature
+│   │   │   ├── nodes/       # Nodes feature
+│   │   │   └── connections/ # Connections feature
+│   │   ├── services/        # External services (API client)
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── context/         # React Context providers (Theme, Auth)
+│   │   ├── routes/          # Route configuration
+│   │   ├── styles/          # Design system (CSS variables)
+│   │   ├── utils/           # Utility functions
+│   │   ├── types/           # TypeScript types
+│   │   ├── config/          # App configuration
+│   │   └── assets/          # Static assets
+│   ├── public/              # Static files
+│   └── README.md            # Frontend documentation
+│
+└── frontend_mvp/            # Legacy MVP (HTML/JS)
+    ├── index.html
+    └── README.md
+```
+
+> **See detailed documentation:**
+> - Frontend: [frontend/README.md](./frontend/README.md)
+> - Development: [DEVELOPMENT.md](./DEVELOPMENT.md)
+> - API: [API_ENDPOINTS.md](./API_ENDPOINTS.md)
+
+---
+
+## Features
+
 ForgeLink provides a system for modeling knowledge as graphs, with isolated projects, typed relationships, and evolution over time. Suitable for worldbuilding, story design, and complex knowledge systems.
+
 - Multiple node types: characters, locations, events, items, concepts, and notes
 - Node connections with various relationship types
 - Project-scoped isolation
@@ -173,12 +240,15 @@ npm run dev
 
    SQL:
 ```bash
-- Language: Python 3.10+
-- Backend:
-  - Django 4.2+
-  - Django REST Framework
-- Database: PostgreSQL
-- Libraries:
+   ALTER USER forgelink_user WITH PASSWORD 'strongpassword';  
+   GRANT ALL PRIVILEGES ON DATABASE forgelink_db TO forgelink_user;  
+```
+
+6. Run migrations  
+```bash
+   python manage.py migrate  
+```
+7. Create a superuser
 ```bash
    python manage.py createsuperuser  
 ```
