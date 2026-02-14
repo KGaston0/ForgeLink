@@ -92,6 +92,12 @@ export function ThemeProvider({ children }) {
     setIsManuallySet(false);
     localStorage.removeItem('forgelink-theme');
     localStorage.removeItem('forgelink-theme-manual');
+    
+    // Recompute and apply the system theme preference
+    const systemTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+    setTheme(systemTheme);
   };
 
   const value = {
