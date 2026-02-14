@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
-import { Navigation } from './components/layout/Navigation/Navigation';
-import { Footer } from './components/layout/Footer/Footer';
-import { HeroSection } from './components/landing/HeroSection/HeroSection';
-import { BentoGrid } from './components/landing/BentoGrid/BentoGrid';
-import { DualPurpose } from './components/landing/DualPurpose/DualPurpose';
-import { PricingSection } from './components/landing/PricingSection/PricingSection';
-import { CTASection } from './components/landing/CTASection/CTASection';
+import { Navigation } from '../components/layout/Navigation/Navigation';
+import { Footer } from '../components/layout/Footer/Footer';
+import { HeroSection } from '../components/landing/HeroSection/HeroSection';
+import { BentoGrid } from '../components/landing/BentoGrid/BentoGrid';
+import { DualPurpose } from '../components/landing/DualPurpose/DualPurpose';
+import { PricingSection } from '../components/landing/PricingSection/PricingSection';
+import { CTASection } from '../components/landing/CTASection/CTASection';
 import './LandingPage.css';
+
 function LandingPage() {
   useEffect(() => {
     // Mouse glow effect
@@ -30,12 +31,14 @@ function LandingPage() {
       document.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, []);
+
   return (
-    <>
+    <div className="landing-page">
       {/* Grain Texture Overlay */}
       <div className="grain"></div>
 
       {/* Mouse Glow Cursor */}
+      <div id="mouse-glow"></div>
 
       <Navigation />
 
@@ -50,8 +53,8 @@ function LandingPage() {
       <CTASection />
 
       <Footer />
-    </>
     </div>
   );
 }
+
 export default LandingPage;
