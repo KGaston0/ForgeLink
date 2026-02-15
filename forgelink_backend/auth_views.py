@@ -126,9 +126,17 @@ def logout(request):
 
     response = Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
 
-    # Clear cookies
-    response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE'])
-    response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
+    # Clear cookies using the same path and samesite attributes as when they were set
+    response.delete_cookie(
+        settings.SIMPLE_JWT['AUTH_COOKIE'],
+        path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
+        samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+    )
+    response.delete_cookie(
+        settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
+        path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
+        samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+    )
 
     return response
 
