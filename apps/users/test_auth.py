@@ -81,8 +81,10 @@ class JWTAuthenticationTest(APITestCase):
 
     def test_refresh_token_invalid(self):
         """Test token refresh fails with invalid refresh token"""
-        data = {'refresh': 'invalid_token_here'}
-        response = self.client.post(self.refresh_url, data)
+        # CookieTokenRefreshView reads the token from the refresh_token cookie,
+        # so set an invalid value there and post an empty body.
+        self.client.cookies['refresh_token'] = 'invalid_token_here'
+        response = self.client.post(self.refresh_url, {})
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
