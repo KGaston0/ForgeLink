@@ -87,8 +87,14 @@ function App() {
 ### LoadingSpinner
 ```jsx
 <LoadingSpinner />
+<LoadingSpinner size="small" fullScreen={false} />
+<LoadingSpinner size="large" />
 ```
-**Props:** None required. Shows overlay with spinner during async operations.
+**Props:**
+- `size` (string, optional): Size of the spinner. Options: `'small'`, `'medium'`, `'large'`. Default: `'medium'`
+- `fullScreen` (boolean, optional): If `true`, displays as a fullscreen overlay with dark background. If `false`, renders as an inline spinner. Default: `true`
+
+Shows loading state during async operations. Use fullscreen mode for page transitions and inline mode for component-level loading.
 
 ---
 
