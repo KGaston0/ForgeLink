@@ -11,14 +11,8 @@ const authService = {
         password,
       });
 
-      // Tokens are now stored in httpOnly cookies automatically
-      // Keep localStorage for backwards compatibility during development
-      if (response.data.access) {
-        localStorage.setItem('access_token', response.data.access);
-      }
-      if (response.data.refresh) {
-        localStorage.setItem('refresh_token', response.data.refresh);
-      }
+      // Tokens are stored in httpOnly cookies automatically by the backend
+      // No need to store in localStorage (security best practice)
 
       return response.data;
     } catch (error) {
@@ -86,19 +80,15 @@ const authService = {
       // Call backend to clear httpOnly cookies
       await apiClient.post(API_ENDPOINTS.LOGOUT);
     } catch (error) {
-      // Even if backend call fails, clear local storage
+      // Even if backend call fails, log the error
       console.error('Logout error:', error);
-    } finally {
-      // Clear localStorage
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
     }
   },
 
   // Get current user
   async getCurrentUser() {
     try {
-      const response = await apiClient.get(API_ENDPOINTS.ME);
+      const response = await apiClient.get(API_ENDPOINTS.AUTH_ME);
       return response.data;
     } catch (error) {
       // Network error
@@ -114,16 +104,6 @@ const authService = {
 
       throw new Error('Failed to get user data.');
     }
-  },
-
-  // Check if user is authenticated
-  isAuthenticated() {
-    return !!localStorage.getItem('access_token');
-  },
-
-  // Get access token
-  getAccessToken() {
-    return localStorage.getItem('access_token');
   },
 };
 

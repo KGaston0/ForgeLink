@@ -1,5 +1,4 @@
 import { useTheme } from '../../../context/ThemeContext';
-import './ThemeToggle.css';
 
 /**
  * ThemeToggle Component
@@ -15,15 +14,15 @@ export function ThemeToggle() {
 
   return (
     <button
-      className="theme-toggle"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] hover:bg-[rgb(var(--color-bg-secondary))]/80 transition-all duration-200"
       onClick={toggleTheme}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Current: ${theme} mode`}
     >
-      <span className="theme-toggle-icon">
+      <span className="text-lg transition-transform duration-200 hover:scale-110">
         {isDark ? '☀️' : '🌙'}
       </span>
-      <span className="theme-toggle-text">
+      <span className="text-sm font-medium text-[rgb(var(--color-text-secondary))]">
         {isDark ? 'Light' : 'Dark'}
       </span>
     </button>

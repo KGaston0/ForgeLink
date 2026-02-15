@@ -1,29 +1,22 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../../config/apiConfig.js';
 
+// Custom error for authentication failures
+export class AuthenticationError extends Error {
+  constructor(message = 'Authentication failed') {
+    super(message);
+    this.name = 'AuthenticationError';
+  }
+}
+
 // Create axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Send cookies with requests
+  withCredentials: true, // Send cookies with requests (including httpOnly JWT cookies)
 });
-
-// Request interceptor - Add JWT token to requests (fallback for localStorage)
-apiClient.interceptors.request.use(
-  (config) => {
-    // Check localStorage as fallback (for development/backwards compatibility)
-    const token = localStorage.getItem('access_token');
-    if (token && !config.headers.Authorization) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Response interceptor - Handle token refresh
 apiClient.interceptors.response.use(
@@ -48,11 +41,8 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh failed, logout user
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
-        return Promise.reject(refreshError);
+        // Refresh failed, throw AuthenticationError for components to handle
+        throw new AuthenticationError('Session expired. Please login again.');
       }
     }
 

@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import authService from '../services/api/authService.js';
-import LoadingSpinner from '../components/LoadingSpinner.jsx';
+import { useNavigate } from 'react-router-dom';
+import authService from '../services/api/authService';
+import apiClient, { AuthenticationError } from '../services/api/apiClient';
+import LoadingSpinner from '../components/common/LoadingSpinner/LoadingSpinner';
 
 const AuthContext = createContext(undefined);
 
@@ -8,6 +10,28 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  // Setup axios interceptor to handle AuthenticationError
+  useEffect(() => {
+    const interceptor = apiClient.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        // If it's an AuthenticationError, logout and redirect to login
+        if (error instanceof AuthenticationError) {
+          setUser(null);
+          setIsAuthenticated(false);
+          navigate('/login', { replace: true });
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup interceptor on unmount
+    return () => {
+      apiClient.interceptors.response.eject(interceptor);
+    };
+  }, [navigate]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -16,14 +40,13 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      if (authService.isAuthenticated()) {
-        const userData = await authService.getCurrentUser();
-        setUser(userData);
-        setIsAuthenticated(true);
-      }
+      // Try to get user data using httpOnly cookie authentication
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
+      setIsAuthenticated(true);
     } catch (error) {
       console.error('Auth check failed:', error);
-      await authService.logout();
+      // User is not authenticated or token expired
       setUser(null);
       setIsAuthenticated(false);
     } finally {

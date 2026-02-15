@@ -1,6 +1,5 @@
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
-import './DashboardPage.css';
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -12,71 +11,53 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="dashboard-page">
-      <header className="dashboard-header">
-        <div className="dashboard-logo">
-          <h2>ForgeLink</h2>
+    <div className="min-h-screen bg-[rgb(var(--color-bg))] p-8">
+      <header className="max-w-7xl mx-auto flex justify-between items-center mb-12">
+        <div>
+          <h2 className="text-2xl font-bold text-[rgb(var(--color-text))]">ForgeLink</h2>
         </div>
-        <div className="dashboard-user">
-          <span className="user-name">
-            {user?.username || 'User'}
+        <div className="flex items-center gap-4">
+          <span className="text-[rgb(var(--color-text-secondary))]">
+            Welcome, {user?.user?.username || 'User'}!
           </span>
-          <button onClick={handleLogout} className="btn btn-secondary">
+          <button onClick={handleLogout} className="btn-secondary">
             Logout
           </button>
         </div>
       </header>
 
-      <main className="dashboard-main">
-        <div className="dashboard-welcome">
-          <h1>Welcome back, {user?.first_name || user?.username}! 👋</h1>
-          <p>Your workspace is ready</p>
-        </div>
+      <main className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold text-[rgb(var(--color-text))] mb-4">Dashboard</h1>
+        <p className="text-[rgb(var(--color-text-secondary))] mb-8">Your knowledge network starts here.</p>
 
-        <div className="dashboard-cards">
-          <div className="dashboard-card">
-            <div className="card-icon">📁</div>
-            <h3>Projects</h3>
-            <p className="card-value">0</p>
-            <p className="card-description">Create your first project</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="p-6 bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] rounded-lg">
+            <h3 className="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">Projects</h3>
+            <p className="text-[rgb(var(--color-text-secondary))] text-sm">Manage your knowledge projects</p>
+            <p className="text-3xl font-bold text-cyan-500 mt-4">0</p>
           </div>
 
-          <div className="dashboard-card">
-            <div className="card-icon">🔗</div>
-            <h3>Graphs</h3>
-            <p className="card-value">0</p>
-            <p className="card-description">Start building connections</p>
+          <div className="p-6 bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] rounded-lg">
+            <h3 className="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">Graphs</h3>
+            <p className="text-[rgb(var(--color-text-secondary))] text-sm">Visual representations of data</p>
+            <p className="text-3xl font-bold text-purple-500 mt-4">0</p>
           </div>
 
-          <div className="dashboard-card">
-            <div className="card-icon">⚫</div>
-            <h3>Nodes</h3>
-            <p className="card-value">0</p>
-            <p className="card-description">Add your first node</p>
+          <div className="p-6 bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] rounded-lg">
+            <h3 className="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">Nodes</h3>
+            <p className="text-[rgb(var(--color-text-secondary))] text-sm">Individual knowledge points</p>
+            <p className="text-3xl font-bold text-cyan-500 mt-4">0</p>
           </div>
         </div>
 
-        <div className="dashboard-section">
-          <h2>Quick Actions</h2>
-          <div className="quick-actions">
-            <button className="btn btn-primary">
-              + New Project
-            </button>
-            <button className="btn btn-secondary">
-              + New Graph
-            </button>
-            <button className="btn btn-secondary">
-              + New Node
-            </button>
-          </div>
-        </div>
-
-        <div className="dashboard-section">
-          <h2>Recent Activity</h2>
-          <div className="empty-state">
-            <p>No recent activity yet</p>
-            <p className="empty-state-hint">Start creating projects to see your activity here</p>
-          </div>
+        <div className="mt-12 p-8 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 rounded-xl">
+          <h2 className="text-2xl font-bold text-[rgb(var(--color-text))] mb-4">🚀 Getting Started</h2>
+          <p className="text-[rgb(var(--color-text-secondary))] mb-6">
+            Welcome to ForgeLink! Start by creating your first project to organize your knowledge network.
+          </p>
+          <button className="btn-primary">
+            Create Your First Project
+          </button>
         </div>
       </main>
     </div>

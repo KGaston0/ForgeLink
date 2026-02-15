@@ -34,14 +34,38 @@ class CookieTokenObtainPairView(TokenObtainPairView):
                 path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
             )
 
-            # Keep tokens in response for backwards compatibility (remove in production)
-            # response.data = {'detail': 'Login successful'}
+            # Remove tokens from response body for security
+            response.data = {'detail': 'Login successful'}
 
         return super().finalize_response(request, response, *args, **kwargs)
 
 
 class CookieTokenRefreshView(TokenRefreshView):
     """Custom refresh view that gets/sets JWT tokens from/to httpOnly cookies"""
+
+    def post(self, request, *args, **kwargs):
+        # Extract refresh token from httpOnly cookie
+        refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
+        
+        if not refresh_token:
+            return Response(
+                {'detail': 'Refresh token not found in cookies'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Create serializer with refresh token from cookie
+        serializer = self.get_serializer(data={'refresh': refresh_token})
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response(
+                {'detail': str(e)},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Return the new access token
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
     def finalize_response(self, request, response, *args, **kwargs):
         if response.status_code == 200 and 'access' in response.data:
@@ -56,8 +80,8 @@ class CookieTokenRefreshView(TokenRefreshView):
                 path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
             )
 
-            # Keep token in response for backwards compatibility
-            # response.data = {'detail': 'Token refreshed successfully'}
+            # Remove tokens from response body for security
+            response.data = {'detail': 'Token refreshed successfully'}
 
         return super().finalize_response(request, response, *args, **kwargs)
 
@@ -74,7 +98,20 @@ def me(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout(request):
-    """Logout user and clear httpOnly cookies"""
+    """Logout user, blacklist refresh token, and clear httpOnly cookies"""
+    try:
+        # Get refresh token from cookie
+        refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
+
+        if refresh_token:
+            # Blacklist the refresh token to invalidate it
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+    except Exception as e:
+        # If blacklisting fails, continue with logout anyway
+        # (cookies will still be cleared, providing client-side logout)
+        pass
+
     response = Response({'detail': 'Logout successful'}, status=status.HTTP_200_OK)
 
     # Clear cookies

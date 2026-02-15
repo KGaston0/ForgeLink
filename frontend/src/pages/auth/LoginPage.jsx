@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext.jsx';
-import LoadingSpinner from '../../components/LoadingSpinner.jsx';
-import './LoginPage.css';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -40,22 +39,27 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-page">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[rgb(var(--color-bg))]">
       {loading && <LoadingSpinner />}
-      <div className="auth-container">
-        <div className="auth-header">
-          <h1>Welcome back</h1>
-          <p>Sign in to your ForgeLink account</p>
+      <div className="w-full max-w-md bg-[rgb(var(--color-bg-secondary))] rounded-2xl shadow-xl p-8 border border-[rgb(var(--color-border))]">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-[rgb(var(--color-text))] mb-2">Welcome back</h1>
+          <p className="text-[rgb(var(--color-text-secondary))]">Sign in to your ForgeLink account</p>
         </div>
 
         {error && (
-          <div className="auth-error" role="alert" aria-live="assertive">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm" role="alert" aria-live="assertive">
             {error}
           </div>
         )}
 
         {/* Google Sign In - Placeholder */}
-        <button type="button" className="btn-google" disabled aria-label="Sign in with Google (Coming soon)">
+        <button
+          type="button"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-[rgb(var(--color-border))] rounded-lg font-medium text-[rgb(var(--color-text))] hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled
+          aria-label="Sign in with Google (Coming soon)"
+        >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
             <path d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z" fill="#34A853"/>
@@ -65,13 +69,17 @@ export default function LoginPage() {
           Continue with Google (Coming soon)
         </button>
 
-        <div className="auth-divider">
-          <span>or</span>
+        <div className="flex items-center gap-4 my-6">
+          <div className="flex-1 h-px bg-[rgb(var(--color-border))]"></div>
+          <span className="text-sm text-[rgb(var(--color-text-muted))]">or</span>
+          <div className="flex-1 h-px bg-[rgb(var(--color-border))]"></div>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form" noValidate>
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="mb-4">
+            <label htmlFor="username" className="block text-sm font-medium text-[rgb(var(--color-text))] mb-2">
+              Username
+            </label>
             <input
               type="text"
               id="username"
@@ -82,12 +90,15 @@ export default function LoginPage() {
               autoComplete="username"
               placeholder="Enter your username"
               aria-required="true"
+              className="input-field"
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <div className="password-input-wrapper">
+          <div className="mb-6">
+            <label htmlFor="password" className="block text-sm font-medium text-[rgb(var(--color-text))] mb-2">
+              Password
+            </label>
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -98,10 +109,11 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 placeholder="Enter your password"
                 aria-required="true"
+                className="input-field pr-12"
               />
               <button
                 type="button"
-                className="password-toggle"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--color-text-muted))] hover:text-[rgb(var(--color-text))] transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 tabIndex={-1}
@@ -123,7 +135,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="btn btn-primary btn-full"
+            className="btn-primary w-full"
             disabled={loading}
             aria-busy={loading}
           >
@@ -131,14 +143,14 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="auth-footer">
-          <p>
+        <div className="mt-6 text-center space-y-3">
+          <p className="text-sm text-[rgb(var(--color-text-secondary))]">
             Don't have an account?{' '}
-            <Link to="/register" className="auth-link">
+            <Link to="/register" className="text-cyan-500 hover:text-cyan-600 font-medium transition-colors">
               Sign up
             </Link>
           </p>
-          <Link to="/" className="auth-link-secondary">
+          <Link to="/" className="inline-block text-sm text-[rgb(var(--color-text-muted))] hover:text-[rgb(var(--color-text))] transition-colors">
             ← Back to home
           </Link>
         </div>
@@ -146,6 +158,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-
-

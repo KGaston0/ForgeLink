@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Third-party apps
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',  # For token blacklisting on logout
     'corsheaders',
     'django_filters',
     # Local apps
@@ -158,7 +159,7 @@ AUTH_USER_MODEL = 'users.User'
 # REST Framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'forgelink_backend.authentication.JWTCookieAuthentication',
         # useful for admin/browsable API in dev
         'rest_framework.authentication.SessionAuthentication',
     ],
@@ -180,14 +181,17 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'ROTATE_REFRESH_TOKENS': True,  # Generate new refresh token on refresh
+    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist old refresh token after rotation
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'access_token',  # Name of cookie for access token
     'AUTH_COOKIE_REFRESH': 'refresh_token',  # Name of cookie for refresh token
     'AUTH_COOKIE_SECURE': config('JWT_COOKIE_SECURE', default=False, cast=bool),  # Set to True in production (HTTPS)
     'AUTH_COOKIE_HTTP_ONLY': True,  # Prevent XSS attacks
-    'AUTH_COOKIE_SAMESITE': 'Lax',  # CSRF protection
+    # SameSite: 'Lax' allows cookies on top-level GET navigation (good UX),
+    # but blocks them on cross-site POST requests (CSRF protection).
+    # Use 'Strict' for maximum security if UX impact is acceptable.
+    'AUTH_COOKIE_SAMESITE': config('JWT_COOKIE_SAMESITE', default='Lax'),
     'AUTH_COOKIE_PATH': '/',
 }
 

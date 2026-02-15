@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import SettingsPage from './pages/settings/SettingsPage.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
       </AuthProvider>
