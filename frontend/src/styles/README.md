@@ -1,6 +1,6 @@
-# ForgeLink Design System
+# ForgeLink Styling System
 
-Centralized design system with CSS variables for consistent styling across the project.
+ForgeLink uses **Tailwind CSS v4** with custom CSS variables for theming and dark mode support.
 
 ---
 
@@ -8,196 +8,155 @@ Centralized design system with CSS variables for consistent styling across the p
 
 ```
 styles/
-├── variables.css    # CSS variables (colors, typography, spacing)
-├── globals.css      # Global styles and reset
-└── theme/           # Theme system (future expansion)
+└── index.css        # Tailwind imports + custom utilities + CSS variables
 ```
 
 ---
 
-## 🎨 CSS Variables
+## 🎨 Tailwind CSS v4
 
-### Colors
+**Configuration:**
+- `tailwind.config.js` - Tailwind configuration with dark mode
+- `postcss.config.js` - PostCSS with @tailwindcss/postcss plugin
+- `index.css` - Tailwind directives and custom utilities
 
+**Imports:**
 ```css
-/* Base */
---color-bg           /* Background */
---color-surface      /* Surface/Card background */
---color-text         /* Primary text */
---color-text-muted   /* Secondary text */
-
-/* Brand */
---color-primary      /* Primary brand color */
---color-secondary    /* Secondary brand color */
---color-cyan
---color-teal
---color-pink
-
-/* Semantic */
---color-success      /* Green */
---color-error        /* Red */
---color-warning      /* Yellow */
---color-info         /* Blue */
-```
-
-### Typography
-
-```css
-/* Families */
---font-heading       /* Outfit */
---font-body          /* Plus Jakarta Sans */
---font-mono          /* JetBrains Mono */
-
-/* Sizes */
---font-size-xs       /* 12px */
---font-size-sm       /* 14px */
---font-size-base     /* 16px */
---font-size-lg       /* 18px */
---font-size-xl       /* 20px */
---font-size-2xl      /* 24px */
---font-size-3xl      /* 30px */
---font-size-4xl      /* 36px */
---font-size-5xl      /* 48px */
---font-size-6xl      /* 60px */
-
-/* Weights */
---font-weight-light      /* 300 */
---font-weight-normal     /* 400 */
---font-weight-medium     /* 500 */
---font-weight-semibold   /* 600 */
---font-weight-bold       /* 700 */
---font-weight-extrabold  /* 800 */
-```
-
-### Spacing (8pt Grid)
-
-```css
---space-0       /* 0px */
---space-xs      /* 8px */
---space-sm      /* 16px */
---space-md      /* 24px */
---space-lg      /* 32px */
---space-xl      /* 40px */
---space-2xl     /* 48px */
---space-3xl     /* 64px */
---space-4xl     /* 80px */
-```
-
-### Effects
-
-```css
-/* Shadows */
---shadow-xs      /* Subtle shadow */
---shadow-sm
---shadow-md
---shadow-lg
---shadow-xl
---shadow-2xl     /* Strong shadow */
-
-/* Border Radius */
---radius-sm      /* 4px */
---radius-md      /* 8px */
---radius-lg      /* 12px */
---radius-xl      /* 16px */
---radius-2xl     /* 24px */
---radius-full    /* 9999px */
-
-/* Transitions */
---transition-fast    /* 150ms */
---transition-base    /* 200ms */
---transition-slow    /* 300ms */
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/preflight" layer(base);
+@import "tailwindcss/utilities" layer(utilities);
 ```
 
 ---
 
 ## 🌗 Dark Mode
 
-Dark mode is activated automatically with the `[data-theme="dark"]` attribute on the `<html>` element.
+Dark mode is controlled via the `dark` class on `<html>` element.
 
+**CSS Variables (Light Mode):**
 ```css
-:root {
-  --color-bg: #fafafa;
-  --color-text: #1e1e1e;
-}
+--color-bg: 255 255 255;
+--color-bg-secondary: 248 249 250;
+--color-text: 26 26 31;
+--color-text-secondary: 107 114 128;
+--color-border: 229 231 235;
+```
 
-[data-theme="dark"] {
-  --color-bg: #0a0a0f;
-  --color-text: #e4e4e7;
+**CSS Variables (Dark Mode):**
+```css
+html.dark {
+  --color-bg: 26 26 31;
+  --color-bg-secondary: 31 31 36;
+  --color-text: 248 250 252;
+  --color-text-secondary: 161 161 170;
+  --color-border: 39 39 42;
 }
 ```
 
-All colors adapt automatically to the theme.
-
----
-
-## 🚀 Usage Examples
-
-### Basic Component
-
-```css
-.my-component {
-  background: var(--color-surface);
-  color: var(--color-text);
-  padding: var(--space-lg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  transition: all var(--transition-base);
-}
-```
-
-### Button with Gradient
-
-```css
-.btn-primary {
-  background: linear-gradient(135deg, var(--color-cyan), var(--color-teal));
-  color: white;
-  padding: var(--space-sm) var(--space-lg);
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-weight: var(--font-weight-semibold);
-  transition: transform var(--transition-fast);
-}
-
-.btn-primary:hover {
-  transform: translateY(-2px);
-}
-```
-
-### Card with Spotlight Effect
-
-```css
-.card {
-  position: relative;
-  background: var(--color-surface);
-  padding: var(--space-lg);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-}
-
-.card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(6, 182, 212, 0.15),
-    transparent 50%
-  );
-  opacity: 0;
-  transition: opacity var(--transition-base);
-}
-
-.card:hover::before {
-  opacity: 1;
-}
+**Usage:**
+```jsx
+<div className="bg-[rgb(var(--color-bg))] text-[rgb(var(--color-text))]">
+  Content adapts to dark/light mode
+</div>
 ```
 
 ---
 
-## 📚 References
+## 🎨 Custom Utility Classes
 
-- **Components:** [../components/README.md](../components/README.md)
-- **Frontend:** [../../README.md](../../README.md)
-- **Project:** [../../../README.md](../../../README.md)
+Defined in `index.css`:
+
+**Buttons:**
+```css
+.btn-primary      /* Gradient button (cyan to purple) */
+.btn-secondary    /* Bordered button with transparent bg */
+```
+
+**Inputs:**
+```css
+.input-field      /* Form input with focus ring */
+.input-error      /* Error state with red border */
+```
+
+**Usage:**
+```jsx
+<button className="btn-primary">Click me</button>
+<input className="input-field" />
+<input className="input-field input-error" />
+```
+
+---
+
+## 📐 Tailwind Utilities
+
+**Spacing:**
+```jsx
+p-4       /* padding: 1rem */
+m-8       /* margin: 2rem */
+gap-6     /* gap: 1.5rem */
+```
+
+**Colors:**
+```jsx
+bg-cyan-500       /* Background */
+text-purple-500   /* Text */
+border-gray-200   /* Border */
+```
+
+**Layout:**
+```jsx
+flex              /* Flexbox */
+grid              /* Grid */
+items-center      /* Align items center */
+justify-between   /* Justify space-between */
+```
+
+**Responsive:**
+```jsx
+md:flex           /* Flex on medium screens and up */
+lg:grid-cols-3    /* 3 columns on large screens */
+```
+
+**Dark Mode:**
+```jsx
+dark:bg-gray-800  /* Background in dark mode */
+dark:text-white   /* Text in dark mode */
+```
+
+---
+
+## 🎯 Best Practices
+
+**Do:**
+```jsx
+// Use Tailwind utilities
+<div className="flex items-center gap-4 p-8">
+
+// Use CSS variables for theme colors
+<div className="bg-[rgb(var(--color-bg))]">
+
+// Use custom classes for repeated patterns
+<button className="btn-primary">
+```
+
+**Don't:**
+```jsx
+// Don't use inline styles
+<div style={{ display: 'flex' }}>
+
+// Don't create new CSS files
+// Use Tailwind utilities instead
+```
+
+---
+
+## 📚 Resources
+
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Tailwind CSS v4 Beta](https://tailwindcss.com/blog/tailwindcss-v4-beta)
+- [React + Tailwind Best Practices](https://tailwindcss.com/docs/guides/vite)
+
+---
+
+**Last Updated:** 2026-02-14
 

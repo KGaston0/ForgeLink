@@ -1,4 +1,4 @@
-import apiClient from './apiClient.js';
+import apiClient, { AuthenticationError } from './apiClient.js';
 import { API_ENDPOINTS } from '../../config/apiConfig.js';
 
 // Auth Service - Handles all authentication operations
@@ -16,6 +16,11 @@ const authService = {
 
       return response.data;
     } catch (error) {
+      // Authentication error from interceptor (session expired)
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+
       // Network error (no internet, server down)
       if (!error.response) {
         throw new Error('Network error. Please check your internet connection.');
@@ -47,6 +52,11 @@ const authService = {
       const response = await apiClient.post(API_ENDPOINTS.REGISTER, userData);
       return response.data;
     } catch (error) {
+      // Authentication error from interceptor (session expired)
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+
       // Network error
       if (!error.response) {
         throw new Error('Network error. Please check your internet connection.');
@@ -91,6 +101,12 @@ const authService = {
       const response = await apiClient.get(API_ENDPOINTS.AUTH_ME);
       return response.data;
     } catch (error) {
+      // Authentication error from interceptor (session expired)
+      if (error instanceof AuthenticationError) {
+        await this.logout();
+        throw error;
+      }
+
       // Network error
       if (!error.response) {
         throw new Error('Network error. Please check your internet connection.');

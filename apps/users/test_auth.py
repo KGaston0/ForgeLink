@@ -195,3 +195,31 @@ class JWTAuthenticationTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['detail'], 'Logout successful')
 
+    def test_refresh_token_rotation(self):
+        """Test multiple consecutive token refreshes work with token rotation enabled"""
+        # Login to get initial tokens
+        login_data = {
+            'username': 'testuser',
+            'password': 'TestPass123!'
+        }
+        login_response = self.client.post(self.login_url, login_data)
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+
+        # First refresh - should work and return new tokens
+        first_refresh = self.client.post(self.refresh_url, {})
+        self.assertEqual(first_refresh.status_code, status.HTTP_200_OK)
+        self.assertIn('access_token', first_refresh.cookies)
+        self.assertIn('refresh_token', first_refresh.cookies)
+
+        # Second refresh - should work with the new rotated refresh token
+        second_refresh = self.client.post(self.refresh_url, {})
+        self.assertEqual(second_refresh.status_code, status.HTTP_200_OK)
+        self.assertIn('access_token', second_refresh.cookies)
+        self.assertIn('refresh_token', second_refresh.cookies)
+
+        # Third refresh - should still work
+        third_refresh = self.client.post(self.refresh_url, {})
+        self.assertEqual(third_refresh.status_code, status.HTTP_200_OK)
+        self.assertIn('access_token', third_refresh.cookies)
+        self.assertIn('refresh_token', third_refresh.cookies)
+

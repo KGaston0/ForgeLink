@@ -71,7 +71,16 @@ export function AuthProvider({ children }) {
     try {
       await authService.register(userData);
       // After registration, login automatically
-      await login(userData.username, userData.password);
+      const loginResult = await login(userData.username, userData.password);
+
+      // Propagate login failure if it occurred
+      if (!loginResult.success) {
+        return {
+          success: false,
+          error: 'Registration successful but automatic login failed. Please try logging in manually.',
+        };
+      }
+
       return { success: true };
     } catch (error) {
       // Handle structured validation errors from backend

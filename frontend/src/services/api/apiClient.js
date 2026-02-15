@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../../config/apiConfig.js';
+import { API_BASE_URL, API_ENDPOINTS } from '../../config/apiConfig.js';
 
 // Custom error for authentication failures
 export class AuthenticationError extends Error {
@@ -31,7 +31,7 @@ apiClient.interceptors.response.use(
       try {
         // Try to refresh using httpOnly cookie
         const response = await axios.post(
-          `${API_BASE_URL}/auth/jwt/refresh/`,
+          `${API_BASE_URL}${API_ENDPOINTS.REFRESH}`,
           {},
           { withCredentials: true }
         );

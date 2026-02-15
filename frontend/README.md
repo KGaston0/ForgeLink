@@ -53,10 +53,11 @@ frontend/
 
 - **Framework:** React 19.2.0
 - **Build Tool:** Vite
-- **Styling:** Native CSS with CSS variables
-- **Theme:** Dark/Light mode
+- **Styling:** Tailwind CSS v4 with custom design system
+- **Theme:** Dark/Light mode with CSS variables
 - **State:** React Context API
 - **Auth:** JWT with httpOnly cookies
+- **Routing:** React Router v7
 
 ---
 
@@ -104,6 +105,44 @@ See complete documentation: [src/components/README.md](./src/components/README.m
 - [ ] Project management
 - [ ] Visual graph editor (canvas)
 - [ ] Node and connection CRUD
+
+---
+
+## 🎨 Styling with Tailwind CSS
+
+**Configuration:**
+- Tailwind CSS v4 with PostCSS plugin
+- Custom design tokens via CSS variables
+- Dark mode with `class` strategy
+- Custom utility classes in `index.css`
+
+**Custom Classes:**
+```css
+.btn-primary      /* Primary button with gradient */
+.btn-secondary    /* Secondary button with border */
+.input-field      /* Form input with focus ring */
+.input-error      /* Error state for inputs */
+```
+
+**CSS Variables:**
+```css
+--color-bg              /* Background color */
+--color-text            /* Text color */
+--color-border          /* Border color */
+/* All colors support dark mode automatically */
+```
+
+**Usage:**
+```jsx
+// Tailwind utilities
+<div className="flex items-center gap-4 p-8">
+
+// With CSS variables
+<div className="bg-[rgb(var(--color-bg))]">
+
+// Custom classes
+<button className="btn-primary">Click me</button>
+```
 
 ---
 

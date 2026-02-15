@@ -80,6 +80,18 @@ class CookieTokenRefreshView(TokenRefreshView):
                 path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
             )
 
+            # Set new refresh token in httpOnly cookie if rotation is enabled
+            if 'refresh' in response.data:
+                response.set_cookie(
+                    key=settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
+                    value=response.data['refresh'],
+                    max_age=int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()),
+                    secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+                    httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+                    samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+                    path=settings.SIMPLE_JWT['AUTH_COOKIE_PATH'],
+                )
+
             # Remove tokens from response body for security
             response.data = {'detail': 'Token refreshed successfully'}
 

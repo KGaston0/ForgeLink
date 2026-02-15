@@ -550,26 +550,27 @@ npm test -- MyComponent.test.js
 ### Backend
 - ✅ Already installed in `requirements.txt`
 
-### Frontend (to install)
+### Frontend
 
-**Core:**
-- `react-router-dom` - Routing
-- `axios` - HTTP client
-- `zustand` - State management
+**Core (installed):**
+- ✅ `react-router-dom` - Routing
+- ✅ `axios` - HTTP client
 
-**UI Library (choose one):**
-- `@mui/material` - Material-UI
-- `tailwindcss` - TailwindCSS
+**UI & Styling (installed):**
+- ✅ `tailwindcss` - Utility-first CSS framework
+- ✅ `@tailwindcss/postcss` - PostCSS plugin for Tailwind v4
+- ✅ `autoprefixer` - CSS vendor prefixes
 
-**Forms:**
-- `react-hook-form` - Form handling
-- `zod` - Schema validation
+**To install:**
+- `zustand` or similar - State management (if needed)
+- `react-hook-form` - Form handling (if needed)
+- `zod` - Schema validation (if needed)
 
-**Graph Visualization:**
+**Graph Visualization (to install when needed):**
 - `reactflow` - Interactive graphs
 - `d3` - Data visualization
 
-**Utilities:**
+**Utilities (to install when needed):**
 - `date-fns` - Date formatting
 - `classnames` - Conditional classes
 
