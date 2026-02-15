@@ -35,7 +35,18 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     // Apply theme to document
     const root = document.documentElement;
+
+    // Remove transition during initial setup
     root.classList.add('theme-transitioning');
+
+    // Apply dark mode class for Tailwind
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+
+    // Keep data-theme for backwards compatibility
     root.setAttribute('data-theme', theme);
 
     // Only save to localStorage if user manually set it
