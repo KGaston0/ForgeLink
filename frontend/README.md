@@ -22,12 +22,16 @@ Frontend available at: http://localhost:5173/
 frontend/
 ├── src/
 │   ├── components/         # Reusable components
-│   │   ├── layout/         # Navigation, Footer
+│   │   ├── layout/         # Navigation, Footer, Sidebar
 │   │   ├── common/         # Button, Card, Badge, LoadingSpinner
 │   │   └── landing/        # Landing page sections
 │   ├── pages/              # Application pages
 │   │   ├── auth/           # Login, Register
-│   │   └── ...
+│   │   ├── home/           # Dashboard
+│   │   ├── graphs/         # GraphCanvasPage
+│   │   └── settings/       # Settings
+│   ├── features/           # Feature modules
+│   │   └── graphs/         # GraphCanvas component
 │   ├── context/            # React Context providers (Theme, Auth)
 │   ├── services/           # API client and services
 │   ├── routes/             # Route configuration
@@ -63,11 +67,12 @@ frontend/
 
 ## 📦 Components
 
-Total: **11 components**
+Total: **13 components**
 
-### Layout (2)
+### Layout (3)
 - `Navigation` - Navbar with dark mode toggle
 - `Footer` - Site footer
+- `Sidebar` - Sidebar de navegación para dashboard y canvas
 
 ### Common (5)
 - `Button` - Button with variants and sizes
@@ -96,15 +101,20 @@ See complete documentation: [src/components/README.md](./src/components/README.m
 - [x] Protected routes
 - [x] AuthContext and authService
 - [x] LoadingSpinner with overlay
+- [x] Dashboard principal con sidebar de navegación
+- [x] GraphCanvas con @xyflow/react para visualización de grafos
+- [x] Redirección automática al "Grafo Principal" tras login
+- [x] Persistencia de posiciones de nodos (PATCH)
 
 ---
 
 ## 🚧 In Development
 
-- [ ] Main dashboard
-- [ ] Project management
-- [ ] Visual graph editor (canvas)
-- [ ] Node and connection CRUD
+- [ ] CRUD completo de nodos desde UI
+- [ ] CRUD completo de conexiones desde UI
+- [ ] Gestión completa de proyectos
+- [ ] Creación de nuevos grafos
+- [ ] Toolbar de herramientas en canvas
 
 ---
 
@@ -181,5 +191,5 @@ Frontend connects to Django REST API:
 
 ---
 
-**Last Updated:** 2026-02-14
+**Last Updated:** 2026-02-24
 

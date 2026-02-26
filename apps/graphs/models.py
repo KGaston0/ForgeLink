@@ -35,6 +35,20 @@ class GraphNode(models.Model):
     position_y = models.FloatField(default=0)
     color = models.CharField(max_length=7, default='#3B82F6')
 
+    # Frame support
+    is_frame = models.BooleanField(default=False)
+    width = models.IntegerField(default=400)
+    height = models.IntegerField(default=300)
+
+    # Nesting: self-referencing FK to support parent frames
+    parent_node = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='children',
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

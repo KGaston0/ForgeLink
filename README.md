@@ -72,7 +72,7 @@ ForgeLink/
 ```
 
 > **See detailed documentation:**
-> - Frontend: [frontend/README.md](./frontend/README.md)
+> - Frontend: [frontend/README.md](frontend/README.md)
 > - Development: [DEVELOPMENT.md](./DEVELOPMENT.md)
 > - API: [API_ENDPOINTS.md](./API_ENDPOINTS.md)
 
@@ -119,7 +119,7 @@ ForgeLink provides a system for modeling knowledge as graphs, with isolated proj
 
 ## 📚 Documentation
 
-- **Frontend:** [frontend/README.md](./frontend/README.md)
+- **Frontend:** [frontend/README.md](frontend/README.md)
 - **Components:** [frontend/src/components/README.md](./frontend/src/components/README.md)
 - **Design System:** [frontend/src/styles/README.md](./frontend/src/styles/README.md)
 - **API Endpoints:** [API_ENDPOINTS.md](./API_ENDPOINTS.md)
@@ -193,7 +193,7 @@ npm run dev
 
 **Frontend available at:** http://localhost:5173/
 
-> 📘 **See complete frontend documentation:** [frontend/README.md](./frontend/README.md)
+> 📘 **See complete frontend documentation:** [frontend/README.md](frontend/README.md)
 
 ---
 
@@ -259,54 +259,11 @@ npm run dev
 ```
 
 The API will be available at:  
-- ✅ DELETE /api/graphs/{id}/ — Delete graph
-- ✅ GET /api/graphs/{id}/canvas/ — Get graph canvas data (nodes + connections)
+- **API Root:** http://localhost:8000/api/
+- **Admin Panel:** http://localhost:8000/admin/
+- **MVP Frontend:** http://localhost:8000/mvp/
 
-### Graph Nodes (Full CRUD ✅)
-
-- ✅ GET /api/graph-nodes/ — List nodes within graphs
-- ✅ POST /api/graph-nodes/ — Add a node to a graph with position/color
-- ✅ GET /api/graph-nodes/{id}/ — Get specific graph node
-- ✅ PUT /api/graph-nodes/{id}/ — Update graph node (full)
-- ✅ PATCH /api/graph-nodes/{id}/ — Update graph node (partial)
-- ✅ DELETE /api/graph-nodes/{id}/ — Remove node from graph
-
-### Nodes (Full CRUD ✅)
-
-- ✅ GET /api/nodes/ — List all nodes
-- ✅ POST /api/nodes/ — Create a new node
-- ✅ GET /api/nodes/{id}/ — Get specific node
-- ✅ PUT /api/nodes/{id}/ — Update node (full)
-- ✅ PATCH /api/nodes/{id}/ — Update node (partial)
-- ✅ DELETE /api/nodes/{id}/ — Delete node
-- ✅ GET /api/nodes/{id}/children/ — Get child nodes
-- ✅ GET /api/nodes/{id}/connections/ — Get all connections for a node
-
-### Connection Types (Full CRUD ✅)
-
-- ✅ GET /api/connection-types/ — List connection types (filterable by project)
-- ✅ POST /api/connection-types/ — Create connection type
-- ✅ GET /api/connection-types/{id}/ — Get specific connection type
-- ✅ PUT /api/connection-types/{id}/ — Update connection type (full)
-- ✅ PATCH /api/connection-types/{id}/ — Update connection type (partial)
-- ✅ DELETE /api/connection-types/{id}/ — Delete connection type
-
-### Node Connections (Full CRUD ✅)
-
-- ✅ GET /api/connections/ — List all connections
-- ✅ POST /api/connections/ — Create a new connection
-- ✅ GET /api/connections/{id}/ — Get specific connection
-- ✅ PUT /api/connections/{id}/ — Update connection (full)
-- ✅ PATCH /api/connections/{id}/ — Update connection (partial)
-- ✅ DELETE /api/connections/{id}/ — Delete connection
-
-### Query Parameters (Available on list endpoints)
-
-- ✅ `?project={id}` — Filter by project
-- ✅ `?graph={id}` — Filter by graph
-- ✅ `?search={query}` — Search in specified fields
-- ✅ `?ordering={field}` — Order results (use `-field` for descending)
-- ✅ `?page={number}` — Pagination (100 items per page)
+> 📘 **See complete API documentation:** [API_ENDPOINTS.md](./API_ENDPOINTS.md)
 
 ---
 
@@ -387,6 +344,7 @@ These endpoints could be added in future iterations:
 - [x] JWT authentication con httpOnly cookies
 - [x] Custom User model
 - [x] Security headers (XSS protection)
+- [x] **Signal post_save:** Auto-creación de "Mi Primer Proyecto" y "Grafo Principal" al registrar usuario
 - [ ] User-based permissions
 - [ ] Graph validation rules
 - [ ] Versioning and history
@@ -400,10 +358,12 @@ These endpoints could be added in future iterations:
 - [x] Login/Register pages con validación completa
 - [x] Protected routes y AuthContext
 - [x] LoadingSpinner y manejo de estados
-- [ ] Dashboard principal
-- [ ] Editor visual de grafos (canvas interactivo)
-- [ ] CRUD de nodos y conexiones
-- [ ] Gestión de proyectos
+- [x] **Dashboard principal** con layout base y sidebar de navegación
+- [x] **GraphCanvas:** Editor visual de grafos con @xyflow/react
+- [x] **Redirección automática** al "Grafo Principal" tras login
+- [x] **Persistencia de posiciones** de nodos (PATCH a /api/graph-nodes/{id}/)
+- [ ] CRUD completo de nodos y conexiones desde UI
+- [ ] Gestión completa de proyectos
 - [ ] Colaboración en tiempo real
 - [ ] Export/Import de datos
 - [ ] Tests unitarios

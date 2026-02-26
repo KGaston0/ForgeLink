@@ -18,6 +18,7 @@ class Node(models.Model):
         ('item', 'Item'),
         ('concept', 'Concept'),
         ('note', 'Note'),
+        ('frame', 'Frame'),
     ]
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='nodes')

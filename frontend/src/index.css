@@ -100,4 +100,70 @@
   .input-error:focus {
     box-shadow: 0 0 0 2px #ef4444;
   }
+
+  /* React Flow Dark Mode Overrides */
+  .react-flow__node {
+    background-color: transparent !important;
+  }
+
+  .react-flow__node-custom {
+    background-color: transparent !important;
+    padding: 0 !important;
+    border-radius: 0.75rem !important;
+    overflow: visible !important;
+    border: 2px solid rgb(var(--color-border)) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+  }
+
+  .react-flow__node-custom:hover {
+    border-color: rgba(6, 182, 212, 0.5) !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .react-flow__node-custom.selected {
+    border-color: rgb(6, 182, 212) !important;
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.5) !important;
+  }
+
+  /* Make entire node draggable */
+  .react-flow__node-custom > div {
+    pointer-events: all !important;
+    cursor: grab !important;
+  }
+
+  .react-flow__node-custom.dragging > div {
+    cursor: grabbing !important;
+  }
+
+  /* React Flow Controls - Dark Mode */
+  :root.dark .react-flow__controls,
+  html.dark .react-flow__controls {
+    background-color: rgb(var(--color-bg-secondary));
+    border: 1px solid rgb(var(--color-border));
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  }
+
+  :root.dark .react-flow__controls button,
+  html.dark .react-flow__controls button {
+    background-color: rgb(var(--color-bg-secondary));
+    border-color: rgb(var(--color-border));
+    fill: rgb(var(--color-text));
+  }
+
+  :root.dark .react-flow__controls button:hover,
+  html.dark .react-flow__controls button:hover {
+    background-color: rgb(var(--color-bg));
+  }
+
+  :root.dark .react-flow__controls button svg,
+  html.dark .react-flow__controls button svg {
+    fill: rgb(var(--color-text));
+  }
+
+  /* React Flow Attribution - hide or style */
+  .react-flow__attribution {
+    display: none;
+  }
 }

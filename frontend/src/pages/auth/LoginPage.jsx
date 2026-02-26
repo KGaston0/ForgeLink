@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
+import apiClient from '../../services/api/apiClient';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -30,7 +31,21 @@ export default function LoginPage() {
     const result = await login(formData.username, formData.password);
 
     if (result.success) {
-      navigate('/dashboard');
+      try {
+        // Fetch user's graphs and redirect to 'Grafo Principal' canvas if available
+        const { data } = await apiClient.get('/graphs/', { params: { ordering: '-updated_at' } });
+        const graphs = Array.isArray(data?.results) ? data.results : data; // Support paginated or non-paginated
+        let target = graphs?.find(g => g.name === 'Grafo Principal');
+        if (!target && graphs?.length) target = graphs[0];
+        if (target) {
+          navigate(`/graphs/${target.id}`);
+        } else {
+          navigate('/dashboard');
+        }
+      } catch (e) {
+        // If API fails, fallback to dashboard
+        navigate('/dashboard');
+      }
     } else {
       setError(result.error);
     }

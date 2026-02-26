@@ -561,14 +561,15 @@ npm test -- MyComponent.test.js
 - ✅ `@tailwindcss/postcss` - PostCSS plugin for Tailwind v4
 - ✅ `autoprefixer` - CSS vendor prefixes
 
-**To install:**
-- `zustand` or similar - State management (if needed)
-- `react-hook-form` - Form handling (if needed)
-- `zod` - Schema validation (if needed)
+**Graph Visualization (installed):**
+- ✅ `@xyflow/react` - Interactive node-based graphs
+- ✅ `@heroicons/react` - Icon library
 
-**Graph Visualization (to install when needed):**
-- `reactflow` - Interactive graphs
-- `d3` - Data visualization
+**To install (when needed):**
+- `zustand` or similar - State management
+- `react-hook-form` - Form handling
+- `zod` - Schema validation
+- `d3` - Advanced data visualization
 
 **Utilities (to install when needed):**
 - `date-fns` - Date formatting
@@ -635,9 +636,46 @@ PORT=3001 npm start
 
 - [Main README](./README.md) - Project overview
 - [API Endpoints](./API_ENDPOINTS.md) - Complete API documentation
-- [Frontend README](./frontend/README.md) - Frontend setup guide
+- [Frontend README](frontend/README.md) - Frontend setup guide
 - [Design System](./frontend/src/styles/README.md) - CSS Variables and theming
 
 ---
 
-**Last Updated:** 2026-01-23
+---
+
+## 🚀 MVP Flow Implementado
+
+### Flujo Inicial de Usuario
+
+1. **Registro de Usuario:**
+   - Al crear un nuevo usuario (vía registro o admin), un signal `post_save` automáticamente crea:
+     - Un proyecto llamado "Mi Primer Proyecto"
+     - Un grafo llamado "Grafo Principal" dentro de ese proyecto
+   - Implementado en: `apps/projects/signals.py`
+
+2. **Login y Redirección:**
+   - Tras autenticarse, el sistema consulta `/api/graphs/`
+   - Busca el grafo "Grafo Principal" y redirige automáticamente a `/graphs/:id`
+   - Si no existe, redirige al dashboard
+   - Implementado en: `frontend/src/pages/auth/LoginPage.jsx`
+
+3. **Dashboard:**
+   - Vista principal con sidebar de navegación
+   - Muestra resumen de proyectos, grafos y nodos
+   - Implementado en: `frontend/src/pages/home/Dashboard.jsx`
+
+4. **Canvas de Grafo:**
+   - Visualización interactiva con `@xyflow/react`
+   - Consume `GET /api/graphs/{id}/canvas/` para obtener nodos y conexiones
+   - Permite mover nodos y guardar posiciones con `PATCH /api/graph-nodes/{id}/`
+   - Implementado en: `frontend/src/features/graphs/GraphCanvas.jsx`
+
+### Componentes Clave
+
+- **Sidebar:** Navegación lateral reutilizable (`frontend/src/components/layout/Sidebar/`)
+- **GraphCanvas:** Canvas interactivo con @xyflow/react (`frontend/src/features/graphs/`)
+- **GraphCanvasPage:** Página que integra Sidebar + GraphCanvas
+
+---
+
+**Last Updated:** 2026-02-24

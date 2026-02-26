@@ -28,6 +28,7 @@ class GraphNodeSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'graph', 'node',
             'position_x', 'position_y', 'color',
+            'is_frame', 'width', 'height', 'parent_node',
             'created_at', 'updated_at',
             'node_title', 'node_type'
         ]
