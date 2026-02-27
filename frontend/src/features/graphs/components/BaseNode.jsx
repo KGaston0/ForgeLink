@@ -1,5 +1,5 @@
-import { memo } from 'react';
-import { Handle, Position, NodeResizer } from '@xyflow/react';
+import { memo, useState, useCallback } from 'react';
+import { Handle, Position, NodeResizer, useReactFlow } from '@xyflow/react';
 
 const NODE_TYPE_COLORS = {
   character: 'from-purple-500 to-pink-500',
@@ -14,9 +14,68 @@ const NODE_TYPE_COLORS = {
 
 const RESIZER_HANDLE_CLASS = '!w-3 !h-3 !bg-cyan-400 !border-none !rounded-sm hover:!scale-150 transition-transform cursor-pointer';
 
-const BaseNode = ({ data, selected }) => {
+const BaseNode = ({ id, data, selected }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editLabel, setEditLabel] = useState(data.label || '');
+  const { setNodes } = useReactFlow();
+
   const gradientClass =
     NODE_TYPE_COLORS[data.nodeType?.toLowerCase()] || NODE_TYPE_COLORS.default;
+
+  const commitLabel = useCallback(() => {
+    const trimmed = editLabel.trim();
+    if (trimmed && trimmed !== data.label) {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === id ? { ...n, data: { ...n.data, label: trimmed } } : n
+        )
+      );
+    } else {
+      setEditLabel(data.label || '');
+    }
+    setIsEditing(false);
+  }, [id, editLabel, data.label, setNodes]);
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitLabel();
+      }
+      if (e.key === 'Escape') {
+        setEditLabel(data.label || '');
+        setIsEditing(false);
+      }
+    },
+    [commitLabel, data.label]
+  );
+
+  const startEditing = useCallback(() => {
+    setEditLabel(data.label || '');
+    setIsEditing(true);
+  }, [data.label]);
+
+  // Reusable inline label element
+  const renderLabel = (textClass, fallback) =>
+    isEditing ? (
+      <input
+        autoFocus
+        type="text"
+        value={editLabel}
+        onChange={(e) => setEditLabel(e.target.value)}
+        onBlur={commitLabel}
+        onKeyDown={handleKeyDown}
+        className={`nodrag nopan ${textClass} bg-transparent border-b border-cyan-500 outline-none w-full`}
+        autoComplete="off"
+      />
+    ) : (
+      <h3
+        onDoubleClick={startEditing}
+        className={`${textClass} cursor-text break-words`}
+      >
+        {data.label || fallback}
+      </h3>
+    );
 
   // --- FRAME NODE RENDERING ---
   if (data.isFrame) {
@@ -40,7 +99,6 @@ const BaseNode = ({ data, selected }) => {
         <div
           className={`relative w-full h-full border-2 rounded-xl backdrop-blur-sm transition-all duration-150 overflow-visible ${frameClasses}`}
         >
-          {/* Locked background — nodrag allows drag-selection inside the frame */}
           <div className="absolute inset-0 nodrag cursor-default rounded-xl" />
 
           <Handle type="source" position={Position.Top} id="top" className="!w-3 !h-3 !bg-cyan-500 !border-2 !border-[rgb(var(--color-bg))]" />
@@ -48,7 +106,6 @@ const BaseNode = ({ data, selected }) => {
           <Handle type="source" position={Position.Bottom} id="bottom" className="!w-3 !h-3 !bg-purple-500 !border-2 !border-[rgb(var(--color-bg))]" />
           <Handle type="source" position={Position.Left} id="left" className="!w-3 !h-3 !bg-cyan-500 !border-2 !border-[rgb(var(--color-bg))]" />
 
-          {/* Floating info card — acts as drag handle for the frame */}
           <div className="custom-drag-handle absolute -right-[180px] top-0 w-[170px] rounded-xl overflow-hidden border-2 border-[rgb(var(--color-border))] bg-[rgb(var(--color-bg))] shadow-md cursor-grab active:cursor-grabbing">
             <div className={`bg-gradient-to-r ${gradientClass} px-3 py-1.5`}>
               <span className="text-xs font-semibold text-white uppercase tracking-wide">
@@ -56,9 +113,7 @@ const BaseNode = ({ data, selected }) => {
               </span>
             </div>
             <div className="px-3 py-2">
-              <h3 className="text-xs font-bold text-[rgb(var(--color-text))] break-words">
-                {data.label || 'Nuevo Marco'}
-              </h3>
+              {renderLabel('text-xs font-bold text-[rgb(var(--color-text))]', 'Nuevo Marco')}
             </div>
           </div>
         </div>
@@ -88,9 +143,7 @@ const BaseNode = ({ data, selected }) => {
         </div>
 
         <div className="flex-1 px-4 py-3">
-          <h3 className="text-sm font-bold text-[rgb(var(--color-text))] mb-1 break-words">
-            {data.label || 'Nuevo Nodo'}
-          </h3>
+          {renderLabel('text-sm font-bold text-[rgb(var(--color-text))] mb-1', 'Nuevo Nodo')}
         </div>
 
         <Handle type="source" position={Position.Bottom} id="bottom" className="!w-3 !h-3 !bg-purple-500 !border-2 !border-[rgb(var(--color-bg))]" />

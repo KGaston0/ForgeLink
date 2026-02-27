@@ -136,30 +136,49 @@
     cursor: grabbing !important;
   }
 
-  /* React Flow Controls - Dark Mode */
-  :root.dark .react-flow__controls,
-  html.dark .react-flow__controls {
-    background-color: rgb(var(--color-bg-secondary));
-    border: 1px solid rgb(var(--color-border));
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  /* React Flow Controls — Theme-aware */
+  .react-flow__controls {
+    background-color: rgb(var(--color-bg-secondary)) !important;
+    border: 1px solid rgb(var(--color-border)) !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    overflow: hidden;
   }
 
-  :root.dark .react-flow__controls button,
-  html.dark .react-flow__controls button {
-    background-color: rgb(var(--color-bg-secondary));
-    border-color: rgb(var(--color-border));
-    fill: rgb(var(--color-text));
+  .react-flow__controls button {
+    background-color: rgb(var(--color-bg-secondary)) !important;
+    border-color: rgb(var(--color-border)) !important;
+    border-bottom: 1px solid rgb(var(--color-border)) !important;
+    fill: rgb(var(--color-text)) !important;
+    color: rgb(var(--color-text)) !important;
+    transition: background-color 0.15s;
   }
 
-  :root.dark .react-flow__controls button:hover,
-  html.dark .react-flow__controls button:hover {
-    background-color: rgb(var(--color-bg));
+  .react-flow__controls button:hover {
+    background-color: rgb(var(--color-bg)) !important;
   }
 
-  :root.dark .react-flow__controls button svg,
-  html.dark .react-flow__controls button svg {
-    fill: rgb(var(--color-text));
+  .react-flow__controls button:last-child {
+    border-bottom: none !important;
+  }
+
+  .react-flow__controls button svg {
+    fill: rgb(var(--color-text)) !important;
+  }
+
+  .react-flow__controls button svg path {
+    fill: rgb(var(--color-text)) !important;
+  }
+
+  /* React Flow Edge path — Theme-aware */
+  .react-flow__edge-path {
+    stroke: rgb(var(--color-text-muted));
+  }
+
+  /* React Flow Background — Dark mode dots */
+  :root.dark .react-flow__background pattern circle,
+  html.dark .react-flow__background pattern circle {
+    fill: rgb(var(--color-border));
   }
 
   /* React Flow Attribution - hide or style */

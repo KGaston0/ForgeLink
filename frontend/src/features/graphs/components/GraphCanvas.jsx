@@ -11,6 +11,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import BaseNode from './BaseNode';
+import NodeEditorModal from './NodeEditorModal';
 import Toolbar from './Toolbar';
 import { fetchCanvasData, saveCanvasNodes, getOrCreateDefaultConnectionType, saveCanvasConnections, deleteGraphNode, deleteConnection } from '../api/graphService';
 
@@ -36,6 +37,7 @@ function GraphCanvasInner({ graphId }) {
   const [projectId, setProjectId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
+  const [editingNode, setEditingNode] = useState(null);
   const contextMenuRef = useRef(null);
   const { getIntersectingNodes } = useReactFlow();
   const dragOverFrameIdRef = useRef(null);
@@ -68,6 +70,7 @@ function GraphCanvasInner({ graphId }) {
               parentNode: gn.parent_node ? `gn-${gn.parent_node}` : null,
               width: gn.width || 400,
               height: gn.height || 300,
+              customProps: gn.node_custom_properties || {},
             },
           };
 
@@ -191,6 +194,7 @@ function GraphCanvasInner({ graphId }) {
     event.preventDefault();
     setContextMenu({
       nodeId: node.id,
+      node,
       isFrame: node.data.isFrame === true,
       x: event.clientX,
       y: event.clientY,
@@ -217,6 +221,38 @@ function GraphCanvasInner({ graphId }) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [contextMenu]);
+
+
+  const handleModalSave = useCallback(
+    (updatedData) => {
+      if (!editingNode) return;
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === editingNode.id
+            ? { ...n, data: { ...n.data, ...updatedData } }
+            : n
+        )
+      );
+      setEditingNode(null);
+    },
+    [editingNode, setNodes]
+  );
+
+  const onNodeDragStart = useCallback(
+    (_event, draggedNode) => {
+      if (draggedNode.data?.isFrame || !draggedNode.parentId) return;
+      // Remove extent temporarily so the node can be pulled outside
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id !== draggedNode.id) return n;
+          const freed = { ...n };
+          delete freed.extent;
+          return freed;
+        })
+      );
+    },
+    [setNodes]
+  );
 
   const onNodeDrag = useCallback(
     (_event, draggedNode) => {
@@ -276,8 +312,6 @@ function GraphCanvasInner({ graphId }) {
           const currentParentId = node.parentId || null;
 
           if (targetFrame) {
-            // Already nested in the same frame — no change needed
-            if (currentParentId === targetFrame.id) return node;
 
             // Calculate absolute position of the dragged node
             let absoluteX = draggedNode.position.x;
@@ -348,6 +382,7 @@ function GraphCanvasInner({ graphId }) {
       const nodesPayload = nodes.map((node) => ({
         tempId: node.id,
         graphNodeId: node.data.graphNodeId || null,
+        nodeId: node.data.nodeId || null,
         nodeType: node.data.nodeType,
         label: node.data.label,
         positionX: node.position.x,
@@ -356,10 +391,10 @@ function GraphCanvasInner({ graphId }) {
         isFrame: node.data.isFrame || false,
         width: Math.round(node.style?.width || node.data.width || 400),
         height: Math.round(node.style?.height || node.data.height || 300),
+        customProps: node.data.customProps || {},
       }));
 
       const nodeResults = await saveCanvasNodes(graphId, projectId, nodesPayload);
-      console.log('[SaveState] Step 1 — Node results:', nodeResults);
 
       // --- Step 2: Build frontendId → nodeId map ---
       // The backend connections use Node IDs (not GraphNode IDs),
@@ -388,8 +423,6 @@ function GraphCanvasInner({ graphId }) {
           frontendIdToNodeId[updated.tempId] = updated.graphNode.node;
         }
       }
-
-      console.log('[SaveState] Step 2 — Frontend ID → Node ID map:', frontendIdToNodeId);
 
       // Update local nodes with backend IDs for newly created nodes
       // and fix parentId / data.parentNode references for children
@@ -468,7 +501,6 @@ function GraphCanvasInner({ graphId }) {
             defaultConnectionType.id,
             connectionsPayload
           );
-          console.log('[SaveState] Step 3 — Connection results:', connectionResults);
 
           // Update edge IDs to reflect backend-persisted connections
           if (connectionResults.created.length > 0) {
@@ -563,6 +595,7 @@ function GraphCanvasInner({ graphId }) {
           onNodesDelete={onNodesDelete}
           onEdgesDelete={onEdgesDelete}
           onNodeContextMenu={onNodeContextMenu}
+          onNodeDragStart={onNodeDragStart}
           onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
           onPaneClick={onPaneClick}
@@ -577,9 +610,19 @@ function GraphCanvasInner({ graphId }) {
         {contextMenu && (
           <div
             ref={contextMenuRef}
-            className="fixed z-[100] min-w-[200px] bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-lg shadow-xl py-2"
+            className="fixed z-[9999] min-w-[200px] bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-lg shadow-xl py-2"
             style={{ top: contextMenu.y, left: contextMenu.x }}
           >
+            <button
+              type="button"
+              onClick={() => {
+                setEditingNode(contextMenu.node);
+                setContextMenu(null);
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
+            >
+              Propiedades
+            </button>
             <button
               type="button"
               onClick={() => toggleFrameMode(contextMenu.nodeId)}
@@ -590,6 +633,13 @@ function GraphCanvasInner({ graphId }) {
           </div>
         )}
       </div>
+
+      <NodeEditorModal
+        node={editingNode}
+        isOpen={!!editingNode}
+        onClose={() => setEditingNode(null)}
+        onSave={handleModalSave}
+      />
     </div>
   );
 }

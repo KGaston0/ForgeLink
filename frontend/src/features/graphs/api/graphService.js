@@ -11,12 +11,13 @@ export async function fetchCanvasData(graphId) {
 /**
  * Create a new Node in the project, then link it to the graph as a GraphNode.
  */
-export async function createGraphNode(graphId, projectId, { nodeType, label, positionX, positionY, isFrame = false, width = 400, height = 300, parentNode = null }) {
-  // 1. Create the Node entity
+export async function createGraphNode(graphId, projectId, { nodeType, label, positionX, positionY, isFrame = false, width = 400, height = 300, parentNode = null, customProps = {} }) {
+  // 1. Create the Node entity (with semantic data)
   const nodeResponse = await apiClient.post('/nodes/', {
     project: projectId,
     title: label,
     node_type: nodeType,
+    custom_properties: customProps,
   });
 
   const nodeId = nodeResponse.data.id;
@@ -40,10 +41,12 @@ export async function createGraphNode(graphId, projectId, { nodeType, label, pos
 }
 
 /**
- * Update an existing GraphNode (position, frame data, parent).
+ * Update an existing GraphNode (position, frame data, parent)
+ * and its associated Node (title, type, custom properties) in parallel.
  */
-export async function updateGraphNode(graphNodeId, { positionX, positionY, isFrame = false, width = 400, height = 300, parentNode = null }) {
-  const response = await apiClient.patch(`/graph-nodes/${graphNodeId}/`, {
+export async function updateGraphNode(graphNodeId, { positionX, positionY, isFrame = false, width = 400, height = 300, parentNode = null, nodeId = null, label = null, nodeType = null, customProps = null }) {
+  // Always update GraphNode layout
+  const graphNodePromise = apiClient.patch(`/graph-nodes/${graphNodeId}/`, {
     position_x: positionX,
     position_y: positionY,
     is_frame: isFrame,
@@ -51,7 +54,27 @@ export async function updateGraphNode(graphNodeId, { positionX, positionY, isFra
     height: Math.round(height),
     parent_node: parentNode,
   });
-  return response.data;
+
+  // Update the Node entity if we have a nodeId and semantic data
+  let nodePromise = null;
+  if (nodeId && (label !== null || nodeType !== null || customProps !== null)) {
+    const nodePayload = {};
+    if (label !== null) nodePayload.title = label;
+    if (nodeType !== null) nodePayload.node_type = nodeType;
+    if (customProps !== null) nodePayload.custom_properties = customProps;
+
+    nodePromise = apiClient.patch(`/nodes/${nodeId}/`, nodePayload);
+  }
+
+  const [graphNodeResponse, nodeResponse] = await Promise.all([
+    graphNodePromise,
+    nodePromise,
+  ]);
+
+  return {
+    ...graphNodeResponse.data,
+    _updatedNode: nodeResponse?.data || null,
+  };
 }
 
 /**
@@ -66,7 +89,7 @@ export async function saveCanvasNodes(graphId, projectId, nodes) {
   for (const node of nodes) {
     try {
       if (node.graphNodeId) {
-        // Existing node: update position + frame data
+        // Existing node: update layout (GraphNode) + semantic data (Node) in parallel
         const updated = await updateGraphNode(node.graphNodeId, {
           positionX: Math.round(node.positionX),
           positionY: Math.round(node.positionY),
@@ -74,10 +97,14 @@ export async function saveCanvasNodes(graphId, projectId, nodes) {
           width: node.width || 400,
           height: node.height || 300,
           parentNode: null,
+          nodeId: node.nodeId || null,
+          label: node.label,
+          nodeType: node.nodeType,
+          customProps: node.customProps || {},
         });
         results.updated.push({ tempId: node.tempId, graphNode: updated });
       } else {
-        // New node: create Node + GraphNode
+        // New node: create Node (with semantic data) + GraphNode
         const created = await createGraphNode(graphId, projectId, {
           nodeType: node.nodeType,
           label: node.label,
@@ -87,6 +114,7 @@ export async function saveCanvasNodes(graphId, projectId, nodes) {
           width: node.width || 400,
           height: node.height || 300,
           parentNode: null,
+          customProps: node.customProps || {},
         });
         results.created.push({ tempId: node.tempId, ...created });
       }
