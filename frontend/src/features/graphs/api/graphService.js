@@ -189,14 +189,31 @@ export async function getOrCreateDefaultConnectionType(projectId) {
 /**
  * Save a single connection to the backend.
  */
-export async function createConnection({ graphId, sourceNodeId, targetNodeId, connectionTypeId, label = '' }) {
+export async function createConnection({ graphId, sourceNodeId, targetNodeId, connectionTypeId, label = '', direction = 'forward', sourceHandlePosition = null, targetHandlePosition = null }) {
   const response = await apiClient.post('/connections/', {
     graph: graphId,
     source_node: sourceNodeId,
     target_node: targetNodeId,
     connection_type: connectionTypeId,
     label,
+    direction,
+    source_handle_position: sourceHandlePosition,
+    target_handle_position: targetHandlePosition,
   });
+  return response.data;
+}
+
+/**
+ * Update an existing connection's direction, label, and handle positions.
+ */
+export async function updateConnection(connectionId, { label, direction, sourceHandlePosition, targetHandlePosition }) {
+  const payload = {};
+  if (label !== undefined) payload.label = label;
+  if (direction !== undefined) payload.direction = direction;
+  if (sourceHandlePosition !== undefined) payload.source_handle_position = sourceHandlePosition;
+  if (targetHandlePosition !== undefined) payload.target_handle_position = targetHandlePosition;
+
+  const response = await apiClient.patch(`/connections/${connectionId}/`, payload);
   return response.data;
 }
 
@@ -215,6 +232,9 @@ export async function saveCanvasConnections(graphId, connectionTypeId, connectio
         targetNodeId: conn.targetNodeId,
         connectionTypeId,
         label: conn.label || '',
+        direction: conn.direction || 'forward',
+        sourceHandlePosition: conn.sourceHandlePosition || null,
+        targetHandlePosition: conn.targetHandlePosition || null,
       });
       results.created.push(created);
     } catch (error) {

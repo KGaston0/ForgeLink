@@ -13,7 +13,9 @@ class NodeConnectionSerializer(serializers.ModelSerializer):
         model = NodeConnection
         fields = [
             'id', 'graph', 'source_node', 'target_node',
-            'connection_type', 'label', 'created_at',
+            'connection_type', 'label', 'direction',
+            'source_handle_position', 'target_handle_position',
+            'created_at',
             'source_node_title', 'target_node_title'
         ]
         read_only_fields = ['created_at']

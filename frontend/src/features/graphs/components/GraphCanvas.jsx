@@ -4,25 +4,37 @@ import {
   Background,
   Controls,
   addEdge,
+  reconnectEdge,
   ReactFlowProvider,
   useNodesState,
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import BaseNode from './BaseNode';
+import BaseNode from './nodes/BaseNode';
+import CustomEdge from './edges/CustomEdge';
+import { EDGE_DIRECTIONS } from './edges/edgeConstants';
 import NodeEditorModal from './NodeEditorModal';
+import EdgeEditorModal from './EdgeEditorModal';
 import Toolbar from './Toolbar';
-import { fetchCanvasData, saveCanvasNodes, getOrCreateDefaultConnectionType, saveCanvasConnections, deleteGraphNode, deleteConnection } from '../api/graphService';
+import {
+  fetchCanvasData,
+  saveCanvasNodes,
+  getOrCreateDefaultConnectionType,
+  saveCanvasConnections,
+  updateConnection,
+  deleteGraphNode,
+  deleteConnection
+} from '../api/graphService';
 
 const nodeTypes = {
   custom: BaseNode,
 };
 
-/**
- * Sort nodes so frames always come first.
- * React Flow requires parent nodes to appear before their children.
- */
+const edgeTypes = {
+  custom: CustomEdge,
+};
+
 function sortNodes(nodes) {
   return [...nodes].sort((a, b) => {
     if (a.data?.isFrame && !b.data?.isFrame) return -1;
@@ -36,13 +48,17 @@ function GraphCanvasInner({ graphId }) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [projectId, setProjectId] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  // Estado unificado para el menú contextual
   const [contextMenu, setContextMenu] = useState(null);
+
   const [editingNode, setEditingNode] = useState(null);
+  const [editingEdge, setEditingEdge] = useState(null);
+
   const contextMenuRef = useRef(null);
-  const { getIntersectingNodes } = useReactFlow();
+  const { getIntersectingNodes, deleteElements } = useReactFlow();
   const dragOverFrameIdRef = useRef(null);
 
-  // Load canvas data from backend on mount
   useEffect(() => {
     if (!graphId) return;
 
@@ -50,11 +66,9 @@ function GraphCanvasInner({ graphId }) {
       .then((data) => {
         setProjectId(data.graph.project);
 
-        // Build a map: node_id → graphNode_id for edge mapping
         const nodeToGraphNode = {};
         const loadedNodes = data.nodes.map((gn) => {
           nodeToGraphNode[gn.node] = gn.id;
-
           const isFrame = gn.is_frame || false;
 
           const reactFlowNode = {
@@ -74,13 +88,11 @@ function GraphCanvasInner({ graphId }) {
             },
           };
 
-          // Frame-specific React Flow properties
           if (isFrame) {
             reactFlowNode.style = { width: gn.width || 400, height: gn.height || 300 };
             reactFlowNode.dragHandle = '.custom-drag-handle';
           }
 
-          // Nesting: set parentId if this node belongs to a frame
           if (gn.parent_node) {
             reactFlowNode.parentId = `gn-${gn.parent_node}`;
             reactFlowNode.extent = 'parent';
@@ -89,7 +101,6 @@ function GraphCanvasInner({ graphId }) {
           return reactFlowNode;
         });
 
-        // Sort: frames first so React Flow registers parents before children
         setNodes(sortNodes(loadedNodes));
 
         const loadedEdges = data.connections
@@ -98,8 +109,13 @@ function GraphCanvasInner({ graphId }) {
             id: `conn-${conn.id}`,
             source: `gn-${nodeToGraphNode[conn.source_node]}`,
             target: `gn-${nodeToGraphNode[conn.target_node]}`,
-            type: 'smoothstep',
-            animated: true,
+            type: 'custom',
+            data: {
+              label: conn.label || '',
+              direction: conn.direction || EDGE_DIRECTIONS.FORWARD,
+              sourceHandlePosition: conn.source_handle_position,
+              targetHandlePosition: conn.target_handle_position,
+            },
           }));
         setEdges(loadedEdges);
       })
@@ -111,7 +127,19 @@ function GraphCanvasInner({ graphId }) {
   const onConnect = useCallback(
     (connection) => {
       setEdges((eds) =>
-        addEdge({ ...connection, type: 'smoothstep', animated: true }, eds)
+        addEdge(
+          {
+            ...connection,
+            type: 'custom',
+            data: {
+              label: '',
+              direction: EDGE_DIRECTIONS.FORWARD,
+              sourceHandlePosition: null,
+              targetHandlePosition: null,
+            },
+          },
+          eds
+        )
       );
     },
     [setEdges]
@@ -190,9 +218,11 @@ function GraphCanvasInner({ graphId }) {
     [setNodes]
   );
 
+  // --- NUEVA LÓGICA DE MENÚ CONTEXTUAL UNIFICADO ---
   const onNodeContextMenu = useCallback((event, node) => {
     event.preventDefault();
     setContextMenu({
+      type: 'node', // Identificador para renderizar opciones de nodo
       nodeId: node.id,
       node,
       isFrame: node.data.isFrame === true,
@@ -201,11 +231,44 @@ function GraphCanvasInner({ graphId }) {
     });
   }, []);
 
+  const onEdgeContextMenu = useCallback((event, edge) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenu({
+      type: 'edge', // Identificador para renderizar opciones de conexión
+      edgeId: edge.id,
+      edge,
+      x: event.clientX,
+      y: event.clientY,
+    });
+  }, []);
+
+  // Doble click sigue abriendo el modal directamente (es muy cómodo)
+  const onEdgeDoubleClick = useCallback((event, edge) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setEditingEdge(edge);
+  }, []);
+
+  const handleEdgeModalSave = useCallback(
+    (updatedData) => {
+      if (!editingEdge) return;
+      setEdges((eds) =>
+        eds.map((e) =>
+          e.id === editingEdge.id
+            ? { ...e, data: { ...e.data, ...updatedData } }
+            : e
+        )
+      );
+      setEditingEdge(null);
+    },
+    [editingEdge, setEdges]
+  );
+
   const onPaneClick = useCallback(() => {
     setContextMenu(null);
   }, []);
 
-  // Close context menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
@@ -221,7 +284,6 @@ function GraphCanvasInner({ graphId }) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [contextMenu]);
-
 
   const handleModalSave = useCallback(
     (updatedData) => {
@@ -241,7 +303,6 @@ function GraphCanvasInner({ graphId }) {
   const onNodeDragStart = useCallback(
     (_event, draggedNode) => {
       if (draggedNode.data?.isFrame || !draggedNode.parentId) return;
-      // Remove extent temporarily so the node can be pulled outside
       setNodes((nds) =>
         nds.map((n) => {
           if (n.id !== draggedNode.id) return n;
@@ -258,26 +319,23 @@ function GraphCanvasInner({ graphId }) {
     (_event, draggedNode) => {
       if (draggedNode.data?.isFrame) return;
 
-      const intersections = getIntersectingNodes(draggedNode).filter(
-        (n) => n.data?.isFrame === true
-      );
-      const hoveredFrameId = intersections[0]?.id || null;
+      const validIntersections = getIntersectingNodes(draggedNode).filter((n) => {
+        const isFrame = n.data?.isFrame === true;
+        const isNotCurrentParent = n.id !== draggedNode.parentId && n.id !== draggedNode.data?.parentNode;
+        return isFrame && isNotCurrentParent;
+      });
 
-      // Only update nodes if the hovered frame changed
+      const hoveredFrameId = validIntersections[0]?.id || null;
+
       if (hoveredFrameId === dragOverFrameIdRef.current) return;
       dragOverFrameIdRef.current = hoveredFrameId;
 
       setNodes((currentNodes) =>
         currentNodes.map((n) => {
           if (!n.data?.isFrame) return n;
-
           const shouldHighlight = n.id === hoveredFrameId;
           if (n.data.isDragOver === shouldHighlight) return n;
-
-          return {
-            ...n,
-            data: { ...n.data, isDragOver: shouldHighlight },
-          };
+          return { ...n, data: { ...n.data, isDragOver: shouldHighlight } };
         })
       );
     },
@@ -286,7 +344,6 @@ function GraphCanvasInner({ graphId }) {
 
   const onNodeDragStop = useCallback(
     (_event, draggedNode) => {
-      // Clear drag-over highlight from all frames
       dragOverFrameIdRef.current = null;
       setNodes((currentNodes) =>
         currentNodes.map((n) => {
@@ -297,7 +354,6 @@ function GraphCanvasInner({ graphId }) {
         })
       );
 
-      // Don't nest frames inside other frames
       if (draggedNode.data?.isFrame) return;
 
       const intersections = getIntersectingNodes(draggedNode).filter(
@@ -312,8 +368,6 @@ function GraphCanvasInner({ graphId }) {
           const currentParentId = node.parentId || null;
 
           if (targetFrame) {
-
-            // Calculate absolute position of the dragged node
             let absoluteX = draggedNode.position.x;
             let absoluteY = draggedNode.position.y;
 
@@ -325,7 +379,6 @@ function GraphCanvasInner({ graphId }) {
               }
             }
 
-            // Convert to position relative to the new parent frame
             const relativeX = absoluteX - targetFrame.position.x;
             const relativeY = absoluteY - targetFrame.position.y;
 
@@ -334,24 +387,15 @@ function GraphCanvasInner({ graphId }) {
               position: { x: relativeX, y: relativeY },
               parentId: targetFrame.id,
               extent: 'parent',
-              data: {
-                ...node.data,
-                parentNode: targetFrame.id,
-              },
+              data: { ...node.data, parentNode: targetFrame.id },
             };
           }
 
-          // Dropped outside any frame — remove parent if it had one
           if (currentParentId) {
             const oldParent = currentNodes.find((n) => n.id === currentParentId);
-            const absoluteX = oldParent
-              ? draggedNode.position.x + oldParent.position.x
-              : draggedNode.position.x;
-            const absoluteY = oldParent
-              ? draggedNode.position.y + oldParent.position.y
-              : draggedNode.position.y;
+            const absoluteX = oldParent ? draggedNode.position.x + oldParent.position.x : draggedNode.position.x;
+            const absoluteY = oldParent ? draggedNode.position.y + oldParent.position.y : draggedNode.position.y;
 
-            // Use delete to fully remove keys — avoids phantom extent limits
             const updatedNode = { ...node };
             delete updatedNode.parentId;
             delete updatedNode.extent;
@@ -378,7 +422,6 @@ function GraphCanvasInner({ graphId }) {
     setSaving(true);
 
     try {
-      // --- Step 1: Save nodes (POST new / PATCH existing) ---
       const nodesPayload = nodes.map((node) => ({
         tempId: node.id,
         graphNodeId: node.data.graphNodeId || null,
@@ -395,37 +438,22 @@ function GraphCanvasInner({ graphId }) {
       }));
 
       const nodeResults = await saveCanvasNodes(graphId, projectId, nodesPayload);
-
-      // --- Step 2: Build frontendId → nodeId map ---
-      // The backend connections use Node IDs (not GraphNode IDs),
-      // so we map each frontend node ID to its real Node ID.
       const frontendIdToNodeId = {};
 
-      // Map created nodes: tempId → node.id from backend response
       for (const created of nodeResults.created) {
         frontendIdToNodeId[created.tempId] = created.node.id;
       }
-
-      // Map existing nodes: use the data already loaded in the canvas
-      // For existing nodes (gn-{graphNodeId}), we need their real Node ID.
-      // The updated entries return graphNode data; we also check loaded node data.
       for (const node of nodes) {
         if (node.data.graphNodeId && !frontendIdToNodeId[node.id]) {
-          // For existing nodes, the node ID was stored when loading from canvas.
-          // We need to fetch it from the graphNode response or the loaded data.
           frontendIdToNodeId[node.id] = node.data.nodeId || null;
         }
       }
-
-      // Also map from updated results (graphNode has `node` field = Node ID)
       for (const updated of nodeResults.updated) {
         if (updated.graphNode?.node) {
           frontendIdToNodeId[updated.tempId] = updated.graphNode.node;
         }
       }
 
-      // Update local nodes with backend IDs for newly created nodes
-      // and fix parentId / data.parentNode references for children
       const tempIdToNewId = {};
       for (const created of nodeResults.created) {
         tempIdToNewId[created.tempId] = `gn-${created.graphNode.id}`;
@@ -435,74 +463,46 @@ function GraphCanvasInner({ graphId }) {
         setNodes((currentNodes) => {
           const updated = currentNodes.map((n) => {
             const created = nodeResults.created.find((c) => c.tempId === n.id);
-
-            // Step A: Update the node's own ID if it was just created
             const updatedNode = created
-              ? {
-                  ...n,
-                  id: `gn-${created.graphNode.id}`,
-                  data: {
-                    ...n.data,
-                    graphNodeId: created.graphNode.id,
-                    nodeId: created.node.id,
-                  },
-                }
+              ? { ...n, id: `gn-${created.graphNode.id}`, data: { ...n.data, graphNodeId: created.graphNode.id, nodeId: created.node.id } }
               : { ...n };
 
-            // Step B: Update parentId if it points to a temp- ID that was just replaced
             if (updatedNode.parentId && tempIdToNewId[updatedNode.parentId]) {
               updatedNode.parentId = tempIdToNewId[updatedNode.parentId];
             }
-
-            // Step C: Update data.parentNode to match the new parentId
             if (updatedNode.data.parentNode && tempIdToNewId[updatedNode.data.parentNode]) {
-              updatedNode.data = {
-                ...updatedNode.data,
-                parentNode: tempIdToNewId[updatedNode.data.parentNode],
-              };
+              updatedNode.data = { ...updatedNode.data, parentNode: tempIdToNewId[updatedNode.data.parentNode] };
             }
-
             return updatedNode;
           });
-
           return sortNodes(updated);
         });
       }
 
-      // --- Step 3: Translate edges and save connections ---
-      // Filter edges that have both source and target mapped to real Node IDs
-      // and skip edges that already came from the backend (conn-*)
       const newEdges = edges.filter((edge) => !edge.id.startsWith('conn-'));
+      const existingEdges = edges.filter((edge) => edge.id.startsWith('conn-'));
 
       if (newEdges.length > 0) {
         const defaultConnectionType = await getOrCreateDefaultConnectionType(projectId);
-
         const connectionsPayload = newEdges
           .map((edge) => {
             const sourceNodeId = frontendIdToNodeId[edge.source];
             const targetNodeId = frontendIdToNodeId[edge.target];
-
-            if (!sourceNodeId || !targetNodeId) {
-              console.warn('[SaveState] Skipping edge — missing node ID mapping:', edge);
-              return null;
-            }
+            if (!sourceNodeId || !targetNodeId) return null;
 
             return {
               sourceNodeId,
               targetNodeId,
-              label: '',
+              label: edge.data?.label || '',
+              direction: edge.data?.direction || 'forward',
+              sourceHandlePosition: edge.data?.sourceHandlePosition || null,
+              targetHandlePosition: edge.data?.targetHandlePosition || null,
             };
           })
           .filter(Boolean);
 
         if (connectionsPayload.length > 0) {
-          const connectionResults = await saveCanvasConnections(
-            graphId,
-            defaultConnectionType.id,
-            connectionsPayload
-          );
-
-          // Update edge IDs to reflect backend-persisted connections
+          const connectionResults = await saveCanvasConnections(graphId, defaultConnectionType.id, connectionsPayload);
           if (connectionResults.created.length > 0) {
             setEdges((currentEdges) => {
               let createdIndex = 0;
@@ -516,14 +516,23 @@ function GraphCanvasInner({ graphId }) {
               });
             });
           }
-
-          if (connectionResults.errors.length > 0) {
-            console.warn('[SaveState] Connection errors:', connectionResults.errors);
-          }
         }
       }
 
-      // Update edge source/target references if nodes were renamed from temp- to gn-
+      for (const edge of existingEdges) {
+        const connectionId = edge.id.replace('conn-', '');
+        try {
+          await updateConnection(connectionId, {
+            label: edge.data?.label || '',
+            direction: edge.data?.direction || 'forward',
+            sourceHandlePosition: edge.data?.sourceHandlePosition || null,
+            targetHandlePosition: edge.data?.targetHandlePosition || null,
+          });
+        } catch (error) {
+          console.warn('[SaveState] Failed to update connection:', connectionId);
+        }
+      }
+
       if (Object.keys(tempIdToNewId).length > 0) {
         setEdges((currentEdges) =>
           currentEdges.map((e) => ({
@@ -534,16 +543,7 @@ function GraphCanvasInner({ graphId }) {
         );
       }
 
-      // Build summary message
-      const summary = [];
-      if (nodeResults.created.length > 0) summary.push(`${nodeResults.created.length} nodos creados`);
-      if (nodeResults.updated.length > 0) summary.push(`${nodeResults.updated.length} nodos actualizados`);
-      const savedEdgeCount = newEdges.length;
-      if (savedEdgeCount > 0) summary.push(`${savedEdgeCount} conexiones procesadas`);
-      if (nodeResults.errors.length > 0) summary.push(`${nodeResults.errors.length} errores en nodos`);
-
-      const summaryText = summary.length > 0 ? summary.join(', ') : 'Sin cambios';
-      alert('Guardado exitoso: ' + summaryText);
+      alert('Guardado exitoso');
     } catch (error) {
       console.error('Error saving canvas:', error);
       alert('Error al guardar el estado del canvas.');
@@ -552,13 +552,18 @@ function GraphCanvasInner({ graphId }) {
     }
   }, [graphId, projectId, nodes, edges, setNodes, setEdges]);
 
+  const onReconnect = useCallback(
+    (oldEdge, newConnection) => {
+      setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
+    },
+    [setEdges]
+  );
+
   const onNodesDelete = useCallback(
     (deletedNodes) => {
       for (const node of deletedNodes) {
         if (node.data?.graphNodeId) {
-          deleteGraphNode(node.data.graphNodeId).catch((err) =>
-            console.error('[Delete] Failed to delete graph node:', err)
-          );
+          deleteGraphNode(node.data.graphNodeId).catch((err) => console.error(err));
         }
       }
     },
@@ -568,12 +573,9 @@ function GraphCanvasInner({ graphId }) {
   const onEdgesDelete = useCallback(
     (deletedEdges) => {
       for (const edge of deletedEdges) {
-        // Only delete edges that were persisted to the backend (conn-{id})
         if (edge.id.startsWith('conn-')) {
           const connectionId = edge.id.replace('conn-', '');
-          deleteConnection(connectionId).catch((err) =>
-            console.error('[Delete] Failed to delete connection:', err)
-          );
+          deleteConnection(connectionId).catch((err) => console.error(err));
         }
       }
     },
@@ -589,12 +591,17 @@ function GraphCanvasInner({ graphId }) {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onReconnect={onReconnect}
+          edgesReconnectable
           onNodesDelete={onNodesDelete}
           onEdgesDelete={onEdgesDelete}
           onNodeContextMenu={onNodeContextMenu}
+          onEdgeContextMenu={onEdgeContextMenu}
+          onEdgeDoubleClick={onEdgeDoubleClick}
           onNodeDragStart={onNodeDragStart}
           onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
@@ -603,33 +610,70 @@ function GraphCanvasInner({ graphId }) {
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
           style={{ width: '100%', height: '100%' }}
         >
-
           <Controls />
         </ReactFlow>
 
+        {/* --- MENÚ CONTEXTUAL UNIFICADO (Nodos y Edges) --- */}
         {contextMenu && (
           <div
             ref={contextMenuRef}
-            className="fixed z-[9999] min-w-[200px] bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-lg shadow-xl py-2"
+            className="fixed z-[9999] min-w-[200px] bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-lg shadow-xl py-1.5"
             style={{ top: contextMenu.y, left: contextMenu.x }}
           >
-            <button
-              type="button"
-              onClick={() => {
-                setEditingNode(contextMenu.node);
-                setContextMenu(null);
-              }}
-              className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
-            >
-              Propiedades
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleFrameMode(contextMenu.nodeId)}
-              className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
-            >
-              {contextMenu.isFrame ? 'Convertir en Nodo Normal' : 'Convertir en Marco'}
-            </button>
+            {/* Opciones de Nodo */}
+            {contextMenu.type === 'node' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setEditingNode(contextMenu.node); setContextMenu(null); }}
+                  className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
+                >
+                  Propiedades
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleFrameMode(contextMenu.nodeId)}
+                  className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
+                >
+                  {contextMenu.isFrame ? 'Convertir en Nodo Normal' : 'Convertir en Marco'}
+                </button>
+                <div className="h-px bg-[rgb(var(--color-border))] my-1 w-full" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteElements({ nodes: [{ id: contextMenu.nodeId }] });
+                    setContextMenu(null);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10 hover:text-red-400 cursor-pointer transition-colors"
+                >
+                  Eliminar Nodo
+                </button>
+              </>
+            )}
+
+            {/* Opciones de Conexión (Edge) */}
+            {contextMenu.type === 'edge' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setEditingEdge(contextMenu.edge); setContextMenu(null); }}
+                  className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
+                >
+                  Configurar Relación
+                </button>
+                <div className="h-px bg-[rgb(var(--color-border))] my-1 w-full" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    deleteElements({ edges: [{ id: contextMenu.edgeId }] });
+                    setContextMenu(null);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10 hover:text-red-400 cursor-pointer transition-colors"
+                >
+                  Eliminar Conexión
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -639,6 +683,21 @@ function GraphCanvasInner({ graphId }) {
         isOpen={!!editingNode}
         onClose={() => setEditingNode(null)}
         onSave={handleModalSave}
+        onDelete={() => {
+          deleteElements({ nodes: [{ id: editingNode.id }] });
+          setEditingNode(null);
+        }}
+      />
+
+      <EdgeEditorModal
+        edge={editingEdge}
+        isOpen={!!editingEdge}
+        onClose={() => setEditingEdge(null)}
+        onSave={handleEdgeModalSave}
+        onDelete={() => {
+          deleteElements({ edges: [{ id: editingEdge.id }] });
+          setEditingEdge(null);
+        }}
       />
     </div>
   );

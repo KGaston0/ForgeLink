@@ -111,30 +111,56 @@
     padding: 0 !important;
     border-radius: 0.75rem !important;
     overflow: visible !important;
-    border: 2px solid rgb(var(--color-border)) !important;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    border: none !important;
+    box-shadow: none !important;
     transition: border-color 0.2s, box-shadow 0.2s !important;
   }
 
+  /* Connection handles: hidden by default */
+  .react-flow__node-custom .node-handle {
+    opacity: 0;
+  }
+
+  /* Resizer corner brackets: hidden by default */
+  .react-flow__node-custom .custom-resizer-handle::after {
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  /* Resizer handles: non-interactive when hidden */
+  .react-flow__node-custom .custom-resizer-handle {
+    pointer-events: none !important;
+  }
+
+  /* Visible on proximity hover (mouse near the node) */
+  .react-flow__node-custom:hover .node-handle,
+  .react-flow__node-custom:hover .custom-resizer-handle::after {
+    opacity: 1;
+  }
+  .react-flow__node-custom:hover .custom-resizer-handle {
+    pointer-events: auto !important;
+  }
+
+  /* Always visible when node is selected */
+  .react-flow__node-custom.selected .node-handle,
+  .react-flow__node-custom.selected .custom-resizer-handle::after {
+    opacity: 1;
+  }
+  .react-flow__node-custom.selected .custom-resizer-handle {
+    pointer-events: auto !important;
+  }
+
   .react-flow__node-custom:hover {
-    border-color: rgba(6, 182, 212, 0.5) !important;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
   }
 
   .react-flow__node-custom.selected {
-    border-color: rgb(6, 182, 212) !important;
-    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.5) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
   }
 
-  /* Make entire node draggable */
-  .react-flow__node-custom > div {
-    pointer-events: all !important;
-    cursor: grab !important;
-  }
-
-  .react-flow__node-custom.dragging > div {
-    cursor: grabbing !important;
-  }
 
   /* React Flow Controls — Theme-aware */
   .react-flow__controls {

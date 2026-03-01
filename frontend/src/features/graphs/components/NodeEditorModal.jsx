@@ -10,13 +10,12 @@ const NODE_TYPES = [
   { value: 'frame', label: 'Frame' },
 ];
 
-export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
+export default function NodeEditorModal({ node, isOpen, onClose, onSave, onDelete }) {
   const [label, setLabel] = useState('');
   const [nodeType, setNodeType] = useState('note');
   const [customProps, setCustomProps] = useState([]);
   const titleInputRef = useRef(null);
 
-  // Sync local state when the node changes
   useEffect(() => {
     if (!node) return;
     setLabel(node.data?.label || '');
@@ -28,14 +27,12 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
     );
   }, [node]);
 
-  // Auto-focus title input on open
   useEffect(() => {
     if (isOpen) {
       requestAnimationFrame(() => titleInputRef.current?.focus());
     }
   }, [isOpen]);
 
-  // Close on Escape key
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
@@ -62,7 +59,6 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
   };
 
   const handleSave = () => {
-    // Build customProps object from the key/value pairs
     const propsObj = {};
     for (const { key, value } of customProps) {
       const trimmedKey = key.trim();
@@ -92,7 +88,6 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
       aria-label="Editar nodo"
     >
       <div className="w-full max-w-md mx-4 rounded-xl border border-[rgb(var(--color-border))] bg-[rgb(var(--color-bg))] shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-[rgb(var(--color-border))] px-6 py-4">
           <h2 className="text-lg font-semibold text-[rgb(var(--color-text))]">
             Editar Nodo
@@ -109,15 +104,10 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-5">
-          {/* Title */}
           <div>
-            <label
-              htmlFor="node-label"
-              className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1.5"
-            >
-              Título
+            <label htmlFor="node-label" className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1.5">
+              Nombre
             </label>
             <input
               ref={titleInputRef}
@@ -131,12 +121,8 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
             />
           </div>
 
-          {/* Type */}
           <div>
-            <label
-              htmlFor="node-type"
-              className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1.5"
-            >
+            <label htmlFor="node-type" className="block text-sm font-medium text-[rgb(var(--color-text-secondary))] mb-1.5">
               Tipo
             </label>
             <select
@@ -153,7 +139,6 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
             </select>
           </div>
 
-          {/* Custom Properties */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-[rgb(var(--color-text-secondary))]">
@@ -170,7 +155,7 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
 
             {customProps.length === 0 && (
               <p className="text-xs text-[rgb(var(--color-text-muted))] italic">
-                Sin propiedades. Haz clic en &quot;+ Agregar&quot; para crear una.
+                Sin propiedades. Haz clic en "+ Agregar" para crear una.
               </p>
             )}
 
@@ -209,25 +194,25 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave }) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-[rgb(var(--color-border))] px-6 py-4">
+        {/* Footer con botón Eliminar */}
+        <div className="flex items-center justify-between border-t border-[rgb(var(--color-border))] px-6 py-4">
           <button
             type="button"
-            onClick={onClose}
-            className="btn-secondary !py-2 !px-4 text-sm cursor-pointer"
+            onClick={onDelete}
+            className="text-sm font-medium text-red-500 hover:text-red-400 transition-colors cursor-pointer"
           >
-            Cancelar
+            Eliminar
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="btn-primary !py-2 !px-4 text-sm cursor-pointer"
-          >
-            Guardar
-          </button>
+          <div className="flex gap-3">
+            <button type="button" onClick={onClose} className="btn-secondary !py-2 !px-4 text-sm cursor-pointer">
+              Cancelar
+            </button>
+            <button type="button" onClick={handleSave} className="btn-primary !py-2 !px-4 text-sm cursor-pointer">
+              Guardar
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
