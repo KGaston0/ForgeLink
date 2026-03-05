@@ -111,7 +111,7 @@ class GraphViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.exception('Bulk canvas save failed for graph %s', pk)
             return Response(
-                {'detail': f'Bulk save failed: {str(e)}'},
+                {'detail': 'Bulk save failed due to an internal error.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
