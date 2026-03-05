@@ -5,6 +5,9 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CookieTokenObtainPairView(TokenObtainPairView):
@@ -59,8 +62,10 @@ class CookieTokenRefreshView(TokenRefreshView):
         try:
             serializer.is_valid(raise_exception=True)
         except Exception as e:
+            # Log the underlying exception on the server, but return a generic message to the client
+            logger.exception("Error validating refresh token from cookie.")
             return Response(
-                {'detail': str(e)},
+                {'detail': 'Invalid or expired refresh token'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
