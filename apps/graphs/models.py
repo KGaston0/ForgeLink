@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.core.exceptions import ValidationError
 
@@ -8,6 +10,7 @@ from apps.nodes.models import Node
 class Graph(models.Model):
     """A named graph/canvas within a project."""
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='graphs')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -34,6 +37,20 @@ class GraphNode(models.Model):
     position_x = models.FloatField(default=0)
     position_y = models.FloatField(default=0)
     color = models.CharField(max_length=7, default='#3B82F6')
+
+    # Frame support
+    is_frame = models.BooleanField(default=False)
+    width = models.IntegerField(default=400)
+    height = models.IntegerField(default=300)
+
+    # Nesting: self-referencing FK to support parent frames
+    parent_node = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='children',
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

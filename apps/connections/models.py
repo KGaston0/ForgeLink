@@ -32,6 +32,18 @@ class NodeConnection(models.Model):
     Nodes are global to a project, but connections are graph-scoped.
     """
 
+    DIRECTION_FORWARD = 'forward'
+    DIRECTION_REVERSE = 'reverse'
+    DIRECTION_BIDIRECTIONAL = 'bidirectional'
+    DIRECTION_UNDIRECTED = 'undirected'
+
+    DIRECTION_CHOICES = [
+        (DIRECTION_FORWARD, 'Forward (A → B)'),
+        (DIRECTION_REVERSE, 'Reverse (B → A)'),
+        (DIRECTION_BIDIRECTIONAL, 'Bidirectional (A ↔ B)'),
+        (DIRECTION_UNDIRECTED, 'Undirected (A — B)'),
+    ]
+
     graph = models.ForeignKey(Graph, on_delete=models.CASCADE, related_name='connections')
     source_node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='outgoing_connections')
     target_node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='incoming_connections')
@@ -43,6 +55,17 @@ class NodeConnection(models.Model):
         related_name='connections'
     )
     label = models.CharField(max_length=255, blank=True)
+    direction = models.CharField(
+        max_length=15,
+        choices=DIRECTION_CHOICES,
+        default=DIRECTION_FORWARD,
+    )
+
+    # Handle positions as percentage of the node perimeter (0.0 to 1.0)
+    # Encoding: 0.0–0.25 = top edge, 0.25–0.5 = right edge,
+    #           0.5–0.75 = bottom edge, 0.75–1.0 = left edge
+    source_handle_position = models.FloatField(default=None, null=True, blank=True)
+    target_handle_position = models.FloatField(default=None, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

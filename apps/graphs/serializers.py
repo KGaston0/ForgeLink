@@ -10,8 +10,8 @@ class GraphSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Graph
-        fields = ['id', 'project', 'name', 'description', 'created_at', 'updated_at', 'node_count']
-        read_only_fields = ['created_at', 'updated_at', 'node_count']
+        fields = ['id', 'uuid', 'project', 'name', 'description', 'created_at', 'updated_at', 'node_count']
+        read_only_fields = ['id', 'uuid', 'created_at', 'updated_at', 'node_count']
 
     def get_node_count(self, obj):
         return obj.graph_nodes.count()
@@ -22,16 +22,18 @@ class GraphNodeSerializer(serializers.ModelSerializer):
 
     node_title = serializers.CharField(source='node.title', read_only=True)
     node_type = serializers.CharField(source='node.node_type', read_only=True)
+    node_custom_properties = serializers.JSONField(source='node.custom_properties', read_only=True)
 
     class Meta:
         model = GraphNode
         fields = [
             'id', 'graph', 'node',
             'position_x', 'position_y', 'color',
+            'is_frame', 'width', 'height', 'parent_node',
             'created_at', 'updated_at',
-            'node_title', 'node_type'
+            'node_title', 'node_type', 'node_custom_properties'
         ]
-        read_only_fields = ['created_at', 'updated_at', 'node_title', 'node_type']
+        read_only_fields = ['created_at', 'updated_at', 'node_title', 'node_type', 'node_custom_properties']
 
     def validate(self, attrs):
         """

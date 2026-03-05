@@ -18,6 +18,7 @@ class Node(models.Model):
         ('item', 'Item'),
         ('concept', 'Concept'),
         ('note', 'Note'),
+        ('frame', 'Frame'),
     ]
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='nodes')
@@ -34,6 +35,7 @@ class Node(models.Model):
     title = models.CharField(max_length=255)
     node_type = models.CharField(max_length=50, choices=NODE_TYPES, default='note')
     content = models.TextField(blank=True)
+    custom_properties = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

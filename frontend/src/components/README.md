@@ -1,101 +1,97 @@
-\`\`\`
-# ForgeLink Components
-Component library for ForgeLink project with reusable, modular architecture.
+# ForgeLink — Component Library
+
+Reusable UI components organized by category.
+
 ---
-## 📦 Available Components
-### Layout (2)
-- **Navigation** - Main navbar with theme toggle
-- **Footer** - Site footer with links and social
-### Common (4)
-- **Button** - Reusable button with variants (primary/secondary) and sizes
-- **Card** - Card component with optional spotlight effect
-- **Badge** - Small labels with 5 color variants
-- **ThemeToggle** - Dark/Light mode switcher
-### Landing (5)
-- **HeroSection** - Hero with animated node canvas
-- **BentoGrid** - Feature grid with bento layout
-- **DualPurpose** - Use cases section (PM + Creative)
-- **PricingSection** - Pricing comparison table
-- **CTASection** - Final call-to-action
+
+## Layout (3)
+
+| Component | Description | Location |
+|---|---|---|
+| `Navigation` | Top navbar with logo, nav links, theme toggle, auth buttons | `layout/Navigation/` |
+| `Footer` | Site footer with links and social icons | `layout/Footer/` |
+| `Sidebar` | Side navigation for dashboard, projects, and graph canvas | `layout/Sidebar/` |
+
+## Common (5)
+
+| Component | Description | Location |
+|---|---|---|
+| `Button` | Button with variant and size props | `common/Button/` |
+| `Card` | Card container with optional spotlight hover effect | `common/Card/` |
+| `Badge` | Small label with color variants | `common/Badge/` |
+| `ThemeToggle` | Dark/light mode switcher | `common/ThemeToggle/` |
+| `LoadingSpinner` | Spinner overlay (fullscreen or inline) | `common/LoadingSpinner/` |
+
+## Landing (5)
+
+| Component | Description | Location |
+|---|---|---|
+| `HeroSection` | Hero with animated node canvas and CTA | `landing/HeroSection/` |
+| `BentoGrid` | Feature showcase in bento grid layout | `landing/BentoGrid/` |
+| `DualPurpose` | Use cases section (project management + creative) | `landing/DualPurpose/` |
+| `PricingSection` | Pricing comparison table | `landing/PricingSection/` |
+| `CTASection` | Final call-to-action | `landing/CTASection/` |
+
 ---
-## 🚀 Quick Start
-### Basic Usage
-\`\`\`jsx
-// Layout
 
-// Common
-import { Button, Card, Badge, ThemeToggle } from '@/components/common';
+## Props Reference
 
-// Landing
-
-function App() {
-  return (
-    <>
-      <Navigation />
-      <HeroSection />
-      <BentoGrid />
-      <Footer />
-    </>
-  );
-}
-```
-### Component Props
-
+### Button
 ```jsx
-<Button variant="primary" size="lg" onClick={handleClick}>
-  Click Me
+<Button variant="primary" size="lg" onClick={fn} disabled={false}>
+  Label
 </Button>
 ```
-\`\`\`
+| Prop | Type | Default | Options |
+|---|---|---|---|
+| `variant` | string | `"primary"` | `"primary"`, `"secondary"` |
+| `size` | string | `"md"` | `"sm"`, `"md"`, `"lg"` |
+| `onClick` | function | — | |
+| `disabled` | boolean | `false` | |
+| `className` | string | `""` | Additional classes |
 
-#### Card
+### Card
 ```jsx
-<Card spotlight={true}>
-  <p>Card content</p>
-</Card>
-\`\`\`jsx
-**Props:** `spotlight` (boolean), `className`, `children`
+<Card spotlight={true}>Content</Card>
+```
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `spotlight` | boolean | `false` | Enable spotlight hover effect |
+| `className` | string | `""` | Additional classes |
+| `children` | node | — | Card content |
 
-#### Badge
+### Badge
 ```jsx
-\`\`\`
-**Props:** \`variant\` (primary/secondary), \`size\` (sm/md/lg), \`onClick\`, \`disabled\`, \`className\`
-\`\`\`jsx
-#### ThemeToggle
+<Badge variant="success">Active</Badge>
+```
+| Prop | Type | Default | Options |
+|---|---|---|---|
+| `variant` | string | `"default"` | `"default"`, `"primary"`, `"success"`, `"warning"`, `"error"` |
+
+### LoadingSpinner
+```jsx
+<LoadingSpinner size="medium" fullScreen={true} />
+```
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `size` | string | `"medium"` | `"small"`, `"medium"`, `"large"` |
+| `fullScreen` | boolean | `true` | Fullscreen overlay vs inline spinner |
+
+### ThemeToggle
 ```jsx
 <ThemeToggle />
 ```
-\`\`\`
-**Props:** \`spotlight\` (boolean), \`className\`, \`children\`
-\`\`\`jsx
-\`\`\`
-**Props:** \`variant\` (default/primary/success/warning/error), \`className\`, \`children\`
+No props. Uses `ThemeContext` internally.
 
-Each component folder contains:
-- \`Component.jsx\` - Component code
-- \`Component.css\` - Styles (optional)
-- \`index.js\` - Export
-- `Component.jsx` - Component code
-\`\`\`jsx
-- `index.js` - Export
-\`\`\`
-## 🎨 Design System
+---
 
-- Colors: \`--color-*\`
-- Fonts: \`--font-*\`
-- Spacing: \`--space-*\`
-- Shadows: \`--shadow-*\`
-- Radius: \`--radius-*\`
-- Transitions: \`--transition-*\`
-\`\`\`
-- Colors: `--color-*`
-- Fonts: `--font-*`
-- Spacing: `--space-*`
-- Shadows: `--shadow-*`
-- Radius: `--radius-*`
-- Transitions: `--transition-*`
+## Conventions
 
-**See:** [../styles/README.md](../styles/README.md) for complete variable reference.
+- Each component lives in its own folder: `ComponentName/`
+- Folder contains `ComponentName.jsx` + `index.js` (re-export)
+- All components use CSS variables from `index.css` for theming
+- Dark/light mode support is automatic via CSS variables
 
-**Last Updated:** 2026-01-24  
-**Documentation:** [Complete project docs](../../../DEVELOPMENT.md)
+---
+
+**See also:** [Development Guide → Design System](../../DEVELOPMENT.md#design-system)

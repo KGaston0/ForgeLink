@@ -14,6 +14,7 @@ class NodeSerializer(serializers.ModelSerializer):
         model = Node
         fields = [
             'id', 'project', 'parent_node', 'title', 'node_type', 'content',
+            'custom_properties',
             'created_at', 'updated_at',
             'child_count', 'depth_level', 'graph_ids'
         ]

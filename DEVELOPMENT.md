@@ -1,605 +1,397 @@
-# ForgeLink - Development Guide
+# ForgeLink — Development Guide
 
-Complete guide for development, project structure, and getting started.
+Architecture, conventions, workflows, and design system reference.
 
 ---
 
-## 📂 Project Structure
-
-### Current Organization
+## Project Structure
 
 ```
 ForgeLink/
-├── .env                      # Environment variables (PostgreSQL config)
-├── .env.example             # Environment template
-├── .gitignore               # Git ignore rules
-├── README.md                # Main project documentation
-├── API_ENDPOINTS.md         # API documentation
-├── requirements.txt         # Python dependencies
-├── manage.py                # Django management script
-├── db.sqlite3               # SQLite DB (for development)
+├── forgelink_backend/            # Django project config
+│   ├── settings.py               # Settings (DB, JWT, CORS, security headers)
+│   ├── urls.py                   # Root URL config
+│   ├── auth_views.py             # JWT cookie authentication views
+│   └── authentication.py         # Custom auth backend (cookie-based JWT)
 │
-├── forgelink_backend/       # Django project settings
-│   ├── settings.py          # Main settings
-│   ├── urls.py              # URL configuration
-│   ├── auth_views.py        # JWT authentication views
-│   └── mvp_views.py         # MVP frontend view
+├── apps/                         # Django apps
+│   ├── users/                    # Custom User model (AbstractUser + membership)
+│   ├── projects/                 # Projects + signals (auto-create on registration)
+│   ├── nodes/                    # Nodes (typed entities with hierarchy)
+│   ├── graphs/                   # Graphs + GraphNodes (canvas + layout)
+│   └── connections/              # ConnectionTypes + NodeConnections
 │
-├── apps/                    # All Django apps
-│   ├── __init__.py
-│   ├── projects/            # Project management
-│   ├── nodes/               # Node management
-│   ├── connections/         # Connection management
-│   └── graphs/              # Graph management
+├── frontend/src/                 # React SPA
+│   ├── App.jsx                   # Route definitions
+│   ├── index.css                 # CSS variables, component classes, React Flow overrides
+│   ├── main.jsx                  # Entry point
+│   │
+│   ├── components/               # Reusable UI components
+│   │   ├── common/               # Badge, Button, Card, LoadingSpinner, ThemeToggle
+│   │   ├── landing/              # HeroSection, BentoGrid, DualPurpose, PricingSection, CTASection
+│   │   └── layout/               # Footer, Navigation, Sidebar
+│   │
+│   ├── pages/                    # Route-level page components
+│   │   ├── LandingPage.jsx       # Public landing
+│   │   ├── auth/                 # LoginPage, RegisterPage
+│   │   ├── home/                 # Dashboard, useDashboardStats hook
+│   │   ├── projects/             # ProjectsPage, ProjectDetailLayout
+│   │   │   └── tabs/             # OverviewTab, SettingsTab
+│   │   ├── graphs/               # GraphCanvasPage
+│   │   └── settings/             # SettingsPage (placeholder)
+│   │
+│   ├── features/graphs/          # Graph editor feature module
+│   │   ├── api/graphService.js   # API calls (fetchCanvasData, saveCanvasBulk, etc.)
+│   │   ├── components/
+│   │   │   ├── GraphCanvas.jsx   # Main canvas (ReactFlow wrapper + auto-save)
+│   │   │   ├── Toolbar.jsx       # Node creation toolbar
+│   │   │   ├── NodeEditorModal.jsx
+│   │   │   ├── EdgeEditorModal.jsx
+│   │   │   ├── NodeLabModal.jsx
+│   │   │   ├── nodes/            # BaseNode, StandardNode, FrameNode, ConnectionHandles
+│   │   │   └── edges/            # CustomEdge, edgeConstants
+│   │   └── hooks/useUndoRedo.js  # Undo/redo state management
+│   │
+│   ├── services/api/             # apiClient (axios instance + token refresh interceptor)
+│   ├── context/                  # AuthContext, ThemeContext
+│   ├── config/apiConfig.js       # API base URL + endpoint constants
+│   └── routes/ProtectedRoute.jsx # Auth guard (redirects to /login)
 │
-├── frontend/                # React frontend (structure ready)
-│   ├── src/                 # Source code
-│   ├── public/              # Static files
-│   ├── tests/               # Test files
-│   ├── .env.example         # Frontend env template
-│   ├── .gitignore           # Frontend git ignore
-│   ├── README.md            # Frontend documentation
-│   └── STRUCTURE.md         # Architecture guide
-│
-└── frontend_mvp/            # Legacy MVP (HTML/JS)
-    ├── index.html
-    └── README.md
+├── dev.sh                        # Start backend + frontend in tmux
+├── setup.sh                      # Initial project setup script
+├── helpers.sh                    # Development utilities
+└── requirements.txt              # Python dependencies
 ```
 
 ---
 
+## Data Models
+
+### User
+Custom model extending `AbstractUser`. Added fields:
+
+| Field | Type | Description |
+|---|---|---|
+| membership_type | CharField | `free`, `basic`, `premium`, `enterprise` |
+| membership_start_date | DateTime | Nullable |
+| membership_end_date | DateTime | Nullable |
+
+### Project
+| Field | Type | Description |
+|---|---|---|
+| uuid | UUIDField | Public identifier (used in URLs, auto-generated) |
+| name | CharField(255) | Project name |
+| description | TextField | Optional |
+| owner | FK → User | CASCADE |
+| created_at | DateTime | auto_now_add |
+| updated_at | DateTime | auto_now |
+
+**Ordering:** `-updated_at`
+
+### Node
+| Field | Type | Description |
+|---|---|---|
+| project | FK → Project | CASCADE |
+| parent_node | FK → self | CASCADE, nullable (hierarchy) |
+| title | CharField(255) | |
+| node_type | CharField(50) | `character`, `location`, `event`, `item`, `concept`, `note`, `frame` |
+| content | TextField | Optional body |
+| custom_properties | JSONField | Extensible key-value data |
+
+**Validations:** No self-referencing parent, no cross-project parent, no cyclic hierarchies.
+
+### Graph
+| Field | Type | Description |
+|---|---|---|
+| uuid | UUIDField | Public identifier (used in URLs) |
+| project | FK → Project | CASCADE |
+| name | CharField(255) | Unique per project |
+| description | TextField | Optional |
+
+**Constraint:** `UniqueConstraint(project, name)`
+
+### GraphNode
+Junction table: node membership + per-graph visual layout.
+
+| Field | Type | Description |
+|---|---|---|
+| graph | FK → Graph | CASCADE |
+| node | FK → Node | CASCADE |
+| position_x / position_y | Float | Canvas coordinates |
+| color | CharField(7) | Hex color, default `#3B82F6` |
+| is_frame | Boolean | Frame node flag |
+| width / height | Integer | Dimensions (default 400×300 for frames) |
+| parent_node | FK → self | SET_NULL, nullable (nesting within frames) |
+
+**Constraint:** `UniqueConstraint(graph, node)` — a node can only appear once per graph.
+**Validation:** Node must belong to the same project as the graph.
+
+### ConnectionType
+| Field | Type | Description |
+|---|---|---|
+| project | FK → Project | CASCADE |
+| name | CharField(100) | Unique per project |
+| description | TextField | Optional |
+| color | CharField(7) | Hex color for visualization |
+
+### NodeConnection
+| Field | Type | Description |
+|---|---|---|
+| graph | FK → Graph | CASCADE |
+| source_node | FK → Node | CASCADE |
+| target_node | FK → Node | CASCADE |
+| connection_type | FK → ConnectionType | PROTECT |
+| label | CharField(255) | Optional edge label |
+| direction | CharField(15) | `forward`, `reverse`, `bidirectional`, `undirected` |
+| source_handle_position | Float | Nullable, 0.0–1.0 perimeter position |
+| target_handle_position | Float | Nullable, 0.0–1.0 perimeter position |
+
+**Validations:** No self-connections, nodes must be in the same project as the graph, nodes must be present in the graph (via GraphNode), connection type must belong to the same project.
 
 ---
 
-### 🔧 Helper Scripts Reference
+## Backend Architecture
 
-Three helper scripts are available in the project root:
+### ViewSets & Lookup
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `setup.sh` | Initial project setup (install deps, create venv) | `./setup.sh` |
-| `dev.sh` | Start both backend and frontend servers | `./dev.sh` |
-| `helpers.sh` | Common development commands | `./helpers.sh [command]` |
+| Resource | ViewSet | lookup_field | URL pattern |
+|---|---|---|---|
+| Project | `ProjectViewSet` | `uuid` | `/projects/{uuid}/` |
+| Graph | `GraphViewSet` | `uuid` | `/graphs/{uuid}/` |
+| Node | `NodeViewSet` | `pk` (default) | `/nodes/{id}/` |
+| GraphNode | `GraphNodeViewSet` | `pk` | `/graph-nodes/{id}/` |
+| Connection | `NodeConnectionViewSet` | `pk` | `/connections/{id}/` |
+| ConnectionType | `ConnectionTypeViewSet` | `pk` | `/connection-types/{id}/` |
 
-**Available helpers.sh commands:**
-- `./helpers.sh check` - Check system status
-- `./helpers.sh create-user` - Create new superuser
-- `./helpers.sh reset-db` - Reset database (⚠️ deletes data)
-- `./helpers.sh shell` - Open Django shell
-- `./helpers.sh migrations` - Create and apply migrations
-- `./helpers.sh static` - Collect static files
-- `./helpers.sh test-backend` - Run backend tests
-- `./helpers.sh urls` - Show all URL patterns
+### Owner Scoping
+All ViewSets filter querysets to the authenticated user's data:
+- Projects: `owner=user`
+- Graphs: `project__owner=user`
+- Nodes: `project__owner=user`
+- GraphNodes: `graph__project__owner=user`
+- Connections: `graph__project__owner=user`
 
----
+### Signals
+`apps/projects/signals.py` — `post_save` on User creation:
+1. Creates "Mi Primer Proyecto" (project)
+2. Creates "Grafo Principal" (graph within that project)
 
-## 🔐 Test Users
-
-Pre-created users for testing:
-
-### Superuser (Admin)
-- **Username:** `admin`
-- **Password:** `admin123`
-- **Access:** Admin panel + Full API access
-
-### Test User
-- **Username:** `testuser`
-- **Password:** `test123`
-- **Access:** API access only
+### Canvas Bulk Endpoint
+`PUT /graphs/{uuid}/canvas/bulk/` — Saves the entire canvas state in a single request. Handles:
+- Creating new nodes + graph-nodes
+- Updating existing graph-node positions and properties
+- Creating new connections
+- Updating existing connection properties
+- Mapping frontend temp IDs to backend IDs in response
 
 ---
 
-## 🌐 Access Points
+## Frontend Architecture
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Backend API | http://localhost:8000/api/ | - |
-| Admin Panel | http://localhost:8000/admin/ | admin / admin123 |
-| MVP Frontend | http://localhost:8000/mvp/ | testuser / test123 |
-| React Frontend | http://localhost:5173/ | (Vite dev server) |
+### Route Structure
 
----
-
-## 📝 Common Commands
-
-### Backend
-
-```bash
-# Activate virtual environment
-source .venv/bin/activate  # Linux/Mac
-.venv\Scripts\activate     # Windows
-
-# Run development server
-python manage.py runserver
-
-# Create migrations
-python manage.py makemigrations
-
-# Apply migrations
-python manage.py migrate
-
-# Create superuser
-python manage.py createsuperuser
-
-# Run tests
-python manage.py test
-
-# Django shell
-python manage.py shell
-
-# Check for issues
-python manage.py check
-
-# Collect static files
-python manage.py collectstatic
+```jsx
+<Route element={<ProtectedRoute />}>
+  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/projects" element={<ProjectsPage />} />
+  <Route path="/projects/:id" element={<ProjectDetailLayout />}>
+    <Route index element={<OverviewTab />} />
+    <Route path="settings" element={<SettingsTab />} />
+  </Route>
+  <Route path="/graphs/:id" element={<GraphCanvasPage />} />
+  <Route path="/settings" element={<SettingsPage />} />
+</Route>
 ```
 
-### Frontend
+> The `:id` param in URLs is always a **UUID** string.
 
-```bash
-# Start development server
-npm run dev
+### Authentication Flow
+1. **Login:** `POST /auth/jwt/login/` → sets httpOnly cookies
+2. **API calls:** `apiClient` (axios) sends cookies automatically
+3. **Token refresh:** Interceptor catches 401, calls `/auth/jwt/refresh/`, retries original request
+4. **Logout:** `POST /auth/jwt/logout/` → blacklists refresh token, clears cookies
+5. **Route guard:** `ProtectedRoute` checks `AuthContext.isAuthenticated`, redirects to `/login`
 
-# Build for production
-npm run dev         # Vite
+### Graph Canvas Architecture
 
-# Preview production build
-npm install package-name
+The graph editor has a layered architecture:
 
-# Update dependencies
-npm update
 ```
+GraphCanvasPage (route page)
+  └── GraphCanvas (ReactFlowProvider wrapper)
+       └── GraphCanvasInner (main logic)
+            ├── ReactFlow (canvas with custom node/edge types)
+            ├── Toolbar (node creation)
+            ├── NodeEditorModal (edit node properties)
+            └── EdgeEditorModal (edit connection properties)
+```
+
+**Data flow:**
+1. `fetchCanvasData(graphUuid)` → loads graph info, nodes (GraphNodes), connections
+2. Maps backend data to ReactFlow nodes/edges format
+3. User interactions modify local ReactFlow state
+4. `saveCanvasBulk(graphUuid, projectId, payload)` → debounced auto-save (2.5s after last change)
+5. Response maps temp IDs to real backend IDs
+
+**ID handling:** The URL uses UUID (`graphUuid`), but internal data operations (FK references in graph-nodes, connections) use integer IDs obtained from `fetchCanvasData` response.
+
+### Project Detail Layout
+
+Tab-based navigation using React Router nested routes + `<Outlet>`:
+
+```
+ProjectDetailLayout (fetches project + graphs, renders tabs)
+  ├── OverviewTab (graphs grid, create graph modal)
+  └── SettingsTab (general settings form, danger zone)
+       └── Sub-navigation: General | Danger Zone
+```
+
+Shared data is passed via `useOutletContext()`:
+- `project` — Project object
+- `graphs` — Array of graphs
+- `addGraph(graph)` — Callback to add a new graph
+- `updateProject(data)` — Callback to update project
+- `projectId` — Internal integer ID (for FK operations)
+- `projectUuid` — UUID string (for API URL paths)
 
 ---
 
-## 🎯 Frontend Architecture
+## Design System
 
-### Directory Structure Explained
+### CSS Variables
 
-```
-frontend/src/
-├── components/          # Reusable UI components
-│   ├── common/         # Generic components (Button, Input, Modal, Card, Badge)
-│   └── layout/         # Layout components (Header, Sidebar, Footer, Navigation)
-│
-├── pages/              # Page components (one per route)
-│   ├── auth/          # Login, Register pages
-│   ├── home/          # Dashboard/Home
-│   ├── projects/      # Projects pages
-│   ├── graphs/        # Graphs pages
-│   └── nodes/         # Nodes pages
-│
-├── features/           # Feature modules (business logic)
-│   ├── auth/          # Authentication feature
-│   │   ├── components/  # Feature-specific components
-│   │   ├── hooks/       # Feature hooks
-│   │   ├── api/         # API calls
-│   │   └── index.js     # Public exports
-│   ├── projects/
-│   ├── graphs/
-│   ├── nodes/
-│   └── connections/
-│
-├── services/           # External services
-│   └── api/           # API client configuration
-│       ├── client.js      # Axios instance
-│       ├── endpoints.js   # API endpoints
-│       └── interceptors.js # Request/response interceptors
-│
-├── hooks/              # Custom React hooks
-│   ├── useFetch.js
-│   ├── useAuth.js
-│   └── useLocalStorage.js
-│
-├── context/            # React Context providers
-│   ├── AuthContext.jsx
-│   ├── ThemeContext.jsx    # 🎨 Theme/Dark mode
-│   └── ToastContext.jsx
-│
-├── styles/             # 🎨 Design System
-│   ├── variables.css      # CSS Variables (colors, fonts, spacing)
-│   ├── globals.css        # Global styles and resets
-│   └── theme/            # Theme system
-│       ├── colors.css       # Color palettes
-│       ├── typography.css   # Font system
-│       ├── spacing.css      # Spacing scale
-│       ├── breakpoints.css  # Responsive breakpoints
-│       └── index.css        # Theme exports
-│
-├── routes/             # Route configuration
-├── utils/              # Utility functions
-├── types/              # TypeScript types (if using TS)
-├── config/             # App configuration
-├── assets/             # Static assets
-└── App.jsx             # Main app component
-```
-
-### Architecture Principles
-
-1. **Feature-Based Structure**: Each feature is self-contained with its own components, hooks, and logic
-2. **Separation of Concerns**: Clear boundaries between UI, business logic, and data
-3. **Component Reusability**: Generic components in `common/`, specific ones in features
-4. **Modular Design**: Easy to add, remove, or modify features
-5. **Testing Ready**: Clear structure makes testing easier
-
----
-
-## 🎨 Design System & Theming
-
-### CSS Variables System
-
-All design tokens are centralized in `styles/variables.css`:
+Defined in `frontend/src/index.css` using RGB triplets (for Tailwind v4 compatibility):
 
 ```css
 :root {
-  /* ========== COLORS - LIGHT MODE ========== */
-  --color-bg: #ffffff;
-  --color-surface: #f8f9fa;
-  --color-surface-hover: #e9ecef;
-  --color-text: #1a1a1f;
-  --color-text-secondary: #6b7280;
-  --color-border: rgba(0, 0, 0, 0.08);
-  
-  /* ========== COLORS - ACCENTS ========== */
-  --color-cyan: #06b6d4;
-  --color-teal: #14b8a6;
-  --color-pink: #ec4899;
-  --color-purple: #a855f7;
-  
-  /* ========== TYPOGRAPHY ========== */
-  --font-heading: 'Outfit', sans-serif;
-  --font-body: 'Plus Jakarta Sans', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-md: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 2rem;
-  --font-size-4xl: 3rem;
-  
-  /* ========== SPACING (8pt Grid) ========== */
-  --space-xs: 0.5rem;    /* 8px */
-  --space-sm: 1rem;      /* 16px */
-  --space-md: 1.5rem;    /* 24px */
-  --space-lg: 2rem;      /* 32px */
-  --space-xl: 3rem;      /* 48px */
-  --space-2xl: 4rem;     /* 64px */
-  --space-3xl: 6rem;     /* 96px */
-  
-  /* ========== LAYOUT ========== */
-  --container-max-width: 1280px;
-  --section-padding: 6rem 1.5rem;
-  
-  /* ========== EFFECTS ========== */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.2);
-  
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  
-  --transition-fast: 150ms;
-  --transition-base: 300ms;
-  --transition-slow: 500ms;
+  --color-bg: 255 255 255;
+  --color-bg-secondary: 248 249 250;
+  --color-text: 26 26 31;
+  --color-text-secondary: 107 114 128;
+  --color-text-muted: 156 163 175;
+  --color-border: 229 231 235;
+  --color-border-hover: 209 213 219;
 }
 
-/* ========== DARK MODE ========== */
-[data-theme="dark"] {
-  --color-bg: #0a0a0f;
-  --color-surface: #13131a;
-  --color-surface-hover: #1a1a24;
-  --color-text: #e4e4e7;
-  --color-text-secondary: #a1a1aa;
-  --color-border: rgba(255, 255, 255, 0.08);
-  
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.5);
+html.dark, :root.dark {
+  --color-bg: 26 26 31;
+  --color-bg-secondary: 31 31 36;
+  --color-text: 248 250 252;
+  --color-text-secondary: 161 161 170;
+  --color-text-muted: 113 113 122;
+  --color-border: 39 39 42;
+  --color-border-hover: 63 63 70;
 }
 ```
 
-### Theme Context
+**Usage:** `rgb(var(--color-text))`, `bg-[rgb(var(--color-bg-secondary))]`
 
-The `ThemeContext` is already implemented in `frontend/src/context/ThemeContext.jsx`.
+### Component Classes
 
-**Key features:**
-- Reads theme from localStorage
-- Detects system preference (`prefers-color-scheme`)
-- Provides `theme`, `toggleTheme`, `isDark`, `isLight`
+Global CSS classes defined in `index.css` `@layer components`:
 
-**Usage:**
+| Class | Description |
+|---|---|
+| `.btn-primary` | Gradient button (cyan → purple) |
+| `.btn-secondary` | Transparent bordered button |
+| `.input-field` | Styled input with focus ring |
+| `.input-error` | Red border variant for validation errors |
 
-```jsx
-import { useTheme } from '../../context/ThemeContext';
+### Theme System
 
-function Header() {
-  const { theme, toggleTheme } = useTheme();
-  
-  return (
-    <header>
-      <button onClick={toggleTheme} className="theme-toggle">
-        {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-      </button>
-    </header>
-  );
-}
-```
+`ThemeContext` provides `theme`, `toggleTheme`, `isDark`, `isLight`. Reads from `localStorage`, falls back to system preference.
 
-### Reusable Components
+**Toggle:** Sets `dark` class on `<html>` element.
 
-Components are located in `frontend/src/components/`:
+### Typography
 
-- **Common components** (`common/`): Button, Card, Badge, ThemeToggle
-- **Layout components** (`layout/`): Navigation, Footer, Container
-- **Landing components** (`landing/`): HeroSection, BentoGrid, PricingSection, etc.
-
-**Example usage:**
-```jsx
-import { Button } from '@/components/common/Button/Button';
-import { ThemeToggle } from '@/components/common/ThemeToggle/ThemeToggle';
-
-<Button variant="primary" size="lg">Click me</Button>
-<ThemeToggle />
-```
-
-### Component Structure
-
-```
-ComponentName/
-├── ComponentName.jsx    # Component logic
-├── ComponentName.css    # Component styles (uses CSS variables)
-└── index.js             # Export (optional)
-```
-
-All components use CSS variables from `styles/variables.css` for theming.
-
-### Landing Page Modularization
-
-The landing page is split into reusable sections:
-
-- `<Navigation />` - Top navigation bar (reusable in all pages)
-- `<HeroSection />` - Hero with animated node canvas
-- `<BentoGrid />` - Feature showcase in bento layout
-- `<DualPurpose />` - Use cases section
-- `<PricingSection />` - Pricing table
-- `<CTASection />` - Call to action
-- `<Footer />` - Footer (reusable in all pages)
-
-Each section is independent and can be used in other pages.
-
-### Global Styles Setup
-
-**Import order in `main.jsx`:**
-
-1. `./styles/variables.css` - Variables first
-2. `./styles/globals.css` - Reset and base
-3. Wrap app with `<ThemeProvider>`
-
+- **Headings:** `font-family: 'Outfit', sans-serif`
+- **Body:** System font stack via Tailwind defaults
 
 ---
 
-## 📚 Development Workflow
+## Development Workflow
 
-### Creating a New Feature
-
-1. **Create feature directory structure**
-   ```bash
-   mkdir -p frontend/src/features/my-feature/{components,hooks,api}
-   ```
-
-2. **Add API calls**
-   ```javascript
-   // frontend/src/features/my-feature/api/myFeatureApi.js
-   import { apiClient } from '../../../services/api/client';
-   
-   export const myFeatureApi = {
-     getAll: () => apiClient.get('/my-endpoint/'),
-     getById: (id) => apiClient.get(`/my-endpoint/${id}/`),
-     create: (data) => apiClient.post('/my-endpoint/', data),
-     update: (id, data) => apiClient.patch(`/my-endpoint/${id}/`, data),
-     delete: (id) => apiClient.delete(`/my-endpoint/${id}/`),
-   };
-   ```
-
-3. **Create custom hook**
-   ```javascript
-   // frontend/src/features/my-feature/hooks/useMyFeature.js
-   import { useState, useEffect } from 'react';
-   import { myFeatureApi } from '../api/myFeatureApi';
-   
-   export const useMyFeature = () => {
-     const [data, setData] = useState([]);
-     const [loading, setLoading] = useState(false);
-     
-     const fetchData = async () => {
-       setLoading(true);
-       try {
-         const result = await myFeatureApi.getAll();
-         setData(result);
-       } catch (error) {
-         console.error(error);
-       } finally {
-         setLoading(false);
-       }
-     };
-     
-     useEffect(() => {
-       fetchData();
-     }, []);
-     
-     return { data, loading, refetch: fetchData };
-   };
-   ```
-
-4. **Export public API**
-   ```javascript
-   // frontend/src/features/my-feature/index.js
-   export { MyComponent } from './components/MyComponent';
-   export { useMyFeature } from './hooks/useMyFeature';
-   export { myFeatureApi } from './api/myFeatureApi';
-   ```
-
-### Adding a New Page
-
-1. **Create page component**
-   ```javascript
-   // frontend/src/pages/my-page/MyPage.jsx
-   import { useMyFeature } from '../../features/my-feature';
-   import { MainLayout } from '../../components/layout';
-   
-   export const MyPage = () => {
-     const { data, loading } = useMyFeature();
-     
-     return (
-       <MainLayout>
-         <h1>My Page</h1>
-         {loading ? <p>Loading...</p> : <div>{/* Render data */}</div>}
-       </MainLayout>
-     );
-   };
-   ```
-
-2. **Add route**
-   ```javascript
-   // frontend/src/routes/index.jsx or App.jsx
-   import { MyPage } from '../pages/my-page/MyPage';
-   
-   <Route path="/my-page" element={<MyPage />} />
-   ```
-
----
-
-## 🔧 Database Configuration
-
-### Using PostgreSQL (Production)
-
-1. **Create database and user**
-   ```bash
-   createdb forgelink_db
-   createuser forgelink_user
-   ```
-
-2. **Set password and permissions**
-   ```sql
-   ALTER USER forgelink_user WITH PASSWORD 'your-secure-password';
-   GRANT ALL PRIVILEGES ON DATABASE forgelink_db TO forgelink_user;
-   ```
-
-3. **Update .env file**
-   ```env
-   DB_NAME=forgelink_db
-   DB_USER=forgelink_user
-   DB_PASSWORD=your-secure-password
-   DB_HOST=localhost
-   DB_PORT=5432
-   ```
-
-4. **Run migrations**
-   ```bash
-   python manage.py migrate
-   ```
-
-### Using SQLite (Development)
-
-The project includes `db.sqlite3` for quick development. No setup needed, just run migrations:
+### Common Commands
 
 ```bash
-python manage.py migrate
+# Backend
+source .venv/bin/activate
+python manage.py runserver          # Start backend
+python manage.py makemigrations     # Create migrations
+python manage.py migrate            # Apply migrations
+python manage.py createsuperuser    # Create admin user
+python manage.py shell              # Django shell
+python manage.py test               # Run tests
+
+# Frontend
+cd frontend
+npm run dev                         # Start dev server
+npm run build                       # Production build
+npm run preview                     # Preview build
+npm run lint                        # ESLint
 ```
 
----
+### Helper Scripts
 
-## 🧪 Testing
+| Script | Purpose |
+|---|---|
+| `./dev.sh` | Start backend + frontend in tmux |
+| `./setup.sh` | Initial project setup |
+| `./helpers.sh check` | System status check |
+| `./helpers.sh reset-db` | Reset database (⚠️ deletes data) |
+| `./helpers.sh shell` | Django shell |
+| `./helpers.sh migrations` | Create + apply migrations |
+| `./helpers.sh create-user` | Create superuser |
+| `./helpers.sh urls` | List all URL patterns |
 
-### Backend Tests
+### Database
 
-```bash
-# Run all tests
-python manage.py test
+**Development:** SQLite (`db.sqlite3`) — no setup needed, auto-created on migrate.
 
-# Run tests for specific app
-python manage.py test apps.projects
-
-# Run with coverage
-coverage run --source='.' manage.py test
-coverage report
+**Production:** PostgreSQL. Configure in `.env`:
+```env
+DB_NAME=forgelink_db
+DB_USER=forgelink_user
+DB_PASSWORD=your-password
+DB_HOST=localhost
+DB_PORT=5432
 ```
 
-### Frontend Tests
+### Adding a New Feature
 
-```bash
-# Run tests
-npm test
+1. **Backend:** Create models in the appropriate app, add serializers, ViewSet, register in `urls.py`
+2. **Frontend:**
+   - API calls → `features/<feature>/api/`
+   - Components → `features/<feature>/components/`
+   - Hooks → `features/<feature>/hooks/`
+   - Page → `pages/<feature>/`
+   - Route → `App.jsx`
 
-# Run tests with coverage
-npm test -- --coverage
+### Code Conventions
 
-# Run specific test file
-npm test -- MyComponent.test.js
-```
+**Backend (Python):**
+- PEP 8
+- Docstrings on models and ViewSet actions
+- `lookup_field = 'uuid'` for public-facing resources
+- Owner-scoped querysets in all ViewSets
 
----
-
-## 📦 Recommended Packages
-
-### Backend
-- ✅ Already installed in `requirements.txt`
-
-### Frontend (to install)
-
-**Core:**
-- `react-router-dom` - Routing
-- `axios` - HTTP client
-- `zustand` - State management
-
-**UI Library (choose one):**
-- `@mui/material` - Material-UI
-- `tailwindcss` - TailwindCSS
-
-**Forms:**
-- `react-hook-form` - Form handling
-- `zod` - Schema validation
-
-**Graph Visualization:**
-- `reactflow` - Interactive graphs
-- `d3` - Data visualization
-
-**Utilities:**
-- `date-fns` - Date formatting
-- `classnames` - Conditional classes
-
----
-
-## 🎨 Code Style
-
-### Backend (Python)
-- Follow PEP 8
-- Use meaningful variable names
-- Add docstrings to functions and classes
-- Keep functions small and focused
-
-### Frontend (JavaScript/React)
-- Use functional components with hooks
+**Frontend (React):**
+- Functional components with hooks
 - One component per file
-- Use meaningful component names (PascalCase)
-- Props validation with PropTypes or TypeScript
-- Keep components under 200 lines
+- Validation on `onChange` + `onBlur` (not just `onSubmit`)
+- Disable submit buttons when form has errors
+- `aria-*` attributes on all form elements
+- `role="alert"` for errors, `role="status"` for success messages
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
-### Backend Issues
-
-**Port already in use:**
+**Port in use:**
 ```bash
-# Find and kill process on port 8000
-lsof -ti:8000 | xargs kill -9
+lsof -ti:8000 | xargs kill -9   # Backend
+lsof -ti:5173 | xargs kill -9   # Frontend
 ```
 
 **Migration conflicts:**
@@ -607,36 +399,30 @@ lsof -ti:8000 | xargs kill -9
 python manage.py migrate --fake-initial
 ```
 
-**Import errors after reorganization:**
+**Stale Python cache:**
 ```bash
-# Clear Python cache
 find . -type d -name __pycache__ -exec rm -rf {} +
-find . -name "*.pyc" -delete
 ```
-
-### Frontend Issues
 
 **Node modules issues:**
 ```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-**Port 3000 in use:**
-```bash
-# Use different port
-PORT=3001 npm start
+cd frontend && rm -rf node_modules package-lock.json && npm install
 ```
 
 ---
 
-## 📖 Additional Documentation
+## Access Points
 
-- [Main README](./README.md) - Project overview
-- [API Endpoints](./API_ENDPOINTS.md) - Complete API documentation
-- [Frontend README](./frontend/README.md) - Frontend setup guide
-- [Design System](./frontend/src/styles/README.md) - CSS Variables and theming
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:5173/ |
+| Backend API | http://localhost:8000/api/ |
+| Django Admin | http://localhost:8000/admin/ |
 
 ---
 
-**Last Updated:** 2026-01-23
+**See also:**
+- [Quick Start](./QUICK_START.md) — Get running in minutes
+- [API Reference](./API_ENDPOINTS.md) — Complete endpoint documentation
+- [Frontend](./frontend/README.md) — Frontend setup, structure, and routes
+- [Component Library](./frontend/src/components/README.md) — UI components with props reference
