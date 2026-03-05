@@ -10,22 +10,21 @@ import FrameNode from './FrameNode';
 const BaseNode = ({ id, data, selected }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(data.label || '');
-  const [isPropsExpanded, setIsPropsExpanded] = useState(true);
+
+  // FIX: En lugar de un estado local que se pierde al recargar,
+  // leemos el estado desde las propiedades ocultas de la base de datos (por defecto true).
+  const isPropsExpanded = data.customProps?._isExpanded !== false;
 
   const { setNodes } = useReactFlow();
-  const updateNodeInternals = useUpdateNodeInternals(); // <-- 1. Importar el actualizador interno
+  const updateNodeInternals = useUpdateNodeInternals();
   const nodeId = useId();
 
-  // FIX: Forzar a React Flow a recalcular las coordenadas del Handle al expandir/colapsar
+  // Forzar a React Flow a recalcular las coordenadas del Handle al expandir/colapsar
   useEffect(() => {
-    // 1. Actualizar de inmediato al hacer click
     updateNodeInternals(id);
-
-    // 2. Volver a actualizar cuando la animación CSS (300ms) termine para tener precisión milimétrica
     const timeoutId = setTimeout(() => {
       updateNodeInternals(id);
     }, 300);
-
     return () => clearTimeout(timeoutId);
   }, [isPropsExpanded, id, updateNodeInternals]);
 
@@ -37,6 +36,8 @@ const BaseNode = ({ id, data, selected }) => {
           n.id === id ? { ...n, data: { ...n.data, label: trimmed } } : n
         )
       );
+      // FIX: Avisar al GraphCanvas que hay cambios sin guardar
+      window.dispatchEvent(new CustomEvent('canvas-unsaved'));
     } else {
       setEditLabel(data.label || '');
     }
@@ -62,8 +63,9 @@ const BaseNode = ({ id, data, selected }) => {
     setIsEditing(true);
   }, [data.label]);
 
+  // FIX: Filtramos la clave oculta '_isExpanded' para que no se renderice en la lista de la UI
   const customPropsEntries = data.customProps
-    ? Object.entries(data.customProps)
+    ? Object.entries(data.customProps).filter(([key]) => key !== '_isExpanded')
     : [];
   const hasCustomProps = customPropsEntries.length > 0;
   const drawerId = `props-drawer-${nodeId}`;
@@ -75,7 +77,27 @@ const BaseNode = ({ id, data, selected }) => {
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          setIsPropsExpanded((prev) => !prev);
+          const newState = !isPropsExpanded;
+
+          // FIX: Guardamos el estado directamente en la data del nodo
+          setNodes((nds) => nds.map((n) => {
+            if (n.id === id) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  customProps: {
+                    ...n.data.customProps,
+                    _isExpanded: newState // Se guarda en el backend de forma oculta
+                  }
+                }
+              };
+            }
+            return n;
+          }));
+
+          // Avisar al GraphCanvas que debe autoguardar
+          window.dispatchEvent(new CustomEvent('canvas-unsaved'));
         }}
         className="nodrag ml-auto flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"
         aria-expanded={isPropsExpanded}

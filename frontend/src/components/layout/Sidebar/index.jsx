@@ -11,11 +11,11 @@ import {
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Proyectos', href: '/projects', icon: Square3Stack3DIcon },
-  { name: 'Tipos de Nodos', href: '/node-types', icon: ShareIcon },
+  { name: 'Node Lab', href: '/node-types', icon: ShareIcon },
   { name: 'Configuración', href: '/settings', icon: Cog6ToothIcon },
 ];
 
-export default function Sidebar() {
+export default function Sidebar(){
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -31,7 +31,9 @@ export default function Sidebar() {
           <li>
             <ul role="list" className="-mx-2 space-y-1">
               {navItems.map((item) => {
-                const isActive = location.pathname === item.href;
+                const isActive =
+                  location.pathname === item.href ||
+                  (item.href !== '/' && location.pathname.startsWith(item.href + '/'));
                 return (
                   <li key={item.name}>
                     <Link

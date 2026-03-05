@@ -14,6 +14,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     """
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    lookup_field = 'uuid'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['created_at', 'updated_at', 'name']
@@ -37,8 +38,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
             raise NotAuthenticated('You must be logged in to create a project.')
         serializer.save(owner=self.request.user)
 
+    @action(detail=False, methods=['get'], url_path='recent')
+    def recent(self, request):
+        """
+        Return the last 3 projects updated by the authenticated user,
+        annotated with graph count for efficient serialization.
+        """
+        if not request.user or not request.user.is_authenticated:
+            raise NotAuthenticated('You must be logged in to view recent projects.')
+
+        recent_projects = (
+            Project.objects
+            .filter(owner=request.user)
+            .order_by('-updated_at')[:3]
+        )
+        serializer = ProjectListSerializer(recent_projects, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['get'])
-    def nodes(self, request, pk=None):
+    def nodes(self, request, uuid=None):
         """
         Get all nodes for a specific project
         """
@@ -50,7 +68,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
-    def connections(self, request, pk=None):
+    def connections(self, request, uuid=None):
         """
         Get all connections for a specific project
         """

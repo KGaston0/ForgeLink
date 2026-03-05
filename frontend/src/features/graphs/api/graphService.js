@@ -2,9 +2,10 @@ import apiClient from '../../../services/api/apiClient';
 
 /**
  * Fetch full canvas data (graph info, nodes, connections) for a given graph.
+ * @param {string} graphUuid - The graph UUID for the API URL
  */
-export async function fetchCanvasData(graphId) {
-  const response = await apiClient.get(`/graphs/${graphId}/canvas/`);
+export async function fetchCanvasData(graphUuid) {
+  const response = await apiClient.get(`/graphs/${graphUuid}/canvas/`);
   return response.data;
 }
 
@@ -249,7 +250,25 @@ export async function saveCanvasConnections(graphId, connectionTypeId, connectio
 }
 
 // Keep backward compatibility alias
+// @deprecated Use saveCanvasBulk instead for better performance
 export const saveCanvasState = saveCanvasNodes;
+
+/**
+ * Bulk save the entire canvas state (nodes + connections) in a single PUT request.
+ * This replaces the N+1 pattern of individual PATCH requests.
+ *
+ * @param {string} graphUuid - The graph UUID for the API URL
+ * @param {number} projectId - The project owning the graph (internal FK id)
+ * @param {{ nodes: Array, connections: Array }} payload - Full canvas state
+ * @returns {Promise<{ nodes: { created: Array, updated_count: number }, connections: { created: Array, updated_count: number } }>}
+ */
+export async function saveCanvasBulk(graphUuid, projectId, payload) {
+  const response = await apiClient.put(
+    `/graphs/${graphUuid}/canvas/bulk/`,
+    payload,
+  );
+  return response.data;
+}
 
 /**
  * Delete a GraphNode (and its associated Node) from the backend.

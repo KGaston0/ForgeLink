@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.core.exceptions import ValidationError
 
@@ -8,6 +10,7 @@ from apps.nodes.models import Node
 class Graph(models.Model):
     """A named graph/canvas within a project."""
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='graphs')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)

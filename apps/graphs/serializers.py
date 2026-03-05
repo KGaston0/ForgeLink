@@ -10,8 +10,8 @@ class GraphSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Graph
-        fields = ['id', 'project', 'name', 'description', 'created_at', 'updated_at', 'node_count']
-        read_only_fields = ['created_at', 'updated_at', 'node_count']
+        fields = ['id', 'uuid', 'project', 'name', 'description', 'created_at', 'updated_at', 'node_count']
+        read_only_fields = ['id', 'uuid', 'created_at', 'updated_at', 'node_count']
 
     def get_node_count(self, obj):
         return obj.graph_nodes.count()

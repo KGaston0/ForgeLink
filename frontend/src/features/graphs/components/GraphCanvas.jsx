@@ -19,53 +19,76 @@ import EdgeEditorModal from './EdgeEditorModal';
 import Toolbar from './Toolbar';
 import {
   fetchCanvasData,
-  saveCanvasNodes,
+  saveCanvasBulk,
   getOrCreateDefaultConnectionType,
-  saveCanvasConnections,
-  updateConnection,
   deleteGraphNode,
   deleteConnection
 } from '../api/graphService';
 
-const nodeTypes = {
-  custom: BaseNode,
-};
+// --- IMPORTAMOS NUESTRO HOOK DE HISTORIAL ---
+import useUndoRedo from '../hooks/useUndoRedo';
 
-const edgeTypes = {
-  custom: CustomEdge,
-};
+const nodeTypes = { custom: BaseNode };
+const edgeTypes = { custom: CustomEdge };
 
 function sortNodes(nodes) {
   return [...nodes].sort((a, b) => {
     if (a.data?.isFrame && !b.data?.isFrame) return -1;
     if (!a.data?.isFrame && b.data?.isFrame) return 1;
-    return 0;
+    return (a.zIndex || 0) - (b.zIndex || 0);
   });
 }
 
-function GraphCanvasInner({ graphId }) {
+function GraphCanvasInner({ graphUuid }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [graphId, setGraphId] = useState(null); // internal int id for data operations
   const [projectId, setProjectId] = useState(null);
-  const [saving, setSaving] = useState(false);
 
-  // Estado unificado para el menú contextual
+  const [saveStatus, setSaveStatus] = useState('saved');
+
   const [contextMenu, setContextMenu] = useState(null);
-
   const [editingNode, setEditingNode] = useState(null);
   const [editingEdge, setEditingEdge] = useState(null);
 
   const contextMenuRef = useRef(null);
-  const { getIntersectingNodes, deleteElements } = useReactFlow();
+  const { getIntersectingNodes, deleteElements, screenToFlowPosition } = useReactFlow();
   const dragOverFrameIdRef = useRef(null);
 
+  const markUnsaved = useCallback(() => setSaveStatus('unsaved'), []);
+
+  // --- INSTANCIAMOS EL HOOK DE DESHACER/REHACER ---
+  const { undo, redo, takeSnapshot, canUndo, canRedo } = useUndoRedo(
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    markUnsaved
+  );
+
+  // --- HELPER: Calcular el centro exacto de la pantalla actual ---
+  const getCenterSpawnPosition = useCallback(() => {
+    if (typeof window === 'undefined') return { x: 100, y: 100 };
+
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    // Convierte el centro de la pantalla a coordenadas del canvas de React Flow
+    const position = screenToFlowPosition({ x: centerX, y: centerY });
+
+    // Offset mínimo al azar para que los nodos no se apilen idénticamente
+    const offset = Math.floor(Math.random() * 20) - 10;
+    return { x: position.x + offset - 80, y: position.y + offset - 40 };
+  }, [screenToFlowPosition]);
+
+  // --- CARGA INICIAL DE DATOS ---
   useEffect(() => {
-    if (!graphId) return;
+    if (!graphUuid) return;
 
-    fetchCanvasData(graphId)
+    fetchCanvasData(graphUuid)
       .then((data) => {
+        setGraphId(data.graph.id);       // internal int for data ops
         setProjectId(data.graph.project);
-
         const nodeToGraphNode = {};
         const loadedNodes = data.nodes.map((gn) => {
           nodeToGraphNode[gn.node] = gn.id;
@@ -75,6 +98,11 @@ function GraphCanvasInner({ graphId }) {
             id: `gn-${gn.id}`,
             type: 'custom',
             position: { x: gn.position_x, y: gn.position_y },
+            zIndex: isFrame ? -1 : 0,
+            style: {
+              width: gn.width || (isFrame ? 400 : 160),
+              height: gn.height || (isFrame ? 300 : 80)
+            },
             data: {
               label: gn.node_title,
               nodeType: gn.node_type,
@@ -82,22 +110,19 @@ function GraphCanvasInner({ graphId }) {
               nodeId: gn.node,
               isFrame,
               parentNode: gn.parent_node ? `gn-${gn.parent_node}` : null,
-              width: gn.width || 400,
-              height: gn.height || 300,
+              width: gn.width || (isFrame ? 400 : 160),
+              height: gn.height || (isFrame ? 300 : 80),
               customProps: gn.node_custom_properties || {},
             },
           };
 
           if (isFrame) {
-            reactFlowNode.style = { width: gn.width || 400, height: gn.height || 300 };
             reactFlowNode.dragHandle = '.custom-drag-handle';
           }
-
           if (gn.parent_node) {
             reactFlowNode.parentId = `gn-${gn.parent_node}`;
             reactFlowNode.extent = 'parent';
           }
-
           return reactFlowNode;
         });
 
@@ -118,473 +143,365 @@ function GraphCanvasInner({ graphId }) {
             },
           }));
         setEdges(loadedEdges);
+        setSaveStatus('saved');
       })
-      .catch((err) => {
-        console.error('Error loading canvas:', err);
-      });
-  }, [graphId, setNodes, setEdges]);
+      .catch((err) => console.error('Error loading canvas:', err));
+  }, [graphUuid, setNodes, setEdges]);
 
-  const onConnect = useCallback(
-    (connection) => {
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...connection,
-            type: 'custom',
-            data: {
-              label: '',
-              direction: EDGE_DIRECTIONS.FORWARD,
-              sourceHandlePosition: null,
-              targetHandlePosition: null,
-            },
-          },
-          eds
-        )
-      );
-    },
-    [setEdges]
-  );
+  // --- LISTENER GLOBAL DE AUTOGUARDADO ---
+  useEffect(() => {
+    const handleUnsaved = () => markUnsaved();
+    window.addEventListener('canvas-unsaved', handleUnsaved);
+    return () => window.removeEventListener('canvas-unsaved', handleUnsaved);
+  }, [markUnsaved]);
 
-  const createNode = useCallback(
-    (nodeType) => {
-      const newNodeId = `temp-${Date.now()}`;
-      const newNode = {
-        id: newNodeId,
-        type: 'custom',
-        position: { x: 100, y: 100 },
-        data: {
-          label: `Nuevo ${nodeType}`,
-          nodeType: nodeType,
-          graphNodeId: null,
-          parentNode: null,
-          isFrame: false,
-        },
-      };
+  // --- INTERCEPTORES DE CAMBIOS ---
+  const handleNodesChange = useCallback((changes) => {
+    const isStructural = changes.some(c => ['remove', 'add'].includes(c.type));
+    if (isStructural) takeSnapshot();
 
-      setNodes((nds) => nds.concat(newNode));
-    },
-    [setNodes]
-  );
+    const hasAnyChange = changes.some(c => ['position', 'remove', 'add', 'dimensions'].includes(c.type));
+    if (hasAnyChange) markUnsaved();
+    onNodesChange(changes);
+  }, [onNodesChange, markUnsaved, takeSnapshot]);
+
+  const handleEdgesChange = useCallback((changes) => {
+    const isStructural = changes.some(c => ['remove', 'add'].includes(c.type));
+    if (isStructural) takeSnapshot();
+
+    if (isStructural) markUnsaved();
+    onEdgesChange(changes);
+  }, [onEdgesChange, markUnsaved, takeSnapshot]);
+
+  const onConnect = useCallback((connection) => {
+    takeSnapshot();
+    setEdges((eds) => addEdge({
+      ...connection,
+      type: 'custom',
+      data: { label: '', direction: EDGE_DIRECTIONS.FORWARD, sourceHandlePosition: null, targetHandlePosition: null },
+    }, eds));
+    markUnsaved();
+  }, [setEdges, markUnsaved, takeSnapshot]);
+
+  // --- CREACIÓN DE ELEMENTOS ---
+  const createNode = useCallback((nodeType) => {
+    takeSnapshot();
+    const centerPosition = getCenterSpawnPosition();
+
+    setNodes((nds) => nds.concat({
+      id: `temp-${Date.now()}`,
+      type: 'custom',
+      position: centerPosition,
+      zIndex: 1000,
+      style: { width: 160, height: 80 },
+      data: { label: `Nuevo ${nodeType}`, nodeType, graphNodeId: null, parentNode: null, isFrame: false, width: 160, height: 80 },
+    }));
+    markUnsaved();
+  }, [setNodes, markUnsaved, takeSnapshot, getCenterSpawnPosition]);
 
   const createFrame = useCallback(() => {
-    const newFrameId = `temp-${Date.now()}`;
-    const newFrame = {
-      id: newFrameId,
+    takeSnapshot();
+    const centerPosition = getCenterSpawnPosition();
+    centerPosition.x -= 120;
+    centerPosition.y -= 110;
+
+    setNodes((nds) => nds.concat({
+      id: `temp-${Date.now()}`,
       type: 'custom',
-      position: { x: 150, y: 150 },
+      position: centerPosition,
       dragHandle: '.custom-drag-handle',
       style: { width: 400, height: 300 },
-      data: {
-        label: 'Nuevo Marco',
-        nodeType: 'frame',
-        graphNodeId: null,
-        parentNode: null,
-        isFrame: true,
-        width: 400,
-        height: 300,
-      },
-    };
+      zIndex: -1,
+      data: { label: 'Nuevo Marco', nodeType: 'frame', graphNodeId: null, parentNode: null, isFrame: true, width: 400, height: 300 },
+    }));
+    markUnsaved();
+  }, [setNodes, markUnsaved, takeSnapshot, getCenterSpawnPosition]);
 
-    setNodes((nds) => nds.concat(newFrame));
+  // --- INTERACCIONES Y DRAG & DROP ---
+  const onNodeClick = useCallback((_, clickedNode) => {
+    setNodes((nds) => nds.map((n) => ({
+      ...n,
+      zIndex: n.id === clickedNode.id ? 1000 : (n.data?.isFrame ? -1 : 0)
+    })));
   }, [setNodes]);
 
-  const toggleFrameMode = useCallback(
-    (nodeId) => {
-      setNodes((currentNodes) =>
-        currentNodes.map((node) => {
-          if (node.id !== nodeId) return node;
+  const onNodeDragStart = useCallback((_event, draggedNode, draggedNodes) => {
+    takeSnapshot();
 
-          const isCurrentlyFrame = node.data.isFrame === true;
-          const frameWidth = node.data.width || 400;
-          const frameHeight = node.data.height || 300;
+    const draggedIds = new Set(draggedNodes.map((n) => n.id));
+    setNodes((nds) => nds.map((n) => {
+      if (draggedIds.has(n.id)) {
+        const freed = { ...n, zIndex: 1000 };
+        if (!n.data?.isFrame && n.parentId) delete freed.extent;
+        return freed;
+      }
+      return { ...n, zIndex: n.data?.isFrame ? -1 : 0 };
+    }));
+  }, [setNodes, takeSnapshot]);
 
+  const onNodeDrag = useCallback((_event, draggedNode) => {
+    if (draggedNode.data?.isFrame) return;
+    const validIntersections = getIntersectingNodes(draggedNode).filter((n) => {
+      const isFrame = n.data?.isFrame === true;
+      const isNotCurrentParent = n.id !== draggedNode.parentId && n.id !== draggedNode.data?.parentNode;
+      return isFrame && isNotCurrentParent;
+    });
+
+    const hoveredFrameId = validIntersections[0]?.id || null;
+    if (hoveredFrameId === dragOverFrameIdRef.current) return;
+    dragOverFrameIdRef.current = hoveredFrameId;
+
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => {
+        if (!n.data?.isFrame) return n;
+        const shouldHighlight = n.id === hoveredFrameId;
+        if (n.data.isDragOver === shouldHighlight) return n;
+        return { ...n, data: { ...n.data, isDragOver: shouldHighlight } };
+      })
+    );
+  }, [getIntersectingNodes, setNodes]);
+
+  const onNodeDragStop = useCallback((_event, draggedNode, draggedNodes) => {
+    dragOverFrameIdRef.current = null;
+    const draggedIds = new Set(draggedNodes.map(n => n.id));
+
+    let structureChanged = false;
+
+    setNodes((currentNodes) => {
+      const updated = currentNodes.map((node) => {
+        if (node.data?.isFrame && node.data.isDragOver) {
+          node = { ...node, data: { ...node.data, isDragOver: false } };
+        }
+
+        if (!draggedIds.has(node.id)) return node;
+        if (node.data?.isFrame) return node;
+
+        const intersections = getIntersectingNodes(draggedNode).filter((n) => n.data?.isFrame === true);
+        const targetFrame = intersections[0] || null;
+        const currentParentId = node.parentId || null;
+
+        if (targetFrame) {
+          if (currentParentId !== targetFrame.id) structureChanged = true;
+          let absoluteX = node.position.x;
+          let absoluteY = node.position.y;
+          if (currentParentId && currentParentId !== targetFrame.id) {
+            const oldParent = currentNodes.find((n) => n.id === currentParentId);
+            if (oldParent) {
+              absoluteX += oldParent.position.x;
+              absoluteY += oldParent.position.y;
+            }
+          }
+          const relativeX = absoluteX - targetFrame.position.x;
+          const relativeY = absoluteY - targetFrame.position.y;
           return {
             ...node,
-            dragHandle: !isCurrentlyFrame ? '.custom-drag-handle' : undefined,
-            style: !isCurrentlyFrame
-              ? { width: frameWidth, height: frameHeight }
-              : undefined,
-            data: {
-              ...node.data,
-              isFrame: !isCurrentlyFrame,
-              width: !isCurrentlyFrame ? frameWidth : node.data.width,
-              height: !isCurrentlyFrame ? frameHeight : node.data.height,
-            },
+            position: { x: relativeX, y: relativeY },
+            parentId: targetFrame.id,
+            extent: 'parent',
+            zIndex: 1000,
+            data: { ...node.data, parentNode: targetFrame.id },
           };
-        })
-      );
-      setContextMenu(null);
-    },
-    [setNodes]
-  );
+        }
 
-  // --- NUEVA LÓGICA DE MENÚ CONTEXTUAL UNIFICADO ---
-  const onNodeContextMenu = useCallback((event, node) => {
-    event.preventDefault();
-    setContextMenu({
-      type: 'node', // Identificador para renderizar opciones de nodo
-      nodeId: node.id,
-      node,
-      isFrame: node.data.isFrame === true,
-      x: event.clientX,
-      y: event.clientY,
-    });
-  }, []);
+        if (currentParentId) {
+          structureChanged = true;
+          const oldParent = currentNodes.find((n) => n.id === currentParentId);
+          const absoluteX = oldParent ? node.position.x + oldParent.position.x : node.position.x;
+          const absoluteY = oldParent ? node.position.y + oldParent.position.y : node.position.y;
+          const updatedNode = { ...node };
+          delete updatedNode.parentId;
+          delete updatedNode.extent;
+          updatedNode.position = { x: absoluteX, y: absoluteY };
+          updatedNode.zIndex = 1000;
+          updatedNode.data = { ...updatedNode.data, parentNode: null };
+          return updatedNode;
+        }
 
-  const onEdgeContextMenu = useCallback((event, edge) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setContextMenu({
-      type: 'edge', // Identificador para renderizar opciones de conexión
-      edgeId: edge.id,
-      edge,
-      x: event.clientX,
-      y: event.clientY,
-    });
-  }, []);
-
-  // Doble click sigue abriendo el modal directamente (es muy cómodo)
-  const onEdgeDoubleClick = useCallback((event, edge) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setEditingEdge(edge);
-  }, []);
-
-  const handleEdgeModalSave = useCallback(
-    (updatedData) => {
-      if (!editingEdge) return;
-      setEdges((eds) =>
-        eds.map((e) =>
-          e.id === editingEdge.id
-            ? { ...e, data: { ...e.data, ...updatedData } }
-            : e
-        )
-      );
-      setEditingEdge(null);
-    },
-    [editingEdge, setEdges]
-  );
-
-  const onPaneClick = useCallback(() => {
-    setContextMenu(null);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
-        setContextMenu(null);
-      }
-    };
-
-    if (contextMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [contextMenu]);
-
-  const handleModalSave = useCallback(
-    (updatedData) => {
-      if (!editingNode) return;
-      setNodes((nds) =>
-        nds.map((n) =>
-          n.id === editingNode.id
-            ? { ...n, data: { ...n.data, ...updatedData } }
-            : n
-        )
-      );
-      setEditingNode(null);
-    },
-    [editingNode, setNodes]
-  );
-
-  const onNodeDragStart = useCallback(
-    (_event, draggedNode) => {
-      if (draggedNode.data?.isFrame || !draggedNode.parentId) return;
-      setNodes((nds) =>
-        nds.map((n) => {
-          if (n.id !== draggedNode.id) return n;
-          const freed = { ...n };
-          delete freed.extent;
-          return freed;
-        })
-      );
-    },
-    [setNodes]
-  );
-
-  const onNodeDrag = useCallback(
-    (_event, draggedNode) => {
-      if (draggedNode.data?.isFrame) return;
-
-      const validIntersections = getIntersectingNodes(draggedNode).filter((n) => {
-        const isFrame = n.data?.isFrame === true;
-        const isNotCurrentParent = n.id !== draggedNode.parentId && n.id !== draggedNode.data?.parentNode;
-        return isFrame && isNotCurrentParent;
+        return { ...node, zIndex: 1000 };
       });
+      return sortNodes(updated);
+    });
 
-      const hoveredFrameId = validIntersections[0]?.id || null;
+    if (structureChanged) markUnsaved();
+  }, [getIntersectingNodes, setNodes, markUnsaved]);
 
-      if (hoveredFrameId === dragOverFrameIdRef.current) return;
-      dragOverFrameIdRef.current = hoveredFrameId;
-
-      setNodes((currentNodes) =>
-        currentNodes.map((n) => {
-          if (!n.data?.isFrame) return n;
-          const shouldHighlight = n.id === hoveredFrameId;
-          if (n.data.isDragOver === shouldHighlight) return n;
-          return { ...n, data: { ...n.data, isDragOver: shouldHighlight } };
-        })
-      );
-    },
-    [getIntersectingNodes, setNodes]
-  );
-
-  const onNodeDragStop = useCallback(
-    (_event, draggedNode) => {
-      dragOverFrameIdRef.current = null;
-      setNodes((currentNodes) =>
-        currentNodes.map((n) => {
-          if (n.data?.isFrame && n.data.isDragOver) {
-            return { ...n, data: { ...n.data, isDragOver: false } };
-          }
-          return n;
-        })
-      );
-
-      if (draggedNode.data?.isFrame) return;
-
-      const intersections = getIntersectingNodes(draggedNode).filter(
-        (n) => n.data?.isFrame === true
-      );
-      const targetFrame = intersections[0] || null;
-
-      setNodes((currentNodes) => {
-        const updated = currentNodes.map((node) => {
-          if (node.id !== draggedNode.id) return node;
-
-          const currentParentId = node.parentId || null;
-
-          if (targetFrame) {
-            let absoluteX = draggedNode.position.x;
-            let absoluteY = draggedNode.position.y;
-
-            if (currentParentId) {
-              const oldParent = currentNodes.find((n) => n.id === currentParentId);
-              if (oldParent) {
-                absoluteX += oldParent.position.x;
-                absoluteY += oldParent.position.y;
-              }
-            }
-
-            const relativeX = absoluteX - targetFrame.position.x;
-            const relativeY = absoluteY - targetFrame.position.y;
-
-            return {
-              ...node,
-              position: { x: relativeX, y: relativeY },
-              parentId: targetFrame.id,
-              extent: 'parent',
-              data: { ...node.data, parentNode: targetFrame.id },
-            };
-          }
-
-          if (currentParentId) {
-            const oldParent = currentNodes.find((n) => n.id === currentParentId);
-            const absoluteX = oldParent ? draggedNode.position.x + oldParent.position.x : draggedNode.position.x;
-            const absoluteY = oldParent ? draggedNode.position.y + oldParent.position.y : draggedNode.position.y;
-
-            const updatedNode = { ...node };
-            delete updatedNode.parentId;
-            delete updatedNode.extent;
-            updatedNode.position = { x: absoluteX, y: absoluteY };
-            updatedNode.data = { ...updatedNode.data, parentNode: null };
-            return updatedNode;
-          }
-
-          return node;
-        });
-
-        return sortNodes(updated);
-      });
-    },
-    [getIntersectingNodes, setNodes]
-  );
-
+  // --- LÓGICA DE GUARDADO EN BLOQUE ---
   const saveState = useCallback(async () => {
-    if (!graphId || !projectId) {
-      console.error('Missing graphId or projectId');
-      return;
-    }
-
-    setSaving(true);
+    if (!graphUuid || !graphId || !projectId) return;
+    setSaveStatus('saving');
 
     try {
-      const nodesPayload = nodes.map((node) => ({
-        tempId: node.id,
-        graphNodeId: node.data.graphNodeId || null,
-        nodeId: node.data.nodeId || null,
-        nodeType: node.data.nodeType,
-        label: node.data.label,
-        positionX: node.position.x,
-        positionY: node.position.y,
-        parentNode: node.data.parentNode || null,
-        isFrame: node.data.isFrame || false,
-        width: Math.round(node.style?.width || node.data.width || 400),
-        height: Math.round(node.style?.height || node.data.height || 300),
-        customProps: node.data.customProps || {},
-      }));
+      const nodesPayload = nodes.map((node) => {
+        const isFrame = node.data?.isFrame === true;
 
-      const nodeResults = await saveCanvasNodes(graphId, projectId, nodesPayload);
-      const frontendIdToNodeId = {};
+        const getDim = (dimName, fallback) => {
+          const val = node.measured?.[dimName] ?? node.style?.[dimName] ?? node.data?.[dimName] ?? fallback;
+          const parsed = parseFloat(val);
+          return isNaN(parsed) ? fallback : Math.round(parsed);
+        };
 
-      for (const created of nodeResults.created) {
-        frontendIdToNodeId[created.tempId] = created.node.id;
+        return {
+          temp_id: node.id,
+          graph_node_id: node.data.graphNodeId || null,
+          node_id: node.data.nodeId || null,
+          node_type: node.data.nodeType,
+          label: node.data.label,
+          position_x: node.position.x,
+          position_y: node.position.y,
+          parent_node: node.data.parentNode || null,
+          is_frame: isFrame,
+          width: getDim('width', isFrame ? 400 : 160),
+          height: getDim('height', isFrame ? 300 : 80),
+          custom_properties: node.data.customProps || {},
+        };
+      });
+
+      const hasNewEdges = edges.some((e) => !e.id.startsWith('conn-'));
+      let defaultConnectionTypeId = null;
+      if (hasNewEdges) {
+        const defaultConnectionType = await getOrCreateDefaultConnectionType(projectId);
+        defaultConnectionTypeId = defaultConnectionType.id;
       }
-      for (const node of nodes) {
-        if (node.data.graphNodeId && !frontendIdToNodeId[node.id]) {
-          frontendIdToNodeId[node.id] = node.data.nodeId || null;
+
+      const connectionsPayload = edges.map((edge) => {
+        const isExisting = edge.id.startsWith('conn-');
+        return {
+          connection_id: isExisting ? parseInt(edge.id.replace('conn-', ''), 10) : null,
+          source_temp_id: edge.source,
+          target_temp_id: edge.target,
+          connection_type_id: isExisting
+            ? (edge.data?.connectionTypeId || defaultConnectionTypeId)
+            : defaultConnectionTypeId,
+          label: edge.data?.label || '',
+          direction: edge.data?.direction || 'forward',
+          source_handle_position: edge.data?.sourceHandlePosition || null,
+          target_handle_position: edge.data?.targetHandlePosition || null,
+        };
+      });
+
+      const result = await saveCanvasBulk(graphUuid, projectId, {
+        nodes: nodesPayload,
+        connections: connectionsPayload,
+      });
+
+      const createdNodes = result.nodes?.created || [];
+      const createdConns = result.connections?.created || [];
+
+      if (createdNodes.length > 0 || createdConns.length > 0) {
+        const tempIdToNewId = {};
+        for (const created of createdNodes) {
+          tempIdToNewId[created.temp_id] = `gn-${created.graph_node_id}`;
         }
-      }
-      for (const updated of nodeResults.updated) {
-        if (updated.graphNode?.node) {
-          frontendIdToNodeId[updated.tempId] = updated.graphNode.node;
-        }
-      }
 
-      const tempIdToNewId = {};
-      for (const created of nodeResults.created) {
-        tempIdToNewId[created.tempId] = `gn-${created.graphNode.id}`;
-      }
-
-      if (nodeResults.created.length > 0) {
         setNodes((currentNodes) => {
           const updated = currentNodes.map((n) => {
-            const created = nodeResults.created.find((c) => c.tempId === n.id);
+            const created = createdNodes.find((c) => c.temp_id === n.id);
             const updatedNode = created
-              ? { ...n, id: `gn-${created.graphNode.id}`, data: { ...n.data, graphNodeId: created.graphNode.id, nodeId: created.node.id } }
+              ? {
+                  ...n,
+                  id: `gn-${created.graph_node_id}`,
+                  data: {
+                    ...n.data,
+                    graphNodeId: created.graph_node_id,
+                    nodeId: created.node_id,
+                  },
+                }
               : { ...n };
 
             if (updatedNode.parentId && tempIdToNewId[updatedNode.parentId]) {
               updatedNode.parentId = tempIdToNewId[updatedNode.parentId];
             }
             if (updatedNode.data.parentNode && tempIdToNewId[updatedNode.data.parentNode]) {
-              updatedNode.data = { ...updatedNode.data, parentNode: tempIdToNewId[updatedNode.data.parentNode] };
+              updatedNode.data = {
+                ...updatedNode.data,
+                parentNode: tempIdToNewId[updatedNode.data.parentNode],
+              };
             }
             return updatedNode;
           });
           return sortNodes(updated);
         });
-      }
 
-      const newEdges = edges.filter((edge) => !edge.id.startsWith('conn-'));
-      const existingEdges = edges.filter((edge) => edge.id.startsWith('conn-'));
+        setEdges((currentEdges) => {
+          let createdConnIndex = 0;
+          return currentEdges.map((e) => {
+            let updatedEdge = { ...e };
+            if (tempIdToNewId[e.source]) updatedEdge.source = tempIdToNewId[e.source];
+            if (tempIdToNewId[e.target]) updatedEdge.target = tempIdToNewId[e.target];
 
-      if (newEdges.length > 0) {
-        const defaultConnectionType = await getOrCreateDefaultConnectionType(projectId);
-        const connectionsPayload = newEdges
-          .map((edge) => {
-            const sourceNodeId = frontendIdToNodeId[edge.source];
-            const targetNodeId = frontendIdToNodeId[edge.target];
-            if (!sourceNodeId || !targetNodeId) return null;
-
-            return {
-              sourceNodeId,
-              targetNodeId,
-              label: edge.data?.label || '',
-              direction: edge.data?.direction || 'forward',
-              sourceHandlePosition: edge.data?.sourceHandlePosition || null,
-              targetHandlePosition: edge.data?.targetHandlePosition || null,
-            };
-          })
-          .filter(Boolean);
-
-        if (connectionsPayload.length > 0) {
-          const connectionResults = await saveCanvasConnections(graphId, defaultConnectionType.id, connectionsPayload);
-          if (connectionResults.created.length > 0) {
-            setEdges((currentEdges) => {
-              let createdIndex = 0;
-              return currentEdges.map((e) => {
-                if (!e.id.startsWith('conn-') && createdIndex < connectionResults.created.length) {
-                  const saved = connectionResults.created[createdIndex];
-                  createdIndex++;
-                  return { ...e, id: `conn-${saved.id}` };
-                }
-                return e;
-              });
-            });
-          }
-        }
-      }
-
-      for (const edge of existingEdges) {
-        const connectionId = edge.id.replace('conn-', '');
-        try {
-          await updateConnection(connectionId, {
-            label: edge.data?.label || '',
-            direction: edge.data?.direction || 'forward',
-            sourceHandlePosition: edge.data?.sourceHandlePosition || null,
-            targetHandlePosition: edge.data?.targetHandlePosition || null,
+            if (!e.id.startsWith('conn-') && createdConnIndex < createdConns.length) {
+              updatedEdge.id = `conn-${createdConns[createdConnIndex].id}`;
+              createdConnIndex++;
+            }
+            return updatedEdge;
           });
-        } catch (error) {
-          console.warn('[SaveState] Failed to update connection:', connectionId);
-        }
+        });
       }
 
-      if (Object.keys(tempIdToNewId).length > 0) {
-        setEdges((currentEdges) =>
-          currentEdges.map((e) => ({
-            ...e,
-            source: tempIdToNewId[e.source] || e.source,
-            target: tempIdToNewId[e.target] || e.target,
-          }))
-        );
-      }
-
-      alert('Guardado exitoso');
+      setSaveStatus('saved');
     } catch (error) {
       console.error('Error saving canvas:', error);
-      alert('Error al guardar el estado del canvas.');
-    } finally {
-      setSaving(false);
+      setSaveStatus('error');
     }
-  }, [graphId, projectId, nodes, edges, setNodes, setEdges]);
+  }, [graphUuid, graphId, projectId, nodes, edges]);
 
-  const onReconnect = useCallback(
-    (oldEdge, newConnection) => {
-      setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
-    },
-    [setEdges]
-  );
+  // --- TIMER DE DEBOUNCE PARA AUTO-GUARDADO ---
+  useEffect(() => {
+    if (saveStatus === 'unsaved') {
+      const timerId = setTimeout(() => {
+        saveState();
+      }, 2500);
+      return () => clearTimeout(timerId);
+    }
+  }, [saveStatus, saveState]);
 
-  const onNodesDelete = useCallback(
-    (deletedNodes) => {
-      for (const node of deletedNodes) {
-        if (node.data?.graphNodeId) {
-          deleteGraphNode(node.data.graphNodeId).catch((err) => console.error(err));
-        }
-      }
-    },
-    []
-  );
+  // --- MENÚ CONTEXTUAL Y OTROS ---
+  const toggleFrameMode = useCallback((nodeId) => {
+    takeSnapshot();
+    setNodes((currentNodes) => currentNodes.map((node) => {
+      if (node.id !== nodeId) return node;
+      const isCurrentlyFrame = node.data.isFrame === true;
+      const frameWidth = node.data.width || 400;
+      const frameHeight = node.data.height || 300;
+      return {
+        ...node,
+        dragHandle: !isCurrentlyFrame ? '.custom-drag-handle' : undefined,
+        style: !isCurrentlyFrame ? { width: frameWidth, height: frameHeight } : undefined,
+        zIndex: !isCurrentlyFrame ? -1 : 1000,
+        data: { ...node.data, isFrame: !isCurrentlyFrame, width: !isCurrentlyFrame ? frameWidth : node.data.width, height: !isCurrentlyFrame ? frameHeight : node.data.height },
+      };
+    }));
+    markUnsaved();
+    setContextMenu(null);
+  }, [setNodes, markUnsaved, takeSnapshot]);
 
-  const onEdgesDelete = useCallback(
-    (deletedEdges) => {
-      for (const edge of deletedEdges) {
-        if (edge.id.startsWith('conn-')) {
-          const connectionId = edge.id.replace('conn-', '');
-          deleteConnection(connectionId).catch((err) => console.error(err));
-        }
-      }
-    },
-    []
-  );
+  const onNodeContextMenu = useCallback((event, node) => {
+    event.preventDefault();
+    setContextMenu({ type: 'node', nodeId: node.id, node, isFrame: node.data.isFrame === true, x: event.clientX, y: event.clientY });
+  }, []);
+
+  const onEdgeContextMenu = useCallback((event, edge) => {
+    event.preventDefault(); event.stopPropagation();
+    setContextMenu({ type: 'edge', edgeId: edge.id, edge, x: event.clientX, y: event.clientY });
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => { if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) setContextMenu(null); };
+    if (contextMenu) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [contextMenu]);
 
   return (
     <div className="absolute inset-0 flex flex-col bg-[rgb(var(--color-bg))] overflow-hidden">
-      <Toolbar onCreateNode={createNode} onCreateFrame={createFrame} onSaveState={saveState} saving={saving} />
+      <Toolbar
+        onCreateNode={createNode}
+        onCreateFrame={createFrame}
+        saveStatus={saveStatus}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+      />
 
       <div className="flex-1 relative">
         <ReactFlow
@@ -592,86 +509,52 @@ function GraphCanvasInner({ graphId }) {
           edges={edges}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
-          onReconnect={onReconnect}
+          onReconnect={useCallback((oldEdge, newConnection) => {
+            takeSnapshot();
+            setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
+            markUnsaved();
+          }, [setEdges, markUnsaved, takeSnapshot])}
           edgesReconnectable
-          onNodesDelete={onNodesDelete}
-          onEdgesDelete={onEdgesDelete}
+          onNodesDelete={useCallback((deletedNodes) => { for (const node of deletedNodes) { if (node.data?.graphNodeId) deleteGraphNode(node.data.graphNodeId).catch(console.error); } }, [])}
+          onEdgesDelete={useCallback((deletedEdges) => { for (const edge of deletedEdges) { if (edge.id.startsWith('conn-')) deleteConnection(edge.id.replace('conn-', '')).catch(console.error); } }, [])}
           onNodeContextMenu={onNodeContextMenu}
           onEdgeContextMenu={onEdgeContextMenu}
-          onEdgeDoubleClick={onEdgeDoubleClick}
+          onEdgeDoubleClick={useCallback((event, edge) => { event.preventDefault(); event.stopPropagation(); setEditingEdge(edge); }, [])}
           onNodeDragStart={onNodeDragStart}
           onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
-          onPaneClick={onPaneClick}
+          onNodeClick={onNodeClick}
+          onPaneClick={useCallback(() => setContextMenu(null), [])}
+          panOnDrag={[1, 2]}
+          selectionOnDrag={true}
+          panOnScroll={true}
+          selectionMode="partial"
           connectionMode="loose"
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
           style={{ width: '100%', height: '100%' }}
         >
+          <Background />
           <Controls />
         </ReactFlow>
 
-        {/* --- MENÚ CONTEXTUAL UNIFICADO (Nodos y Edges) --- */}
         {contextMenu && (
-          <div
-            ref={contextMenuRef}
-            className="fixed z-[9999] min-w-[200px] bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-lg shadow-xl py-1.5"
-            style={{ top: contextMenu.y, left: contextMenu.x }}
-          >
-            {/* Opciones de Nodo */}
+          <div ref={contextMenuRef} className="fixed z-[9999] min-w-[200px] bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-lg shadow-xl py-1.5" style={{ top: contextMenu.y, left: contextMenu.x }}>
             {contextMenu.type === 'node' && (
               <>
-                <button
-                  type="button"
-                  onClick={() => { setEditingNode(contextMenu.node); setContextMenu(null); }}
-                  className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
-                >
-                  Propiedades
-                </button>
-                <button
-                  type="button"
-                  onClick={() => toggleFrameMode(contextMenu.nodeId)}
-                  className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
-                >
-                  {contextMenu.isFrame ? 'Convertir en Nodo Normal' : 'Convertir en Marco'}
-                </button>
+                <button type="button" onClick={() => { setEditingNode(contextMenu.node); setContextMenu(null); }} className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer">Propiedades</button>
+                <button type="button" onClick={() => toggleFrameMode(contextMenu.nodeId)} className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer">{contextMenu.isFrame ? 'Convertir en Nodo Normal' : 'Convertir en Marco'}</button>
                 <div className="h-px bg-[rgb(var(--color-border))] my-1 w-full" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    deleteElements({ nodes: [{ id: contextMenu.nodeId }] });
-                    setContextMenu(null);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10 hover:text-red-400 cursor-pointer transition-colors"
-                >
-                  Eliminar Nodo
-                </button>
+                <button type="button" onClick={() => { deleteElements({ nodes: [{ id: contextMenu.nodeId }] }); setContextMenu(null); }} className="w-full px-4 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10 hover:text-red-400 cursor-pointer transition-colors">Eliminar Nodo</button>
               </>
             )}
-
-            {/* Opciones de Conexión (Edge) */}
             {contextMenu.type === 'edge' && (
               <>
-                <button
-                  type="button"
-                  onClick={() => { setEditingEdge(contextMenu.edge); setContextMenu(null); }}
-                  className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer"
-                >
-                  Configurar Relación
-                </button>
+                <button type="button" onClick={() => { setEditingEdge(contextMenu.edge); setContextMenu(null); }} className="w-full px-4 py-2 text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer">Configurar Relación</button>
                 <div className="h-px bg-[rgb(var(--color-border))] my-1 w-full" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    deleteElements({ edges: [{ id: contextMenu.edgeId }] });
-                    setContextMenu(null);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10 hover:text-red-400 cursor-pointer transition-colors"
-                >
-                  Eliminar Conexión
-                </button>
+                <button type="button" onClick={() => { deleteElements({ edges: [{ id: contextMenu.edgeId }] }); setContextMenu(null); }} className="w-full px-4 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10 hover:text-red-400 cursor-pointer transition-colors">Eliminar Conexión</button>
               </>
             )}
           </div>
@@ -682,31 +565,37 @@ function GraphCanvasInner({ graphId }) {
         node={editingNode}
         isOpen={!!editingNode}
         onClose={() => setEditingNode(null)}
-        onSave={handleModalSave}
-        onDelete={() => {
-          deleteElements({ nodes: [{ id: editingNode.id }] });
+        onSave={useCallback((updatedData) => {
+          if (!editingNode) return;
+          takeSnapshot();
+          setNodes((nds) => nds.map((n) => n.id === editingNode.id ? { ...n, data: { ...n.data, ...updatedData } } : n));
+          markUnsaved();
           setEditingNode(null);
-        }}
+        }, [editingNode, setNodes, markUnsaved, takeSnapshot])}
+        onDelete={() => { deleteElements({ nodes: [{ id: editingNode.id }] }); setEditingNode(null); }}
       />
 
       <EdgeEditorModal
         edge={editingEdge}
         isOpen={!!editingEdge}
         onClose={() => setEditingEdge(null)}
-        onSave={handleEdgeModalSave}
-        onDelete={() => {
-          deleteElements({ edges: [{ id: editingEdge.id }] });
+        onSave={useCallback((updatedData) => {
+          if (!editingEdge) return;
+          takeSnapshot();
+          setEdges((eds) => eds.map((e) => e.id === editingEdge.id ? { ...e, data: { ...e.data, ...updatedData } } : e));
+          markUnsaved();
           setEditingEdge(null);
-        }}
+        }, [editingEdge, setEdges, markUnsaved, takeSnapshot])}
+        onDelete={() => { deleteElements({ edges: [{ id: editingEdge.id }] }); setEditingEdge(null); }}
       />
     </div>
   );
 }
 
-export default function GraphCanvas({ graphId }) {
+export default function GraphCanvas({ graphUuid }) {
   return (
     <ReactFlowProvider>
-      <GraphCanvasInner graphId={graphId} />
+      <GraphCanvasInner graphUuid={graphUuid} />
     </ReactFlowProvider>
   );
 }

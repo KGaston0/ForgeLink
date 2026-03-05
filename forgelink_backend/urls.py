@@ -20,14 +20,11 @@ from django.views.generic import RedirectView
 
 
 from . import auth_views
-from .mvp_views import mvp_index
 
 urlpatterns = [
     # Root redirects to API (DRF browsable API)
     path('', RedirectView.as_view(url='/api/', permanent=False)),
 
-    # MVP Frontend
-    path('mvp/', mvp_index, name='mvp_frontend'),
 
     # Django Admin
     path('admin/', admin.site.urls),

@@ -38,7 +38,7 @@ export default function LoginPage() {
         let target = graphs?.find(g => g.name === 'Grafo Principal');
         if (!target && graphs?.length) target = graphs[0];
         if (target) {
-          navigate(`/graphs/${target.id}`);
+          navigate(`/graphs/${target.uuid}`);
         } else {
           navigate('/dashboard');
         }

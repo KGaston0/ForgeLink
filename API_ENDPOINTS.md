@@ -1,116 +1,303 @@
-# ForgeLink API Endpoints
+# ForgeLink API Reference
 
-## Base URL Structure
+Base URL: `http://localhost:8000/api/`
 
-| Path | Purpose |
-|------|---------|
-| `/` | Redirects to `/api/` (DRF browsable API root) |
-| `/api/` | API root - Django REST Framework browsable interface |
-| `/mvp/` | MVP frontend (development/testing interface) |
-| `/admin/` | Django admin interface |
-
----
-
-## Authentication Endpoints
-
-### JWT Authentication
-- `POST /api/auth/jwt/login/` - Obtain JWT access and refresh tokens
-  - Body: `{"username": "...", "password": "..."}`
-  - Returns: `{"access": "...", "refresh": "..."}`
-
-- `POST /api/auth/jwt/refresh/` - Refresh access token
-  - Body: `{"refresh": "..."}`
-  - Returns: `{"access": "..."}`
-
-### User Info
-- `GET /api/auth/me/` - Get current authenticated user info
-  - Returns: `{"authenticated": true, "user": {"username": "..."}}`
-
----
-
-## App Endpoints
-
-### Projects
-- `GET /api/projects/` - List all projects
-- `POST /api/projects/` - Create a new project
-- `GET /api/projects/{id}/` - Retrieve a specific project
-- `PUT /api/projects/{id}/` - Update a project
-- `DELETE /api/projects/{id}/` - Delete a project
-- `GET /api/projects/{id}/nodes/` - Get all nodes for a project
-- `GET /api/projects/{id}/connections/` - Get all connections for a project
-
-### Graphs
-- `GET /api/graphs/` - List all graphs
-- `POST /api/graphs/` - Create a new graph
-- `GET /api/graphs/{id}/` - Retrieve a specific graph
-- `PUT /api/graphs/{id}/` - Update a graph
-- `DELETE /api/graphs/{id}/` - Delete a graph
-- `GET /api/graphs/{id}/canvas/` - Get graph canvas data (nodes + connections)
-
-### Graph Nodes
-- `GET /api/graph-nodes/` - List all graph nodes
-- `POST /api/graph-nodes/` - Add a node to a graph
-- `GET /api/graph-nodes/{id}/` - Retrieve a specific graph node
-- `PUT /api/graph-nodes/{id}/` - Update graph node (position, color)
-- `DELETE /api/graph-nodes/{id}/` - Remove node from graph
-
-### Nodes
-- `GET /api/nodes/` - List all nodes
-- `POST /api/nodes/` - Create a new node
-- `GET /api/nodes/{id}/` - Retrieve a specific node
-- `PUT /api/nodes/{id}/` - Update a node
-- `DELETE /api/nodes/{id}/` - Delete a node
-- `GET /api/nodes/{id}/connections/` - Get all connections for a node
-
-### Connection Types
-- `GET /api/connection-types/` - List all connection types
-- `POST /api/connection-types/` - Create a new connection type
-- `GET /api/connection-types/{id}/` - Retrieve a connection type
-- `PUT /api/connection-types/{id}/` - Update a connection type
-- `DELETE /api/connection-types/{id}/` - Delete a connection type
-
-### Connections
-- `GET /api/connections/` - List all connections
-- `POST /api/connections/` - Create a new connection
-- `GET /api/connections/{id}/` - Retrieve a specific connection
-- `PUT /api/connections/{id}/` - Update a connection
-- `DELETE /api/connections/{id}/` - Delete a connection
-
----
-
-## Common Query Parameters
-
-- `?project={id}` - Filter by project
-- `?graph={id}` - Filter by graph
-- `?search={query}` - Search (available on most list endpoints)
-- `?ordering={field}` - Order results (use `-field` for descending)
-- `?page={number}` - Pagination
+All endpoints require authentication unless noted. Authentication is via JWT tokens stored in httpOnly cookies.
 
 ---
 
 ## Authentication
 
-All API endpoints (except `/api/auth/jwt/login/` and `/api/auth/jwt/refresh/`) require authentication.
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| POST | `/auth/jwt/login/` | Obtain JWT tokens (set as httpOnly cookie) | No |
+| POST | `/auth/jwt/refresh/` | Refresh access token | No |
+| POST | `/auth/jwt/logout/` | Logout and blacklist token | Yes |
+| GET | `/auth/me/` | Current authenticated user info | Yes |
 
-Add the JWT token to your requests:
+**Login request:**
+```json
+{ "username": "...", "password": "..." }
 ```
-Authorization: Bearer {access_token}
+
+**Login response:** Sets `access` and `refresh` tokens as httpOnly cookies. Response body:
+```json
+{ "access": "...", "refresh": "..." }
 ```
 
 ---
 
-## Development
+## Users
 
-- **API Root**: Visit `http://localhost:8000/api/` for the browsable API
-- **MVP Frontend**: Visit `http://localhost:8000/mvp/` for the development UI
-- **Admin Panel**: Visit `http://localhost:8000/admin/` for Django admin
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/users/` | Register a new user |
+| GET | `/users/me/` | Current user profile |
+
+**Register request:**
+```json
+{
+  "username": "newuser",
+  "email": "user@example.com",
+  "password": "SecureP@ss1"
+}
+```
+
+> On registration, a signal automatically creates an initial project ("Mi Primer Proyecto") and graph ("Grafo Principal").
 
 ---
 
-## Notes
+## Projects
 
-- All timestamps are in UTC
-- All POST/PUT requests require `Content-Type: application/json`
-- All list endpoints support pagination (100 items per page by default)
-- The API follows REST conventions (GET, POST, PUT, DELETE)
+Lookup by **UUID**. All operations are scoped to the authenticated user's projects.
 
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/projects/` | List user's projects |
+| POST | `/projects/` | Create project |
+| GET | `/projects/{uuid}/` | Project detail |
+| PATCH | `/projects/{uuid}/` | Update project |
+| DELETE | `/projects/{uuid}/` | Delete project (cascades to all graphs, nodes, connections) |
+| GET | `/projects/recent/` | Last 3 recently updated projects |
+| GET | `/projects/{uuid}/nodes/` | All nodes in the project |
+| GET | `/projects/{uuid}/connections/` | All connections across project graphs |
+
+**Create/Update request:**
+```json
+{ "name": "My Project", "description": "Optional description" }
+```
+
+**Response includes:**
+```json
+{
+  "id": 1,
+  "uuid": "b18c9fed-bba9-4343-b325-ef651da8a6dd",
+  "name": "My Project",
+  "description": "...",
+  "owner": 1,
+  "node_count": 12,
+  "graph_count": 3,
+  "created_at": "...",
+  "updated_at": "..."
+}
+```
+
+**Query parameters:**
+- `?search=term` — Search by name or description
+- `?ordering=field` — Order by `created_at`, `updated_at`, `name` (prefix `-` for descending)
+
+---
+
+## Graphs
+
+Lookup by **UUID**. Filtered to graphs belonging to the authenticated user's projects.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/graphs/` | List graphs |
+| POST | `/graphs/` | Create graph |
+| GET | `/graphs/{uuid}/` | Graph detail |
+| PATCH | `/graphs/{uuid}/` | Update graph |
+| DELETE | `/graphs/{uuid}/` | Delete graph |
+| GET | `/graphs/{uuid}/canvas/` | Full canvas data (graph info + nodes + connections) |
+| PUT | `/graphs/{uuid}/canvas/bulk/` | Bulk save entire canvas state |
+
+**Create request:**
+```json
+{ "project": 1, "name": "Main Graph", "description": "..." }
+```
+
+> The `project` field expects the internal integer ID (returned as `id` in project responses).
+
+**Canvas response** (`GET /graphs/{uuid}/canvas/`):
+```json
+{
+  "graph": { "id": 1, "uuid": "...", "project": 1, "name": "...", ... },
+  "nodes": [
+    {
+      "id": 1, "graph": 1, "node": 1,
+      "position_x": 100, "position_y": 200,
+      "color": "#3B82F6", "is_frame": false,
+      "width": 160, "height": 80,
+      "node_title": "Character A", "node_type": "character",
+      "node_custom_properties": {}
+    }
+  ],
+  "connections": [
+    {
+      "id": 1, "graph": 1,
+      "source_node": 1, "target_node": 2,
+      "connection_type": 1,
+      "label": "knows", "direction": "forward"
+    }
+  ]
+}
+```
+
+**Bulk save request** (`PUT /graphs/{uuid}/canvas/bulk/`):
+```json
+{
+  "nodes": [
+    {
+      "temp_id": "gn-1",
+      "graph_node_id": 1,
+      "node_id": 1,
+      "node_type": "character",
+      "label": "Character A",
+      "position_x": 150, "position_y": 250,
+      "is_frame": false,
+      "width": 160, "height": 80,
+      "parent_node": null,
+      "custom_properties": {}
+    }
+  ],
+  "connections": [
+    {
+      "connection_id": 1,
+      "source_temp_id": "gn-1",
+      "target_temp_id": "gn-2",
+      "connection_type_id": 1,
+      "label": "knows",
+      "direction": "forward"
+    }
+  ]
+}
+```
+
+**Query parameters:**
+- `?project=id` — Filter by project (internal ID)
+- `?project__uuid=uuid` — Filter by project UUID
+- `?search=term` — Search by name or description
+- `?ordering=field` — Order by `created_at`, `updated_at`, `name`
+
+---
+
+## Nodes
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/nodes/` | List nodes |
+| POST | `/nodes/` | Create node |
+| GET | `/nodes/{id}/` | Node detail |
+| PATCH | `/nodes/{id}/` | Update node |
+| DELETE | `/nodes/{id}/` | Delete node |
+| GET | `/nodes/{id}/children/` | Child nodes (hierarchy) |
+| GET | `/nodes/{id}/connections/` | All connections involving this node |
+
+**Create request:**
+```json
+{
+  "project": 1,
+  "title": "Character A",
+  "node_type": "character",
+  "content": "Description text",
+  "custom_properties": { "age": 25 },
+  "parent_node": null
+}
+```
+
+**Node types:** `character`, `location`, `event`, `item`, `concept`, `note`, `frame`
+
+**Query parameters:**
+- `?project=id` — Filter by project
+- `?node_type=character` — Filter by type
+- `?search=term` — Search by title or content
+
+---
+
+## Graph Nodes
+
+Junction table managing node membership and visual layout within a graph.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/graph-nodes/` | List graph-node memberships |
+| POST | `/graph-nodes/` | Add node to a graph with position |
+| GET | `/graph-nodes/{id}/` | Graph-node detail |
+| PATCH | `/graph-nodes/{id}/` | Update position, color, frame data |
+| DELETE | `/graph-nodes/{id}/` | Remove node from graph |
+
+**Create request:**
+```json
+{
+  "graph": 1,
+  "node": 1,
+  "position_x": 100, "position_y": 200,
+  "color": "#3B82F6",
+  "is_frame": false,
+  "width": 160, "height": 80,
+  "parent_node": null
+}
+```
+
+**Query parameters:**
+- `?graph=id` — Filter by graph
+- `?node=id` — Filter by node
+
+---
+
+## Connection Types
+
+Project-scoped relationship types. A default "Default" type is auto-created when needed.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/connection-types/` | List connection types |
+| POST | `/connection-types/` | Create type |
+| GET | `/connection-types/{id}/` | Type detail |
+| PATCH | `/connection-types/{id}/` | Update type |
+| DELETE | `/connection-types/{id}/` | Delete type (fails if connections exist) |
+
+**Create request:**
+```json
+{ "project": 1, "name": "Knows", "description": "...", "color": "#6B7280" }
+```
+
+**Query parameters:**
+- `?project=id` — Filter by project
+
+---
+
+## Connections
+
+Graph-scoped relationships between nodes.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/connections/` | List connections |
+| POST | `/connections/` | Create connection |
+| GET | `/connections/{id}/` | Connection detail |
+| PATCH | `/connections/{id}/` | Update connection |
+| DELETE | `/connections/{id}/` | Delete connection |
+
+**Create request:**
+```json
+{
+  "graph": 1,
+  "source_node": 1,
+  "target_node": 2,
+  "connection_type": 1,
+  "label": "knows",
+  "direction": "forward",
+  "source_handle_position": null,
+  "target_handle_position": null
+}
+```
+
+**Direction options:** `forward`, `reverse`, `bidirectional`, `undirected`
+
+**Query parameters:**
+- `?graph=id` — Filter by graph
+- `?source_node=id` — Filter by source
+- `?target_node=id` — Filter by target
+- `?connection_type=id` — Filter by type
+
+---
+
+## Common Notes
+
+- All list endpoints support pagination (100 items per page)
+- All timestamps are ISO 8601 in UTC
+- All POST/PATCH requests use `Content-Type: application/json`
+- Projects and Graphs use UUID for URL lookup; all other resources use integer IDs
+- Owner-scoped: users can only access their own data
