@@ -11,15 +11,15 @@ const BaseNode = ({ id, data, selected }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(data.label || '');
 
-  // FIX: En lugar de un estado local que se pierde al recargar,
-  // leemos el estado desde las propiedades ocultas de la base de datos (por defecto true).
+  // FIX: Instead of local state that is lost on reload,
+  // read the expanded state from the hidden custom properties (default: true).
   const isPropsExpanded = data.customProps?._isExpanded !== false;
 
   const { setNodes } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const nodeId = useId();
 
-  // Forzar a React Flow a recalcular las coordenadas del Handle al expandir/colapsar
+  // Force React Flow to recalculate handle coordinates on expand/collapse
   useEffect(() => {
     updateNodeInternals(id);
     const timeoutId = setTimeout(() => {
@@ -36,7 +36,7 @@ const BaseNode = ({ id, data, selected }) => {
           n.id === id ? { ...n, data: { ...n.data, label: trimmed } } : n
         )
       );
-      // FIX: Avisar al GraphCanvas que hay cambios sin guardar
+      // FIX: Notify GraphCanvas of unsaved changes
       window.dispatchEvent(new CustomEvent('canvas-unsaved'));
     } else {
       setEditLabel(data.label || '');
@@ -63,7 +63,7 @@ const BaseNode = ({ id, data, selected }) => {
     setIsEditing(true);
   }, [data.label]);
 
-  // FIX: Filtramos la clave oculta '_isExpanded' para que no se renderice en la lista de la UI
+  // FIX: Filter out the hidden '_isExpanded' key so it doesn't render in the UI list
   const customPropsEntries = data.customProps
     ? Object.entries(data.customProps).filter(([key]) => key !== '_isExpanded')
     : [];
@@ -79,7 +79,7 @@ const BaseNode = ({ id, data, selected }) => {
           e.stopPropagation();
           const newState = !isPropsExpanded;
 
-          // FIX: Guardamos el estado directamente en la data del nodo
+          // FIX: Store the expanded state directly in the node data
           setNodes((nds) => nds.map((n) => {
             if (n.id === id) {
               return {
@@ -88,7 +88,7 @@ const BaseNode = ({ id, data, selected }) => {
                   ...n.data,
                   customProps: {
                     ...n.data.customProps,
-                    _isExpanded: newState // Se guarda en el backend de forma oculta
+                    _isExpanded: newState // Persisted to backend as a hidden property
                   }
                 }
               };
@@ -96,7 +96,7 @@ const BaseNode = ({ id, data, selected }) => {
             return n;
           }));
 
-          // Avisar al GraphCanvas que debe autoguardar
+          // Notify GraphCanvas to trigger auto-save
           window.dispatchEvent(new CustomEvent('canvas-unsaved'));
         }}
         className="nodrag ml-auto flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/20 transition-colors text-white cursor-pointer"

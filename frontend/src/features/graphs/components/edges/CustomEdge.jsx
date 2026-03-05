@@ -72,7 +72,7 @@ const CustomEdge = ({
           }}
         >
           {displayLabel && (
-            // FIX: Estilo de etiqueta (badge) mejorado
+            //
             <span className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-[6px] bg-[rgb(var(--color-bg))]/95 text-[rgb(var(--color-text))] border-[1.5px] border-[rgb(var(--color-border))] shadow-md backdrop-blur-md">
               {displayLabel}
             </span>

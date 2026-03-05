@@ -9,7 +9,7 @@ import ConnectionHandles from './ConnectionHandles';
  * preserving the original visual design.
  */
 const FrameNode = ({
-  id, // FIX: Recibe el ID
+  id,
   selected,
   data,
   isEditing,
@@ -43,7 +43,7 @@ const FrameNode = ({
         isPropsExpanded ? 'border-l-0 rounded-r-xl rounded-l-none' : 'rounded-xl'
       } ${activeShadow}`;
 
-  // FIX: Se cambió border-r-0 por border-r-2 para crear la línea vertical separadora
+  // FIX: Changed border-r-0 to border-r-2 to create the vertical separator line
   const drawerWrapperClasses = `absolute -top-[2px] -bottom-[2px] w-[220px] flex flex-col z-20 transition-all duration-300 ease-in-out ${
     isPropsExpanded
       ? `-left-[2px] -translate-x-full border-y-2 border-l-2 border-r-2 rounded-tl-xl rounded-bl-xl ${activeColor} ${drawerBorderStyle} ${activeShadow}`

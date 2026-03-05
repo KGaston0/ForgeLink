@@ -42,7 +42,7 @@ function sortNodes(nodes) {
 function GraphCanvasInner({ graphUuid }) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [graphId, setGraphId] = useState(null); // internal int id for data operations
+  const [graphId, setGraphId] = useState(null);
   const [projectId, setProjectId] = useState(null);
 
   const [saveStatus, setSaveStatus] = useState('saved');
@@ -57,7 +57,7 @@ function GraphCanvasInner({ graphUuid }) {
 
   const markUnsaved = useCallback(() => setSaveStatus('unsaved'), []);
 
-  // --- INSTANCIAMOS EL HOOK DE DESHACER/REHACER ---
+  // --- UNDO/REDO HOOK ---
   const { undo, redo, takeSnapshot, canUndo, canRedo } = useUndoRedo(
     nodes,
     edges,
@@ -66,22 +66,22 @@ function GraphCanvasInner({ graphUuid }) {
     markUnsaved
   );
 
-  // --- HELPER: Calcular el centro exacto de la pantalla actual ---
+  // --- HELPER: Calculate the exact center of the current viewport ---
   const getCenterSpawnPosition = useCallback(() => {
     if (typeof window === 'undefined') return { x: 100, y: 100 };
 
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
 
-    // Convierte el centro de la pantalla a coordenadas del canvas de React Flow
+    // Convert screen center to React Flow canvas coordinates
     const position = screenToFlowPosition({ x: centerX, y: centerY });
 
-    // Offset mínimo al azar para que los nodos no se apilen idénticamente
+    // Small random offset to prevent nodes from stacking on the exact same spot
     const offset = Math.floor(Math.random() * 20) - 10;
     return { x: position.x + offset - 80, y: position.y + offset - 40 };
   }, [screenToFlowPosition]);
 
-  // --- CARGA INICIAL DE DATOS ---
+  // --- INITIAL DATA LOAD ---
   useEffect(() => {
     if (!graphUuid) return;
 
@@ -148,14 +148,14 @@ function GraphCanvasInner({ graphUuid }) {
       .catch((err) => console.error('Error loading canvas:', err));
   }, [graphUuid, setNodes, setEdges]);
 
-  // --- LISTENER GLOBAL DE AUTOGUARDADO ---
+  // --- GLOBAL AUTO-SAVE LISTENER ---
   useEffect(() => {
     const handleUnsaved = () => markUnsaved();
     window.addEventListener('canvas-unsaved', handleUnsaved);
     return () => window.removeEventListener('canvas-unsaved', handleUnsaved);
   }, [markUnsaved]);
 
-  // --- INTERCEPTORES DE CAMBIOS ---
+  // --- CHANGE INTERCEPTORS ---
   const handleNodesChange = useCallback((changes) => {
     const isStructural = changes.some(c => ['remove', 'add'].includes(c.type));
     if (isStructural) takeSnapshot();
@@ -183,7 +183,7 @@ function GraphCanvasInner({ graphUuid }) {
     markUnsaved();
   }, [setEdges, markUnsaved, takeSnapshot]);
 
-  // --- CREACIÓN DE ELEMENTOS ---
+  // --- ELEMENT CREATION ---
   const createNode = useCallback((nodeType) => {
     takeSnapshot();
     const centerPosition = getCenterSpawnPosition();
@@ -217,7 +217,7 @@ function GraphCanvasInner({ graphUuid }) {
     markUnsaved();
   }, [setNodes, markUnsaved, takeSnapshot, getCenterSpawnPosition]);
 
-  // --- INTERACCIONES Y DRAG & DROP ---
+  // --- INTERACTIONS AND DRAG & DROP ---
   const onNodeClick = useCallback((_, clickedNode) => {
     setNodes((nds) => nds.map((n) => ({
       ...n,
@@ -445,7 +445,6 @@ function GraphCanvasInner({ graphUuid }) {
     }
   }, [graphUuid, graphId, projectId, nodes, edges]);
 
-  // --- TIMER DE DEBOUNCE PARA AUTO-GUARDADO ---
   useEffect(() => {
     if (saveStatus === 'unsaved') {
       const timerId = setTimeout(() => {
@@ -455,7 +454,7 @@ function GraphCanvasInner({ graphUuid }) {
     }
   }, [saveStatus, saveState]);
 
-  // --- MENÚ CONTEXTUAL Y OTROS ---
+  // --- CONTEXT MENU AND UTILITIES ---
   const toggleFrameMode = useCallback((nodeId) => {
     takeSnapshot();
     setNodes((currentNodes) => currentNodes.map((node) => {

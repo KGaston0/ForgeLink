@@ -73,10 +73,10 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
       <div className="w-full relative z-50 bg-[rgb(var(--color-bg-secondary))]/95 backdrop-blur-sm border-b border-[rgb(var(--color-border))] shadow-lg connection-mode-loose">
         <div className="flex items-center justify-between px-6 py-2.5">
 
-          {/* --- SECCIÓN IZQUIERDA: CREACIÓN --- */}
+          {/* --- LEFT SECTION: CREATION --- */}
           <div className="flex items-center gap-3">
 
-            {/* MENU NODOS */}
+            {/* NODES MENU */}
             <div className="relative group">
               <button
                 type="button"
@@ -141,7 +141,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
               </div>
             </div>
 
-            {/* MENU MARCOS (UNIFICADO) */}
+            {/* FRAMES MENU */}
             <div className="relative group">
               <button
                 type="button"
@@ -198,7 +198,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
             </div>
           </div>
 
-          {/* --- SECCIÓN DERECHA: ESTADO Y ACCIONES --- */}
+          {/* --- RIGHT SECTION: STATUS AND ACTIONS --- */}
           <div className="flex items-center gap-2.5">
             <div className="flex items-center bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-full shadow-inner p-0.5">
               <div className="relative group">
@@ -234,7 +234,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
         isOpen={isNodeLabOpen}
         onClose={() => setIsNodeLabOpen(false)}
         onSpawnNode={(type) => {
-          // Si el tipo empieza por 'custom_' es un nodo, si no (o por lógica de negocio), manejamos frames
+          // If the type includes 'frame', create a frame; otherwise create a regular node
           if (type.includes('frame')) {
              onCreateFrame(type);
           } else {

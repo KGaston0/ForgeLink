@@ -9,7 +9,7 @@ import ConnectionHandles from './ConnectionHandles';
  * to prevent the colored header from clipping outside the border.
  */
 const StandardNode = ({
-  id, // FIX: Recibe el ID
+  id,
   selected,
   data,
   isEditing,
@@ -70,7 +70,6 @@ const StandardNode = ({
 
       <div className={`relative h-full w-full rounded-xl border-2 bg-[rgb(var(--color-bg))] min-w-[160px] transition-all duration-200 z-10 flex flex-col ${nodeColor} ${nodeShadow}`}>
 
-        {/* FIX: Se pasan los props correctamente */}
         <ConnectionHandles id={id} isFrame={false} isPropsExpanded={isPropsExpanded} />
 
         <div className="flex-1 flex flex-col rounded-[10px] overflow-hidden">

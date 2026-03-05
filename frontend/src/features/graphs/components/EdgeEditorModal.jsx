@@ -106,7 +106,7 @@ export default function EdgeEditorModal({ edge, isOpen, onClose, onSave, onDelet
           </div>
         </div>
 
-        {/* Footer con botón Eliminar */}
+        {/* Footer with Delete button */}
         <div className="flex items-center justify-between border-t border-[rgb(var(--color-border))] px-6 py-4">
           <button
             type="button"

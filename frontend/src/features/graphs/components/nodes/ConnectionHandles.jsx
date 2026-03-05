@@ -3,14 +3,14 @@ import { Handle, Position, useStore } from '@xyflow/react';
 const VisibleHandle = ({ position, id, isFrame, isPropsExpanded }) => {
   let style = {};
 
-  // FIX: Mueve el handle al extremo izquierdo del panel de propiedades cuando se expande el Frame
+  // FIX: Move handle to the far left of the properties panel when frame is expanded
   if (position === Position.Left && isFrame && isPropsExpanded) {
     style = { left: '-224px', transition: 'left 0.3s ease-in-out' };
   }
 
   return (
     <Handle
-      type="source" // En modo 'loose', actúa como origen y destino
+      type="source" // In 'loose' mode, acts as both source and target
       position={position}
       id={id}
       className="!w-[14px] !h-[14px] !bg-[rgb(var(--color-bg))] !border-[2.5px] !border-cyan-500 !rounded-full shadow-sm transition-all duration-150 hover:!scale-125 hover:!bg-cyan-500 z-50 node-handle cursor-crosshair"
@@ -19,10 +19,10 @@ const VisibleHandle = ({ position, id, isFrame, isPropsExpanded }) => {
   );
 };
 
-// Handle secundario: Solo sirve para recibir conexiones y solo es visible cuando se está arrastrando una flecha
+// Secondary handle: only receives connections, visible only while dragging an edge
 const TargetOnlyHandle = ({ position, id, style: extraStyle, isVisible }) => (
   <Handle
-    type="target" // ESTRICTAMENTE SOLO DESTINO
+    type="target" // STRICTLY TARGET ONLY
     position={position}
     id={id}
     className={`!w-[12px] !h-[12px] !bg-[rgb(var(--color-bg-secondary))] !border-[2px] !border-purple-500 !rounded-full shadow-sm z-40 !cursor-crosshair transition-opacity duration-300 ${
@@ -33,21 +33,21 @@ const TargetOnlyHandle = ({ position, id, style: extraStyle, isVisible }) => (
 );
 
 const ConnectionHandles = ({ id, isFrame, isPropsExpanded }) => {
-  // Hook nativo para saber si el usuario está arrastrando una conexión en este momento
+  // Native hook to detect if the user is currently dragging a connection
   const connectionNodeId = useStore((state) => state.connectionNodeId);
 
-  // Es visible si hay una conexión en progreso, PERO ocultamos los del nodo del que sale la flecha
+  // Visible when a connection is in progress, BUT hidden on the node the edge originates from
   const isConnecting = !!connectionNodeId && connectionNodeId !== id;
 
   return (
     <>
-      {/* Puntos principales (Orígenes y destinos) */}
+      {/* Primary handles (source and target) */}
       <VisibleHandle position={Position.Top} id="top" isFrame={isFrame} isPropsExpanded={isPropsExpanded} />
       <VisibleHandle position={Position.Right} id="right" isFrame={isFrame} isPropsExpanded={isPropsExpanded} />
       <VisibleHandle position={Position.Bottom} id="bottom" isFrame={isFrame} isPropsExpanded={isPropsExpanded} />
       <VisibleHandle position={Position.Left} id="left" isFrame={isFrame} isPropsExpanded={isPropsExpanded} />
 
-      {/* Puntos secundarios (SOLO destinos, aparecen dinámicamente) */}
+      {/* Secondary handles (target-only, appear dynamically while connecting) */}
       <TargetOnlyHandle position={Position.Top} id="top-left" style={{ left: '25%' }} isVisible={isConnecting} />
       <TargetOnlyHandle position={Position.Top} id="top-right" style={{ left: '75%' }} isVisible={isConnecting} />
       <TargetOnlyHandle position={Position.Bottom} id="bottom-left" style={{ left: '25%' }} isVisible={isConnecting} />
