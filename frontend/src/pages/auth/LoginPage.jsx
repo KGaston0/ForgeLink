@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
-import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 import apiClient from '../../services/api/apiClient';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -54,12 +56,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[rgb(var(--color-bg))]">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       {loading && <LoadingSpinner />}
       <div className="w-full max-w-md bg-[rgb(var(--color-bg-secondary))] rounded-2xl shadow-xl p-8 border border-[rgb(var(--color-border))]">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[rgb(var(--color-text))] mb-2">Welcome back</h1>
-          <p className="text-[rgb(var(--color-text-secondary))]">Sign in to your ForgeLink account</p>
+          <h1 className="text-3xl font-bold text-[rgb(var(--color-text))] mb-2">{t('auth.login.title')}</h1>
+          <p className="text-[rgb(var(--color-text-secondary))]">{t('auth.login.subtitle')}</p>
         </div>
 
         {error && (
@@ -73,7 +75,7 @@ export default function LoginPage() {
           type="button"
           className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-[rgb(var(--color-border))] rounded-lg font-medium text-[rgb(var(--color-text))] hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled
-          aria-label="Sign in with Google (Coming soon)"
+          aria-label={t('auth.login.googleSignIn')}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
@@ -81,7 +83,7 @@ export default function LoginPage() {
             <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49L4.405 11.9z" fill="#FBBC05"/>
             <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#EA4335"/>
           </svg>
-          Continue with Google (Coming soon)
+          {t('auth.login.googleSignIn')}
         </button>
 
         <div className="flex items-center gap-4 my-6">
@@ -93,7 +95,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="mb-4">
             <label htmlFor="username" className="block text-sm font-medium text-[rgb(var(--color-text))] mb-2">
-              Username
+              {t('auth.login.username')}
             </label>
             <input
               type="text"
@@ -103,7 +105,7 @@ export default function LoginPage() {
               onChange={handleChange}
               required
               autoComplete="username"
-              placeholder="Enter your username"
+              placeholder={t('auth.login.username')}
               aria-required="true"
               className="input-field"
             />
@@ -111,7 +113,7 @@ export default function LoginPage() {
 
           <div className="mb-6">
             <label htmlFor="password" className="block text-sm font-medium text-[rgb(var(--color-text))] mb-2">
-              Password
+              {t('auth.login.password')}
             </label>
             <div className="relative">
               <input
@@ -122,7 +124,7 @@ export default function LoginPage() {
                 onChange={handleChange}
                 required
                 autoComplete="current-password"
-                placeholder="Enter your password"
+                placeholder={t('auth.login.password')}
                 aria-required="true"
                 className="input-field pr-12"
               />
@@ -153,15 +155,15 @@ export default function LoginPage() {
             disabled={loading}
             aria-busy={loading}
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? `${t('auth.login.signIn')}...` : t('auth.login.signIn')}
           </button>
         </form>
 
         <div className="mt-6 text-center space-y-3">
           <p className="text-sm text-[rgb(var(--color-text-secondary))]">
-            Don't have an account?{' '}
+            {t('auth.login.noAccount')}{' '}
             <Link to="/register" className="text-cyan-500 hover:text-cyan-600 font-medium transition-colors">
-              Sign up
+              {t('auth.login.register')}
             </Link>
           </p>
           <Link to="/" className="inline-block text-sm text-[rgb(var(--color-text-muted))] hover:text-[rgb(var(--color-text))] transition-colors">

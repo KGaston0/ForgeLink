@@ -42,7 +42,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def recent(self, request):
         """
         Return the last 3 projects updated by the authenticated user,
-        annotated with graph count for efficient serialization.
+        with prefetched relations to avoid N+1 queries.
         """
         if not request.user or not request.user.is_authenticated:
             raise NotAuthenticated('You must be logged in to view recent projects.')
@@ -50,6 +50,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         recent_projects = (
             Project.objects
             .filter(owner=request.user)
+            .prefetch_related('nodes', 'graphs')
             .order_by('-updated_at')[:3]
         )
         serializer = ProjectListSerializer(recent_projects, many=True)

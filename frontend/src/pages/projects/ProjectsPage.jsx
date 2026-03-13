@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   PlusIcon,
   XMarkIcon,
@@ -7,29 +8,35 @@ import {
   Square3Stack3DIcon,
   CubeIcon,
 } from '@heroicons/react/24/outline';
-import Sidebar from '../../components/layout/Sidebar/index';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Sidebar from '@/components/layout/Sidebar';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 import apiClient from '../../services/api/apiClient';
+import { useActivityFeedInvalidation } from '../../context/ActivityFeedContext';
 
 const INITIAL_FORM = { name: '', description: '' };
 
-const VALIDATION_RULES = {
-  name: {
-    required: 'Project name is required.',
-    maxLength: { value: 255, message: 'Name must be 255 characters or less.' },
-  },
-};
+function createValidationRules(t) {
+  return {
+    name: {
+      required: t('projects.newProjectModal.errors.nameRequired'),
+      maxLength: { value: 255, message: t('projects.newProjectModal.errors.nameMaxLength') },
+    },
+  };
+}
 
-function validateField(field, value) {
-  const rules = VALIDATION_RULES[field];
-  if (!rules) return '';
-  if (rules.required && !value.trim()) return rules.required;
-  if (rules.maxLength && value.length > rules.maxLength.value) return rules.maxLength.message;
+function validateField(field, value, rules) {
+  const fieldRules = rules[field];
+  if (!fieldRules) return '';
+  if (fieldRules.required && !value.trim()) return fieldRules.required;
+  if (fieldRules.maxLength && value.length > fieldRules.maxLength.value) return fieldRules.maxLength.message;
   return '';
 }
 
 // ── Modal for creating a new project ──────────────────────────────────────────
 function NewProjectModal({ isOpen, onClose, onCreated }) {
+  const { invalidateActivityFeed } = useActivityFeedInvalidation();
+  const { t } = useTranslation();
+  const VALIDATION_RULES = createValidationRules(t);
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -50,13 +57,13 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value, VALIDATION_RULES) }));
   };
 
   const handleBlur = (e) => {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
-    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value, VALIDATION_RULES) }));
   };
 
   const hasErrors = Object.values(errors).some(Boolean);
@@ -66,7 +73,7 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
     setApiError('');
 
     // Validate all fields before submission
-    const newErrors = { name: validateField('name', form.name) };
+    const newErrors = { name: validateField('name', form.name, VALIDATION_RULES) };
     setErrors(newErrors);
     setTouched({ name: true });
 
@@ -78,13 +85,14 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
         name: form.name.trim(),
         description: form.description.trim(),
       });
+      invalidateActivityFeed();
       onCreated(data);
       onClose();
     } catch (err) {
       const detail =
         err.response?.data?.name?.[0] ||
         err.response?.data?.detail ||
-        'Could not create the project. Please try again.';
+        t('projects.newProjectModal.errors.creationFailed');
       setApiError(detail);
     } finally {
       setSubmitting(false);
@@ -104,12 +112,12 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[rgb(var(--color-border))]">
           <h2 id="new-project-title" className="text-lg font-semibold text-[rgb(var(--color-text))]">
-            New Project
+            {t('projects.newProjectModal.title')}
           </h2>
           <button
             onClick={onClose}
             className="p-1 rounded-md text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] hover:bg-white/5 transition"
-            aria-label="Close modal"
+            aria-label={t('projects.newProjectModal.cancelButton')}
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
@@ -126,7 +134,7 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
           {/* Name field */}
           <div>
             <label htmlFor="project-name" className="block text-sm font-medium text-[rgb(var(--color-text))] mb-1">
-              Name
+              {t('projects.newProjectModal.name')}
             </label>
             <input
               id="project-name"
@@ -137,7 +145,7 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
               onChange={handleChange}
               onBlur={handleBlur}
               className={`input-field ${touched.name && errors.name ? 'input-error' : ''}`}
-              placeholder="My Awesome Project"
+              placeholder={t('projects.newProjectModal.placeholder.name')}
               aria-required="true"
               aria-invalid={!!(touched.name && errors.name)}
               aria-describedby={touched.name && errors.name ? 'project-name-error' : undefined}
@@ -152,7 +160,7 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
           {/* Description field */}
           <div>
             <label htmlFor="project-description" className="block text-sm font-medium text-[rgb(var(--color-text))] mb-1">
-              Description
+              {t('projects.newProjectModal.description')}
             </label>
             <textarea
               id="project-description"
@@ -163,14 +171,14 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
               onChange={handleChange}
               onBlur={handleBlur}
               className="input-field resize-none"
-              placeholder="What is this project about?"
+              placeholder={t('projects.newProjectModal.placeholder.description')}
             />
           </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-secondary" disabled={submitting}>
-              Cancel
+              {t('projects.newProjectModal.cancelButton')}
             </button>
             <button
               type="submit"
@@ -178,7 +186,7 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
               disabled={submitting || hasErrors}
               aria-busy={submitting}
             >
-              {submitting ? 'Creating…' : 'Create Project'}
+              {submitting ? `${t('projects.newProjectModal.createButton')}…` : t('projects.newProjectModal.createButton')}
             </button>
           </div>
         </form>
@@ -190,7 +198,7 @@ function NewProjectModal({ isOpen, onClose, onCreated }) {
 // ── Project card ──────────────────────────────────────────────────────────────
 function ProjectCard({ project, onOpen }) {
   return (
-    <div className="group p-6 bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] rounded-xl shadow-sm hover:border-cyan-500/40 transition-colors">
+    <div className="group p-6 bg-[rgb(var(--color-bg-secondary))]/50 border border-transparent rounded-xl shadow-sm hover:border-cyan-500/40 transition-colors">
       <div className="flex items-start justify-between mb-3">
         <h3 className="text-lg font-semibold text-[rgb(var(--color-text))] truncate pr-2">
           {project.name}
@@ -223,17 +231,19 @@ function ProjectCard({ project, onOpen }) {
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 function EmptyState({ onNewProject }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
       <FolderOpenIcon className="h-16 w-16 text-[rgb(var(--color-text-muted))] mb-4" />
-      <h2 className="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">No projects yet</h2>
+      <h2 className="text-xl font-semibold text-[rgb(var(--color-text))] mb-2">{t('projects.emptyState.title')}</h2>
       <p className="text-[rgb(var(--color-text-secondary))] mb-6 max-w-md">
-        Create your first project to start organizing your knowledge network.
+        {t('projects.emptyState.description')}
       </p>
       <button onClick={onNewProject} className="btn-primary">
         <span className="flex items-center gap-2">
           <PlusIcon className="h-5 w-5" />
-          New Project
+          {t('projects.header')}
         </span>
       </button>
     </div>
@@ -243,6 +253,7 @@ function EmptyState({ onNewProject }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function ProjectsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -258,11 +269,11 @@ export default function ProjectsPage() {
       const list = Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
       setProjects(list);
     } catch {
-      setFetchError('Could not load projects. Please try again.');
+      setFetchError(t('projects.newProjectModal.errors.creationFailed'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchProjects();
@@ -277,7 +288,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-[rgb(var(--color-bg))]">
+    <div className="flex h-screen bg-background">
       <Sidebar />
 
       <main className="flex-1 overflow-y-auto p-8">
@@ -285,14 +296,14 @@ export default function ProjectsPage() {
           {/* Header */}
           <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-[rgb(var(--color-text))]">Projects</h1>
+              <h1 className="text-3xl font-bold text-[rgb(var(--color-text))]">{t('projects.header')}</h1>
               <p className="text-[rgb(var(--color-text-secondary))] mt-1">
-                Manage your knowledge workspaces.
+                {t('projects.subtitle')}
               </p>
             </div>
             <button onClick={() => setModalOpen(true)} className="btn-primary flex items-center gap-2 self-start">
               <PlusIcon className="h-5 w-5" />
-              New Project
+              {t('projects.newProjectModal.title')}
             </button>
           </header>
 
@@ -327,4 +338,3 @@ export default function ProjectsPage() {
     </div>
   );
 }
-

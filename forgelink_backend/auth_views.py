@@ -104,13 +104,25 @@ def me(request):
     """Returns current user info if JWT token is valid."""
     if not request.user or not request.user.is_authenticated:
         return Response({'authenticated': False}, status=status.HTTP_200_OK)
-    return Response({'authenticated': True, 'user': {'username': request.user.username}})
+    return Response({
+        'authenticated': True,
+        'user': {
+            'username': request.user.username,
+            'email': request.user.email,
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+        }
+    })
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def logout(request):
-    """Logout user, blacklist refresh token, and clear httpOnly cookies"""
+    """Logout user, best-effort blacklist refresh token, and clear httpOnly cookies.
+
+    Allows unauthenticated access so users with an expired access token
+    can still clear their httpOnly cookies (which are not accessible from JS).
+    """
     try:
         # Get refresh token from cookie
         refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])

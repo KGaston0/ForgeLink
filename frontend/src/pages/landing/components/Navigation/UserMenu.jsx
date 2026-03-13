@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 
 /**
  * UserMenu Component
@@ -75,7 +75,7 @@ export function UserMenu() {
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label="User menu"
-        className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 text-white border-2 border-[rgb(var(--color-border))] font-semibold text-base cursor-pointer transition-all duration-200 flex items-center justify-center hover:scale-105 hover:shadow-[0_0_0_4px_rgba(6,182,212,0.1)] active:scale-95"
+        className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent text-white border-2 border-border font-semibold text-base cursor-pointer transition-all duration-200 flex items-center justify-center hover:scale-105 hover:shadow-[0_0_0_4px_hsl(var(--primary)/0.15)] active:scale-95"
       >
         {getInitials()}
       </button>
@@ -83,19 +83,19 @@ export function UserMenu() {
       {isOpen && (
         <div
           role="menu"
-          className="absolute top-[calc(100%+0.5rem)] right-0 min-w-[200px] bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] rounded-lg shadow-lg py-2 animate-slide-down z-[1000]"
+          className="absolute top-[calc(100%+0.5rem)] right-0 min-w-[200px] bg-card border border-border rounded-lg shadow-lg py-2 animate-slide-down z-[1000]"
         >
           <div className="px-4 py-3">
-            <span className="font-semibold text-[rgb(var(--color-text))] text-[15px]">
+            <span className="font-semibold text-foreground text-[15px]">
               @{user?.user?.username || 'User'}
             </span>
           </div>
 
-          <div className="h-px bg-[rgb(var(--color-border))] my-2"></div>
+          <div className="h-px bg-border my-2"></div>
 
           <Link
             to="/dashboard"
-            className="flex items-center gap-3 w-full px-4 py-2.5 text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-bg-secondary))] hover:text-[rgb(var(--color-text))] text-[15px] transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-2.5 text-muted-foreground hover:bg-muted hover:text-foreground text-[15px] transition-colors"
             onClick={() => setIsOpen(false)}
             role="menuitem"
           >
@@ -110,7 +110,7 @@ export function UserMenu() {
 
           <Link
             to="/settings"
-            className="flex items-center gap-3 w-full px-4 py-2.5 text-[rgb(var(--color-text-secondary))] hover:bg-[rgb(var(--color-bg-secondary))] hover:text-[rgb(var(--color-text))] text-[15px] transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-2.5 text-muted-foreground hover:bg-muted hover:text-foreground text-[15px] transition-colors"
             onClick={() => setIsOpen(false)}
             role="menuitem"
           >
@@ -121,7 +121,7 @@ export function UserMenu() {
             Settings
           </Link>
 
-          <div className="h-px bg-[rgb(var(--color-border))] my-2"></div>
+          <div className="h-px bg-border my-2"></div>
 
           <button
             className="flex items-center gap-3 w-full px-4 py-2.5 text-red-500 hover:bg-red-500/10 text-[15px] transition-colors text-left"

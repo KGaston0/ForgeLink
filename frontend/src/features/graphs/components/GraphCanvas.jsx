@@ -27,6 +27,7 @@ import {
 
 // --- IMPORTAMOS NUESTRO HOOK DE HISTORIAL ---
 import useUndoRedo from '../hooks/useUndoRedo';
+import { useActivityFeedInvalidation } from '../../../context/ActivityFeedContext';
 
 const nodeTypes = { custom: BaseNode };
 const edgeTypes = { custom: CustomEdge };
@@ -40,6 +41,7 @@ function sortNodes(nodes) {
 }
 
 function GraphCanvasInner({ graphUuid }) {
+  const { invalidateActivityFeed } = useActivityFeedInvalidation();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [graphId, setGraphId] = useState(null);
@@ -52,8 +54,9 @@ function GraphCanvasInner({ graphUuid }) {
   const [editingEdge, setEditingEdge] = useState(null);
 
   const contextMenuRef = useRef(null);
-  const { getIntersectingNodes, deleteElements, screenToFlowPosition } = useReactFlow();
+  const { getIntersectingNodes, deleteElements, screenToFlowPosition, getViewport, setViewport } = useReactFlow();
   const dragOverFrameIdRef = useRef(null);
+  const originalParentIdsRef = useRef(new Map());
 
   const markUnsaved = useCallback(() => setSaveStatus('unsaved'), []);
 
@@ -67,18 +70,21 @@ function GraphCanvasInner({ graphUuid }) {
   );
 
   // --- HELPER: Calculate the exact center of the current viewport ---
+  const reactFlowWrapper = useRef(null);
   const getCenterSpawnPosition = useCallback(() => {
-    if (typeof window === 'undefined') return { x: 100, y: 100 };
+    const wrapper = reactFlowWrapper.current;
+    if (!wrapper) return screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
 
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
+    const rect = wrapper.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
 
     // Convert screen center to React Flow canvas coordinates
     const position = screenToFlowPosition({ x: centerX, y: centerY });
 
     // Small random offset to prevent nodes from stacking on the exact same spot
     const offset = Math.floor(Math.random() * 20) - 10;
-    return { x: position.x + offset - 80, y: position.y + offset - 40 };
+    return { x: position.x + offset, y: position.y + offset };
   }, [screenToFlowPosition]);
 
   // --- INITIAL DATA LOAD ---
@@ -187,25 +193,32 @@ function GraphCanvasInner({ graphUuid }) {
   const createNode = useCallback((nodeType) => {
     takeSnapshot();
     const centerPosition = getCenterSpawnPosition();
+    // Center the node on the spawn point
+    centerPosition.x -= 80;
+    centerPosition.y -= 40;
 
-    setNodes((nds) => nds.concat({
+    setNodes((nds) => sortNodes([...nds.map((n) => ({
+      ...n,
+      zIndex: n.data?.isFrame ? -1 : 0,
+    })), {
       id: `temp-${Date.now()}`,
       type: 'custom',
       position: centerPosition,
       zIndex: 1000,
       style: { width: 160, height: 80 },
       data: { label: `Nuevo ${nodeType}`, nodeType, graphNodeId: null, parentNode: null, isFrame: false, width: 160, height: 80 },
-    }));
+    }]));
     markUnsaved();
   }, [setNodes, markUnsaved, takeSnapshot, getCenterSpawnPosition]);
 
   const createFrame = useCallback(() => {
     takeSnapshot();
     const centerPosition = getCenterSpawnPosition();
-    centerPosition.x -= 120;
-    centerPosition.y -= 110;
+    // Center the frame on the spawn point
+    centerPosition.x -= 200;
+    centerPosition.y -= 150;
 
-    setNodes((nds) => nds.concat({
+    setNodes((nds) => sortNodes([...nds, {
       id: `temp-${Date.now()}`,
       type: 'custom',
       position: centerPosition,
@@ -213,7 +226,7 @@ function GraphCanvasInner({ graphUuid }) {
       style: { width: 400, height: 300 },
       zIndex: -1,
       data: { label: 'Nuevo Marco', nodeType: 'frame', graphNodeId: null, parentNode: null, isFrame: true, width: 400, height: 300 },
-    }));
+    }]));
     markUnsaved();
   }, [setNodes, markUnsaved, takeSnapshot, getCenterSpawnPosition]);
 
@@ -229,32 +242,60 @@ function GraphCanvasInner({ graphUuid }) {
     takeSnapshot();
 
     const draggedIds = new Set(draggedNodes.map((n) => n.id));
-    setNodes((nds) => nds.map((n) => {
-      if (draggedIds.has(n.id)) {
-        const freed = { ...n, zIndex: 1000 };
-        if (!n.data?.isFrame && n.parentId) delete freed.extent;
-        return freed;
+
+    // Remember the original parent of each dragged node
+    const parentMap = new Map();
+    setNodes((nds) => {
+      for (const n of nds) {
+        if (draggedIds.has(n.id) && !n.data?.isFrame && n.parentId) {
+          parentMap.set(n.id, n.parentId);
+        }
       }
-      return { ...n, zIndex: n.data?.isFrame ? -1 : 0 };
-    }));
+      originalParentIdsRef.current = parentMap;
+
+      return nds.map((n) => {
+        if (draggedIds.has(n.id)) {
+          const freed = { ...n, zIndex: 1000 };
+          // Detach child from parent frame so it moves freely with absolute coords
+          if (!n.data?.isFrame && n.parentId) {
+            const parent = nds.find((p) => p.id === n.parentId);
+            if (parent) {
+              freed.position = {
+                x: n.position.x + parent.position.x,
+                y: n.position.y + parent.position.y,
+              };
+            }
+            delete freed.parentId;
+            delete freed.extent;
+          }
+          return freed;
+        }
+        return { ...n, zIndex: n.data?.isFrame ? -1 : 0 };
+      });
+    });
   }, [setNodes, takeSnapshot]);
 
   const onNodeDrag = useCallback((_event, draggedNode) => {
     if (draggedNode.data?.isFrame) return;
+
+    const originalParentId = originalParentIdsRef.current.get(draggedNode.id) || null;
+
     const validIntersections = getIntersectingNodes(draggedNode).filter((n) => {
-      const isFrame = n.data?.isFrame === true;
-      const isNotCurrentParent = n.id !== draggedNode.parentId && n.id !== draggedNode.data?.parentNode;
-      return isFrame && isNotCurrentParent;
+      return n.data?.isFrame === true;
     });
 
     const hoveredFrameId = validIntersections[0]?.id || null;
-    if (hoveredFrameId === dragOverFrameIdRef.current) return;
-    dragOverFrameIdRef.current = hoveredFrameId;
+
+    // Only highlight if hovering over a DIFFERENT frame than the original parent
+    const effectiveHoveredId = hoveredFrameId === originalParentId ? null : hoveredFrameId;
+
+    if (effectiveHoveredId === dragOverFrameIdRef.current) return;
+    dragOverFrameIdRef.current = effectiveHoveredId;
 
     setNodes((currentNodes) =>
       currentNodes.map((n) => {
         if (!n.data?.isFrame) return n;
-        const shouldHighlight = n.id === hoveredFrameId;
+        const shouldHighlight = n.id === effectiveHoveredId;
         if (n.data.isDragOver === shouldHighlight) return n;
         return { ...n, data: { ...n.data, isDragOver: shouldHighlight } };
       })
@@ -264,6 +305,7 @@ function GraphCanvasInner({ graphUuid }) {
   const onNodeDragStop = useCallback((_event, draggedNode, draggedNodes) => {
     dragOverFrameIdRef.current = null;
     const draggedIds = new Set(draggedNodes.map(n => n.id));
+    const parentMap = originalParentIdsRef.current;
 
     let structureChanged = false;
 
@@ -276,23 +318,19 @@ function GraphCanvasInner({ graphUuid }) {
         if (!draggedIds.has(node.id)) return node;
         if (node.data?.isFrame) return node;
 
-        const intersections = getIntersectingNodes(draggedNode).filter((n) => n.data?.isFrame === true);
+        const intersections = getIntersectingNodes(node).filter((n) => n.data?.isFrame === true);
         const targetFrame = intersections[0] || null;
-        const currentParentId = node.parentId || null;
+        const originalParentId = parentMap.get(node.id) || null;
 
         if (targetFrame) {
-          if (currentParentId !== targetFrame.id) structureChanged = true;
-          let absoluteX = node.position.x;
-          let absoluteY = node.position.y;
-          if (currentParentId && currentParentId !== targetFrame.id) {
-            const oldParent = currentNodes.find((n) => n.id === currentParentId);
-            if (oldParent) {
-              absoluteX += oldParent.position.x;
-              absoluteY += oldParent.position.y;
-            }
+          const relativeX = node.position.x - targetFrame.position.x;
+          const relativeY = node.position.y - targetFrame.position.y;
+
+          // Dropping on a different frame than the original → structural change
+          if (targetFrame.id !== originalParentId) {
+            structureChanged = true;
           }
-          const relativeX = absoluteX - targetFrame.position.x;
-          const relativeY = absoluteY - targetFrame.position.y;
+
           return {
             ...node,
             position: { x: relativeX, y: relativeY },
@@ -303,27 +341,29 @@ function GraphCanvasInner({ graphUuid }) {
           };
         }
 
-        if (currentParentId) {
+        // Node dropped outside any frame
+        if (originalParentId) {
+          // Was inside a frame, now removed → structural change
           structureChanged = true;
-          const oldParent = currentNodes.find((n) => n.id === currentParentId);
-          const absoluteX = oldParent ? node.position.x + oldParent.position.x : node.position.x;
-          const absoluteY = oldParent ? node.position.y + oldParent.position.y : node.position.y;
-          const updatedNode = { ...node };
-          delete updatedNode.parentId;
-          delete updatedNode.extent;
-          updatedNode.position = { x: absoluteX, y: absoluteY };
-          updatedNode.zIndex = 1000;
-          updatedNode.data = { ...updatedNode.data, parentNode: null };
-          return updatedNode;
         }
-
-        return { ...node, zIndex: 1000 };
+        return {
+          ...node,
+          zIndex: 1000,
+          data: { ...node.data, parentNode: null },
+        };
       });
       return sortNodes(updated);
     });
 
+    originalParentIdsRef.current = new Map();
+
     if (structureChanged) markUnsaved();
   }, [getIntersectingNodes, setNodes, markUnsaved]);
+
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  nodesRef.current = nodes;
+  edgesRef.current = edges;
 
   // --- LÓGICA DE GUARDADO EN BLOQUE ---
   const saveState = useCallback(async () => {
@@ -331,7 +371,7 @@ function GraphCanvasInner({ graphUuid }) {
     setSaveStatus('saving');
 
     try {
-      const nodesPayload = nodes.map((node) => {
+      const nodesPayload = nodesRef.current.map((node) => {
         const isFrame = node.data?.isFrame === true;
 
         const getDim = (dimName, fallback) => {
@@ -356,14 +396,14 @@ function GraphCanvasInner({ graphUuid }) {
         };
       });
 
-      const hasNewEdges = edges.some((e) => !e.id.startsWith('conn-'));
+      const hasNewEdges = edgesRef.current.some((e) => !e.id.startsWith('conn-'));
       let defaultConnectionTypeId = null;
       if (hasNewEdges) {
         const defaultConnectionType = await getOrCreateDefaultConnectionType(projectId);
         defaultConnectionTypeId = defaultConnectionType.id;
       }
 
-      const connectionsPayload = edges.map((edge) => {
+      const connectionsPayload = edgesRef.current.map((edge) => {
         const isExisting = edge.id.startsWith('conn-');
         return {
           connection_id: isExisting ? parseInt(edge.id.replace('conn-', ''), 10) : null,
@@ -387,7 +427,9 @@ function GraphCanvasInner({ graphUuid }) {
       const createdNodes = result.nodes?.created || [];
       const createdConns = result.connections?.created || [];
 
+      // Invalidate feed if any nodes or connections were created
       if (createdNodes.length > 0 || createdConns.length > 0) {
+        invalidateActivityFeed();
         const tempIdToNewId = {};
         for (const created of createdNodes) {
           tempIdToNewId[created.temp_id] = `gn-${created.graph_node_id}`;
@@ -443,16 +485,24 @@ function GraphCanvasInner({ graphUuid }) {
       console.error('Error saving canvas:', error);
       setSaveStatus('error');
     }
-  }, [graphUuid, graphId, projectId, nodes, edges]);
+  }, [graphUuid, graphId, projectId, invalidateActivityFeed]);
 
+  // Store saveState in a ref so we can call it without recreating the effect
+  const saveStateRef = useRef(saveState);
   useEffect(() => {
-    if (saveStatus === 'unsaved') {
-      const timerId = setTimeout(() => {
-        saveState();
-      }, 2500);
-      return () => clearTimeout(timerId);
-    }
-  }, [saveStatus, saveState]);
+    saveStateRef.current = saveState;
+  }, [saveState]);
+
+  // Auto-save effect - only depends on saveStatus, uses ref to call saveState
+  useEffect(() => {
+    if (saveStatus !== 'unsaved') return;
+    
+    const timerId = setTimeout(() => {
+      saveStateRef.current();
+    }, 2500);
+    
+    return () => clearTimeout(timerId);
+  }, [saveStatus]);
 
   // --- CONTEXT MENU AND UTILITIES ---
   const toggleFrameMode = useCallback((nodeId) => {
@@ -474,15 +524,85 @@ function GraphCanvasInner({ graphUuid }) {
     setContextMenu(null);
   }, [setNodes, markUnsaved, takeSnapshot]);
 
-  const onNodeContextMenu = useCallback((event, node) => {
-    event.preventDefault();
-    setContextMenu({ type: 'node', nodeId: node.id, node, isFrame: node.data.isFrame === true, x: event.clientX, y: event.clientY });
-  }, []);
+  const rightMouseDownPosRef = useRef(null);
+  const isPanningRef = useRef(false);
 
-  const onEdgeContextMenu = useCallback((event, edge) => {
-    event.preventDefault(); event.stopPropagation();
-    setContextMenu({ type: 'edge', edgeId: edge.id, edge, x: event.clientX, y: event.clientY });
-  }, []);
+  // Manual right-click handling: pan on drag, context menu on static click
+  useEffect(() => {
+    const wrapper = reactFlowWrapper.current;
+    if (!wrapper) return;
+
+    const suppress = (e) => e.preventDefault();
+
+    const handleMouseDown = (e) => {
+      if (e.button !== 2) return;
+      rightMouseDownPosRef.current = { x: e.clientX, y: e.clientY };
+      isPanningRef.current = false;
+    };
+
+    const handleMouseMove = (e) => {
+      const start = rightMouseDownPosRef.current;
+      if (!start) return;
+
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+
+      if (!isPanningRef.current && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+        isPanningRef.current = true;
+      }
+
+      if (isPanningRef.current) {
+        const vp = getViewport();
+        setViewport({ x: vp.x + (e.movementX), y: vp.y + (e.movementY), zoom: vp.zoom });
+      }
+    };
+
+    const handleMouseUp = (e) => {
+      if (e.button !== 2) return;
+      const start = rightMouseDownPosRef.current;
+      const wasPanning = isPanningRef.current;
+      rightMouseDownPosRef.current = null;
+      isPanningRef.current = false;
+      if (!start || wasPanning) return;
+
+      // Static right-click → open context menu
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const rfNodeEl = target?.closest('.react-flow__node');
+      const rfEdgeEl = target?.closest('.react-flow__edge');
+
+      if (rfNodeEl) {
+        const nodeId = rfNodeEl.getAttribute('data-id');
+        const node = nodesRef.current.find((n) => n.id === nodeId);
+        if (node) {
+          setContextMenu({
+            type: 'node',
+            nodeId: node.id,
+            node,
+            isFrame: node.data.isFrame === true,
+            x: e.clientX,
+            y: e.clientY,
+          });
+        }
+      } else if (rfEdgeEl) {
+        const edgeId = rfEdgeEl.getAttribute('data-testid')?.replace('rf__edge-', '');
+        const edge = edgesRef.current.find((ed) => ed.id === edgeId);
+        if (edge) {
+          setContextMenu({ type: 'edge', edgeId: edge.id, edge, x: e.clientX, y: e.clientY });
+        }
+      }
+    };
+
+    wrapper.addEventListener('contextmenu', suppress);
+    wrapper.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      wrapper.removeEventListener('contextmenu', suppress);
+      wrapper.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [getViewport, setViewport]);
 
   useEffect(() => {
     const handleClickOutside = (event) => { if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) setContextMenu(null); };
@@ -502,7 +622,7 @@ function GraphCanvasInner({ graphUuid }) {
         canRedo={canRedo}
       />
 
-      <div className="flex-1 relative">
+      <div className="flex-1 relative" ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -519,8 +639,6 @@ function GraphCanvasInner({ graphUuid }) {
           edgesReconnectable
           onNodesDelete={useCallback((deletedNodes) => { for (const node of deletedNodes) { if (node.data?.graphNodeId) deleteGraphNode(node.data.graphNodeId).catch(console.error); } }, [])}
           onEdgesDelete={useCallback((deletedEdges) => { for (const edge of deletedEdges) { if (edge.id.startsWith('conn-')) deleteConnection(edge.id.replace('conn-', '')).catch(console.error); } }, [])}
-          onNodeContextMenu={onNodeContextMenu}
-          onEdgeContextMenu={onEdgeContextMenu}
           onEdgeDoubleClick={useCallback((event, edge) => { event.preventDefault(); event.stopPropagation(); setEditingEdge(edge); }, [])}
           onNodeDragStart={onNodeDragStart}
           onNodeDrag={onNodeDrag}

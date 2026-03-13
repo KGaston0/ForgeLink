@@ -1,0 +1,408 @@
+{
+  "sidebar": {
+    "dashboard": "Panel de Control",
+    "projects": "Proyectos",
+    "nodeLab": "Laboratorio de Nodos",
+    "settings": "Configuración",
+    "expandTooltip": "Expandir barra lateral",
+    "collapseTooltip": "Contraer barra lateral",
+    "logoutTooltip": "Cerrar sesión",
+    "brand": "ForgeLink"
+  },
+  "projects": {
+    "header": "Proyectos",
+    "subtitle": "Gestiona tus proyectos",
+    "newProjectModal": {
+      "title": "Nuevo Proyecto",
+      "name": "Nombre",
+      "description": "Descripción",
+      "placeholder": {
+        "name": "Mi Proyecto Increíble",
+        "description": "Una breve descripción..."
+      },
+      "createButton": "Crear",
+      "cancelButton": "Cancelar",
+      "errors": {
+        "nameRequired": "El nombre del proyecto es obligatorio.",
+        "nameMaxLength": "El nombre debe tener 255 caracteres o menos.",
+        "creationFailed": "No se pudo crear el proyecto. Intenta de nuevo."
+      }
+    },
+    "emptyState": {
+      "title": "Sin proyectos aún",
+      "description": "Crea tu primer proyecto para empezar"
+    },
+    "projectCard": {
+      "graphs": "Grafos",
+      "openProject": "Abrir proyecto",
+      "delete": "Eliminar proyecto",
+      "lastUpdated": "Última actualización"
+    },
+    "deleteConfirm": {
+      "title": "Eliminar Proyecto",
+      "message": "¿Estás seguro de que deseas eliminar este proyecto? Esta acción no puede deshacerse.",
+      "confirm": "Eliminar",
+      "cancel": "Cancelar"
+    }
+  },
+  "projectDetail": {
+    "tabs": {
+      "overview": "Descripción General",
+      "settings": "Configuración"
+    },
+    "overview": {
+      "graphs": "Grafos",
+      "noGraphs": "Sin grafos aún. Crea tu primer grafo.",
+      "newGraph": "Nuevo Grafo"
+    },
+    "settings": {
+      "projectName": "Nombre del Proyecto",
+      "description": "Descripción",
+      "saveButton": "Guardar Cambios",
+      "savingButton": "Guardando...",
+      "deleteButton": "Eliminar Proyecto",
+      "success": "Proyecto actualizado correctamente",
+      "error": "No se pudo actualizar el proyecto"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Bienvenido de vuelta",
+      "subtitle": "Inicia sesión en tu cuenta de ForgeLink",
+      "username": "Usuario",
+      "password": "Contraseña",
+      "signIn": "Iniciar Sesión",
+      "noAccount": "¿No tienes una cuenta?",
+      "register": "Regístrate aquí",
+      "errors": {
+        "invalidCredentials": "Usuario o contraseña inválidos",
+        "network": "Error de red. Intenta de nuevo."
+      },
+      "googleSignIn": "Inicia sesión con Google (Próximamente)"
+    },
+    "register": {
+      "title": "Crear cuenta",
+      "subtitle": "Comienza a construir tu red de conocimiento",
+      "username": "Usuario",
+      "email": "Correo",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar Contraseña",
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "signUp": "Crear Cuenta",
+      "haveAccount": "¿Ya tienes una cuenta?",
+      "login": "Inicia sesión aquí",
+      "errors": {
+        "usernameMinLength": "El usuario debe tener al menos 3 caracteres",
+        "usernameInvalid": "El usuario solo puede contener letras, números y guiones bajos",
+        "emailInvalid": "Por favor, ingresa un correo válido",
+        "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+        "passwordLowercase": "La contraseña debe contener al menos una letra minúscula",
+        "passwordUppercase": "La contraseña debe contener al menos una letra mayúscula",
+        "passwordNumber": "La contraseña debe contener al menos un número",
+        "passwordSpecial": "La contraseña debe contener al menos un carácter especial",
+        "passwordMismatch": "Las contraseñas no coinciden"
+      }
+    }
+  },
+  "graphCanvas": {
+    "selectGraph": "Selecciona un grafo para visualizar",
+    "toolbar": {
+      "undo": "Deshacer",
+      "redo": "Rehacer",
+      "save": "Guardar",
+      "zoomIn": "Acercar",
+      "zoomOut": "Alejar",
+      "fitView": "Ajustar Vista"
+    },
+    "errors": {
+      "notFound": "Grafo no encontrado",
+      "loadFailed": "No se pudo cargar el grafo"
+    }
+  },
+  "nodeLab": {
+    "header": "Laboratorio de Nodos",
+    "subtitle": "Gestiona y crea plantillas de nodos",
+    "tabs": {
+      "blueprints": "Plantillas",
+      "nodeLists": "Listas de Nodos"
+    },
+    "blueprints": {
+      "title": "Plantillas de Nodos",
+      "create": "Crear Plantilla",
+      "empty": "Sin plantillas aún. Crea tu primera plantilla."
+    },
+    "nodeLists": {
+      "title": "Listas de Nodos",
+      "create": "Crear Lista",
+      "empty": "Sin listas aún. Crea tu primera lista."
+    }
+  },
+  "dashboard": {
+    "commandCenter": "Centro de Comandos",
+    "recentActivity": "Actividad Reciente",
+    "newProject": "Nuevo Proyecto",
+    "header": {
+      "greeting": "Bienvenido de vuelta, {username}."
+    },
+    "resumeWork": {
+      "title": "Modificado Recientemente",
+      "noGraphs": "Sin grafos recientes. ¡Crea tu primer grafo para empezar!",
+      "continueEditing": "Continuar Editando",
+      "ariaLabel": "Continuar editando grafo: {graphName}"
+    },
+    "quickActions": {
+      "newProject": {
+        "label": "Nuevo Proyecto",
+        "description": "Crear un nuevo proyecto"
+      },
+      "quickNote": {
+        "label": "Nota Rápida",
+        "description": "Crear una nota rápida"
+      },
+      "globalSearch": {
+        "label": "Búsqueda Global",
+        "description": "Buscar en todos los proyectos"
+      }
+    },
+    "activityFeed": {
+      "title": "Actividad Reciente",
+      "noActivity": "Sin actividad reciente",
+      "startMessage": "Crea un proyecto o grafo para empezar",
+      "actions": {
+        "created": "Creado",
+        "updated": "Actualizado",
+        "linked": "Vinculado",
+        "deleted": "Eliminado"
+      }
+    },
+    "systemUpdates": {
+      "title": "Novedades",
+      "updates": [
+        {
+          "version": "v1.2.0",
+          "title": "Autoguardado de Canvas",
+          "description": "Tus cambios se guardan automáticamente mientras trabajas",
+          "date": "2026-03-10",
+          "icon": "💾"
+        },
+        {
+          "version": "v1.1.5",
+          "title": "Tipos de Nodos Mejorados",
+          "description": "Nuevos tipos de nodos personalizables con soporte de metadatos mejorado",
+          "date": "2026-03-05",
+          "icon": "✨"
+        },
+        {
+          "version": "v1.1.0",
+          "title": "Modo Oscuro Lanzado",
+          "description": "Soporte completo de modo oscuro para una experiencia cómoda",
+          "date": "2026-02-28",
+          "icon": "🌙"
+        }
+      ]
+    }
+  },
+  "settings": {
+    "header": {
+      "title": "Configuración",
+      "description": "Gestiona tu cuenta, preferencias y comportamiento de la aplicación."
+    },
+    "profile": {
+      "title": "Perfil",
+      "description": "Tu identidad pública en ForgeLink.",
+      "editButton": "Editar Perfil",
+      "displayName": "Nombre Mostrado",
+      "bio": "Biografía",
+      "bioPlaceholder": "Una breve descripción sobre ti..."
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Personaliza cómo se ve ForgeLink.",
+      "theme": {
+        "label": "Tema",
+        "description": "Elige entre tema claro, oscuro o del sistema.",
+        "light": "Claro",
+        "dark": "Oscuro",
+        "system": "Sistema"
+      },
+      "accentColor": {
+        "label": "Color de Acentuación",
+        "description": "Color de resaltado primario utilizado en toda la interfaz.",
+        "cyan": "Cian (Predeterminado)",
+        "purple": "Púrpura",
+        "emerald": "Esmeralda",
+        "rose": "Rosa",
+        "amber": "Ámbar",
+        "blue": "Azul"
+      },
+      "fontFamily": {
+        "label": "Familia de Fuentes",
+        "description": "Tipografía utilizada en la aplicación.",
+        "outfit": "Outfit (Predeterminado)",
+        "inter": "Inter",
+        "jakarta": "Plus Jakarta Sans",
+        "mono": "JetBrains Mono"
+      },
+      "density": {
+        "label": "Densidad de la UI",
+        "description": "Controla el espaciado y relleno en toda la interfaz.",
+        "compact": "Compacto",
+        "comfortable": "Cómodo (Predeterminado)",
+        "spacious": "Espacioso"
+      }
+    },
+    "language": {
+      "title": "Idioma y Región",
+      "description": "Establece tu idioma preferido y formatos regionales.",
+      "interfaceLanguage": {
+        "label": "Idioma de la Interfaz",
+        "description": "El idioma utilizado para menús, botones y etiquetas.",
+        "english": "🇬🇧  English",
+        "spanish": "🇪🇸  Español",
+        "portuguese": "🇧🇷  Português",
+        "french": "🇫🇷  Français",
+        "german": "🇩🇪  Deutsch",
+        "japanese": "🇯🇵  日本語",
+        "korean": "🇰🇷  한국어",
+        "chinese": "🇨🇳  中文"
+      },
+      "dateFormat": {
+        "label": "Formato de Fecha",
+        "description": "Cómo se muestran las fechas en la aplicación.",
+        "dmy": "DD/MM/YYYY",
+        "mdy": "MM/DD/YYYY",
+        "ymd": "YYYY-MM-DD",
+        "relative": "Relativo (hace 2 días)"
+      },
+      "timezone": {
+        "label": "Zona Horaria",
+        "description": "Se utiliza para marcas de tiempo y programación.",
+        "auto": "Autodetectar (Predeterminado)",
+        "utc": "UTC",
+        "eastern": "Este (UTC-5)",
+        "pacific": "Pacífico (UTC-8)",
+        "centralEurope": "Europa Central (UTC+1)",
+        "japan": "Japón (UTC+9)"
+      }
+    },
+    "canvas": {
+      "title": "Canvas y Editor",
+      "description": "Configura el comportamiento del canvas del grafo.",
+      "autoSave": {
+        "label": "Autoguardado",
+        "description": "Guarda automáticamente los cambios del canvas."
+      },
+      "autoSaveInterval": {
+        "label": "Intervalo de Autoguardado",
+        "description": "Con qué frecuencia se guardan automáticamente los cambios.",
+        "every2s": "Cada 2 segundos",
+        "every5s": "Cada 5 segundos (Predeterminado)",
+        "every10s": "Cada 10 segundos",
+        "every30s": "Cada 30 segundos"
+      },
+      "snapToGrid": {
+        "label": "Ajuste a la Cuadrícula",
+        "description": "Los nodos se ajustan a una cuadrícula invisible al moverse."
+      },
+      "showGrid": {
+        "label": "Mostrar Cuadrícula",
+        "description": "Muestra la cuadrícula de puntos de fondo en el canvas."
+      },
+      "showMinimap": {
+        "label": "Mostrar Minimapa",
+        "description": "Muestra un minimapa de navegación en el canvas."
+      },
+      "animateEdges": {
+        "label": "Bordes Animados",
+        "description": "Muestra animación de flujo en los bordes de conexión."
+      },
+      "defaultEdgeType": {
+        "label": "Tipo de Borde Predeterminado",
+        "description": "El estilo utilizado al crear nuevas conexiones.",
+        "bezier": "Bezier (Predeterminado)",
+        "straight": "Recto",
+        "step": "Escalonado",
+        "smoothStep": "Escalonado Suave"
+      }
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "description": "Controla cómo y cuándo recibes notificaciones.",
+      "emailNotifications": {
+        "label": "Notificaciones por Correo Electrónico",
+        "description": "Recibe actualizaciones importantes por correo electrónico."
+      },
+      "collaboratorJoins": {
+        "label": "Incorporación de Colaboradores",
+        "description": "Recibe una notificación cuando alguien se une a tu proyecto."
+      },
+      "weeklyDigest": {
+        "label": "Resumen Semanal",
+        "description": "Recibe un resumen semanal de tu actividad."
+      },
+      "soundEffects": {
+        "label": "Efectos de Sonido",
+        "description": "Reproduce sonidos para acciones y notificaciones."
+      }
+    },
+    "privacy": {
+      "title": "Privacidad y Datos",
+      "description": "Gestiona tus preferencias de datos y privacidad.",
+      "publicProfile": {
+        "label": "Perfil Público",
+        "description": "Permite que otros usuarios vean tu perfil y proyectos."
+      },
+      "usageAnalytics": {
+        "label": "Análisis de Uso",
+        "description": "Ayuda a mejorar ForgeLink compartiendo datos de uso anónimos."
+      },
+      "showOnlineStatus": {
+        "label": "Mostrar Estado en Línea",
+        "description": "Permite que los colaboradores vean cuándo estás en línea."
+      },
+      "twoFactorAuth": {
+        "label": "Autenticación de Dos Factores",
+        "description": "Agrega una capa adicional de seguridad a tu cuenta."
+      },
+      "exportData": {
+        "label": "Exportar Datos",
+        "description": "Descarga una copia de todos tus proyectos y datos.",
+        "button": "Exportar JSON"
+      }
+    },
+    "shortcuts": {
+      "title": "Atajos de Teclado",
+      "description": "Personaliza los atajos de teclado para acciones comunes.",
+      "actions": {
+        "undo": "Deshacer",
+        "redo": "Rehacer",
+        "save": "Guardar",
+        "deleteNode": "Eliminar Nodo",
+        "selectAll": "Seleccionar Todo",
+        "zoomIn": "Ampliar",
+        "zoomOut": "Reducir",
+        "fitView": "Ajustar Vista"
+      }
+    },
+    "dangerZone": {
+      "title": "Zona de Peligro",
+      "description": "Acciones irreversibles. Procede con precaución.",
+      "deleteProjects": {
+        "label": "Eliminar Todos los Proyectos",
+        "description": "Elimina permanentemente todos tus proyectos y sus datos.",
+        "button": "Eliminar Todo"
+      },
+      "deleteAccount": {
+        "label": "Eliminar Cuenta",
+        "description": "Elimina permanentemente tu cuenta y todos los datos asociados.",
+        "button": "Eliminar Cuenta"
+      }
+    },
+    "footer": {
+      "note": "La configuración se guarda localmente. La sincronización del lado del servidor llegará en una actualización futura."
+    }
+  }
+}
+
+

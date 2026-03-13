@@ -108,8 +108,9 @@ class GraphViewSet(viewsets.ModelViewSet):
                 connection_results = self._process_connections_bulk(
                     graph, project, connections_data, node_results['temp_id_map'],
                 )
+                graph.save(update_fields=['updated_at'])
         except Exception as e:
-            logger.exception('Bulk canvas save failed for graph %s', pk)
+            logger.exception('Bulk canvas save failed for graph %s', uuid)
             return Response(
                 {'detail': f'Bulk save failed: {str(e)}'},
                 status=status.HTTP_400_BAD_REQUEST,

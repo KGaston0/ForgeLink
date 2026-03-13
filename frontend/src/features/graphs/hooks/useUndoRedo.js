@@ -6,8 +6,8 @@ export default function useUndoRedo(nodes, edges, setNodes, setEdges, markUnsave
   const [past, setPast] = useState([]);
   const [future, setFuture] = useState([]);
 
-  // Usamos referencias (refs) para siempre tener el estado más actual sin causar
-  // que useCallback se re-renderice (esto salva el rendimiento de React Flow).
+  // We use references (refs) to always have the most current state without causing
+  // useCallback to be re-rendered (this saves React Flow performance).
   const currentNodes = useRef(nodes);
   const currentEdges = useRef(edges);
 
@@ -24,7 +24,7 @@ export default function useUndoRedo(nodes, edges, setNodes, setEdges, markUnsave
       }
       return newPast;
     });
-    setFuture([]); // Si haces algo nuevo, pierdes el futuro (Redo se vacía)
+    setFuture([]); // If you do something new, you lose the future (Redo empties itself)
   }, []);
 
   const undo = useCallback(() => {
@@ -38,7 +38,7 @@ export default function useUndoRedo(nodes, edges, setNodes, setEdges, markUnsave
 
       setNodes(previous.nodes);
       setEdges(previous.edges);
-      markUnsaved(); // Avisamos que hay un cambio para auto-guardar
+      markUnsaved(); // We are announcing a change to the auto-save feature.
 
       return newPast;
     });
@@ -55,16 +55,16 @@ export default function useUndoRedo(nodes, edges, setNodes, setEdges, markUnsave
 
       setNodes(next.nodes);
       setEdges(next.edges);
-      markUnsaved(); // Avisamos que hay un cambio para auto-guardar
+      markUnsaved(); // We are announcing a change to the auto-save feature.
 
       return newFuture;
     });
   }, [setNodes, setEdges, markUnsaved]);
 
-  // Atajos de teclado universales (Ctrl+Z y Ctrl+Y)
+  // Universal keyboard shortcuts (Ctrl+Z and Ctrl+Y)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignoramos si el usuario está escribiendo adentro de un input o textarea
+      // We ignore whether the user is typing inside an input or textarea
       if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') {
         return;
       }

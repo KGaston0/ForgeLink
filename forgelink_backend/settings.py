@@ -213,10 +213,11 @@ CSRF_TRUSTED_ORIGINS = config(
     cast=Csv(),
 )
 
-# Security Headers - XSS Protection
-SECURE_BROWSER_XSS_FILTER = True  # Enable browser's XSS filter
+# Security Headers
 X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
 SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME sniffing
+# Note: SECURE_BROWSER_XSS_FILTER was removed in Django 4.0+.
+# Modern browsers ignore the X-XSS-Protection header; rely on CSP instead.
 
 # Production security (requires HTTPS) - uncomment in production:
 # SESSION_COOKIE_SECURE = True

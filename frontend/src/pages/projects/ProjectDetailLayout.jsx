@@ -1,26 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Outlet, NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeftIcon,
   Square3Stack3DIcon,
   Cog6ToothIcon,
   CubeIcon,
 } from '@heroicons/react/24/outline';
-import Sidebar from '../../components/layout/Sidebar/index';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Sidebar from '@/components/layout/Sidebar';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 import apiClient from '../../services/api/apiClient';
 
 const normalizeList = (data) =>
   Array.isArray(data?.results) ? data.results : Array.isArray(data) ? data : [];
 
-const TABS = [
-  { label: 'Overview', to: '.', icon: Square3Stack3DIcon, end: true },
-  { label: 'Settings', to: 'settings', icon: Cog6ToothIcon, end: false },
-];
-
 export default function ProjectDetailLayout() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const TABS = [
+    { label: t('projectDetail.tabs.overview'), to: '.', icon: Square3Stack3DIcon, end: true },
+    { label: t('projectDetail.tabs.settings'), to: 'settings', icon: Cog6ToothIcon, end: false },
+  ];
 
   const [project, setProject] = useState(null);
   const [graphs, setGraphs] = useState([]);
@@ -56,7 +58,7 @@ export default function ProjectDetailLayout() {
   // ── Loading state ───────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex h-screen bg-[rgb(var(--color-bg))]">
+      <div className="flex h-screen bg-background">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <LoadingSpinner size="medium" fullScreen={false} />
@@ -68,12 +70,12 @@ export default function ProjectDetailLayout() {
   // ── Error state ─────────────────────────────────────────────────────────
   if (fetchError || !project) {
     return (
-      <div className="flex h-screen bg-[rgb(var(--color-bg))]">
+      <div className="flex h-screen bg-background">
         <Sidebar />
         <main className="flex-1 flex flex-col items-center justify-center gap-4">
-          <p role="alert" className="text-red-400">{fetchError || 'Project not found.'}</p>
+          <p role="alert" className="text-red-400">{fetchError || t('projectDetail.overview.noGraphs')}</p>
           <button onClick={() => navigate('/projects')} className="btn-secondary">
-            Back to Projects
+            ← {t('projects.header')}
           </button>
         </main>
       </div>
@@ -81,7 +83,7 @@ export default function ProjectDetailLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-[rgb(var(--color-bg))]">
+    <div className="flex h-screen bg-background">
       <Sidebar />
 
       <main className="flex-1 overflow-y-auto p-8">
@@ -92,7 +94,7 @@ export default function ProjectDetailLayout() {
             className="flex items-center gap-1 text-sm text-[rgb(var(--color-text-secondary))] hover:text-cyan-500 transition-colors mb-6"
           >
             <ArrowLeftIcon className="h-4 w-4" />
-            Back to Projects
+            ← {t('projects.header')}
           </button>
 
           {/* Project header */}

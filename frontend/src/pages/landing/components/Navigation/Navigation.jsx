@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
-import { ThemeToggle } from '../../common/ThemeToggle/ThemeToggle';
+import { useAuth } from '@/context/AuthContext';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { UserMenu } from './UserMenu';
 
 /**
@@ -21,10 +21,10 @@ export function Navigation() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 py-6 backdrop-blur-xl bg-[rgb(var(--color-bg))]/80 border-b border-[rgb(var(--color-border))]">
+    <nav className="fixed top-0 left-0 right-0 z-50 py-6 backdrop-blur-xl bg-background/80 border-b border-border">
       <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 text-[rgb(var(--color-text))] hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 flex items-center justify-center text-cyan-500">
+        <Link to="/" className="flex items-center gap-3 text-foreground hover:opacity-80 transition-opacity">
+          <div className="w-8 h-8 flex items-center justify-center text-primary">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="6" cy="6" r="3" fill="currentColor" opacity="0.6"/>
               <circle cx="18" cy="6" r="3" fill="currentColor" opacity="0.8"/>
@@ -36,13 +36,13 @@ export function Navigation() {
         </Link>
 
         <div className="hidden md:flex gap-8">
-          <a href="#gallery" className="text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] font-medium text-[15px] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-cyan-500 after:transition-all hover:after:w-full">
+          <a href="#gallery" className="text-muted-foreground hover:text-foreground font-medium text-[15px] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">
             Gallery
           </a>
-          <a href="#pricing" className="text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] font-medium text-[15px] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-cyan-500 after:transition-all hover:after:w-full">
+          <a href="#pricing" className="text-muted-foreground hover:text-foreground font-medium text-[15px] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">
             Pricing
           </a>
-          <a href="#docs" className="text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] font-medium text-[15px] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-cyan-500 after:transition-all hover:after:w-full">
+          <a href="#docs" className="text-muted-foreground hover:text-foreground font-medium text-[15px] transition-colors relative after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-0.5 after:bg-primary after:transition-all hover:after:w-full">
             Docs
           </a>
         </div>

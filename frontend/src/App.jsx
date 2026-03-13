@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
-import LandingPage from './pages/LandingPage.jsx';
+import { ActivityFeedProvider } from './context/ActivityFeedContext.jsx';
+import LandingPage from './pages/landing/LandingPage.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
 import Dashboard from './pages/home/Dashboard.jsx';
@@ -11,12 +12,14 @@ import SettingsTab from './pages/projects/tabs/SettingsTab.jsx';
 import SettingsPage from './pages/settings/SettingsPage.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import GraphCanvasPage from './pages/graphs/GraphCanvasPage.jsx';
+import NodeLabPage from './pages/nodelab/NodeLabPage.jsx';
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
+        <ActivityFeedProvider>
+          <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -31,9 +34,11 @@ function App() {
               <Route path="settings" element={<SettingsTab />} />
             </Route>
             <Route path="/graphs/:id" element={<GraphCanvasPage />} />
+            <Route path="/node-types" element={<NodeLabPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
-        </Routes>
+          </Routes>
+        </ActivityFeedProvider>
       </AuthProvider>
     </BrowserRouter>
   );

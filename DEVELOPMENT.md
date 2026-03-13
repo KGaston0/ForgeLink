@@ -23,22 +23,31 @@ ForgeLink/
 │
 ├── frontend/src/                 # React SPA
 │   ├── App.jsx                   # Route definitions
-│   ├── index.css                 # CSS variables, component classes, React Flow overrides
+│   ├── index.css                 # shadcn/ui HSL variables, component classes, React Flow overrides
 │   ├── main.jsx                  # Entry point
 │   │
-│   ├── components/               # Reusable UI components
-│   │   ├── common/               # Badge, Button, Card, LoadingSpinner, ThemeToggle
-│   │   ├── landing/              # HeroSection, BentoGrid, DualPurpose, PricingSection, CTASection
-│   │   └── layout/               # Footer, Navigation, Sidebar
+│   ├── components/               # Shared UI components
+│   │   ├── layout/Sidebar/       # Collapsible sidebar (shadcn + lucide-react + tooltips)
+│   │   └── ui/                   # shadcn/ui primitives + app-level components
+│   │       ├── avatar.jsx        #   Radix Avatar with gradient fallback
+│   │       ├── button.jsx        #   CVA button with 6 variants + 4 sizes
+│   │       ├── loading-spinner.jsx  # Theme-aware spinner (fullscreen / inline)
+│   │       ├── separator.jsx     #   Radix Separator
+│   │       ├── theme-toggle.jsx  #   Animated Sun/Moon toggle (lucide-react)
+│   │       └── tooltip.jsx       #   Radix Tooltip with portal
 │   │
 │   ├── pages/                    # Route-level page components
-│   │   ├── LandingPage.jsx       # Public landing
 │   │   ├── auth/                 # LoginPage, RegisterPage
 │   │   ├── home/                 # Dashboard, useDashboardStats hook
+│   │   ├── landing/              # LandingPage + co-located components
+│   │   │   └── components/       #   Navigation, UserMenu, Footer, HeroSection,
+│   │   │                         #   BentoGrid, DualPurpose, PricingSection, CTASection
 │   │   ├── projects/             # ProjectsPage, ProjectDetailLayout
 │   │   │   └── tabs/             # OverviewTab, SettingsTab
 │   │   ├── graphs/               # GraphCanvasPage
-│   │   └── settings/             # SettingsPage (placeholder)
+│   │   ├── nodelab/              # NodeLabPage
+│   │   │   └── tabs/             # BlueprintsTab, NodeListsTab
+│   │   └── settings/             # SettingsPage
 │   │
 │   ├── features/graphs/          # Graph editor feature module
 │   │   ├── api/graphService.js   # API calls (fetchCanvasData, saveCanvasBulk, etc.)
@@ -52,11 +61,14 @@ ForgeLink/
 │   │   │   └── edges/            # CustomEdge, edgeConstants
 │   │   └── hooks/useUndoRedo.js  # Undo/redo state management
 │   │
+│   ├── lib/utils.js              # cn() utility (clsx + tailwind-merge)
 │   ├── services/api/             # apiClient (axios instance + token refresh interceptor)
 │   ├── context/                  # AuthContext, ThemeContext
 │   ├── config/apiConfig.js       # API base URL + endpoint constants
-│   └── routes/ProtectedRoute.jsx # Auth guard (redirects to /login)
+│   ├── routes/ProtectedRoute.jsx # Auth guard (redirects to /login)
+│   └── types/NodeType.js         # Type definitions
 │
+├── components.json               # shadcn/ui configuration
 ├── dev.sh                        # Start backend + frontend in tmux
 ├── setup.sh                      # Initial project setup script
 ├── helpers.sh                    # Development utilities
@@ -258,41 +270,75 @@ Shared data is passed via `useOutletContext()`:
 
 ## Design System
 
-### CSS Variables
+### Theme Architecture
 
-Defined in `frontend/src/index.css` using RGB triplets (for Tailwind v4 compatibility):
+Built on **shadcn/ui** with **Tailwind CSS v4** (CSS-based config, no `tailwind.config.js`).
+
+All design tokens are defined as HSL values in `frontend/src/index.css`. The `@theme inline` block registers them as Tailwind colors so you can use classes like `bg-primary`, `text-muted-foreground`, `border-border`.
+
+### CSS Variables (HSL format)
 
 ```css
 :root {
-  --color-bg: 255 255 255;
-  --color-bg-secondary: 248 249 250;
-  --color-text: 26 26 31;
-  --color-text-secondary: 107 114 128;
-  --color-text-muted: 156 163 175;
-  --color-border: 229 231 235;
-  --color-border-hover: 209 213 219;
+  /* Core surfaces */
+  --background: 220 16% 96%;        /* Warm gray (not pure white) */
+  --foreground: 240 6% 10%;         /* Near-black text */
+  --card: 220 14% 93%;              /* Card/panel background */
+  --popover: 220 14% 93%;           /* Dropdown/modal background */
+
+  /* Brand colors */
+  --primary: 187 72% 43%;           /* Cyan — buttons, links, focus rings */
+  --accent: 271 81% 56%;            /* Purple — gradients, secondary brand */
+
+  /* Semantic */
+  --muted: 220 14% 89%;             /* Subtle backgrounds */
+  --muted-foreground: 220 9% 46%;   /* Secondary text */
+  --destructive: 0 84% 60%;         /* Error/danger */
+  --border: 220 13% 86%;            /* Borders */
+  --ring: 187 72% 43%;              /* Focus ring (cyan) */
+
+  /* Sidebar-specific */
+  --sidebar: 220 16% 93%;
+  --sidebar-foreground: 240 6% 10%;
+  --sidebar-accent: 187 72% 43%;
+  --sidebar-border: 220 13% 86%;
 }
 
-html.dark, :root.dark {
-  --color-bg: 26 26 31;
-  --color-bg-secondary: 31 31 36;
-  --color-text: 248 250 252;
-  --color-text-secondary: 161 161 170;
-  --color-text-muted: 113 113 122;
-  --color-border: 39 39 42;
-  --color-border-hover: 63 63 70;
+.dark {
+  --background: 240 6% 10%;         /* Deep charcoal */
+  --foreground: 210 40% 98%;        /* Off-white text */
+  --card: 240 5% 12%;
+  --primary: 187 72% 43%;           /* Cyan (same in both themes) */
+  --accent: 271 81% 56%;            /* Purple (same in both themes) */
+  --border: 240 4% 16%;
+  /* ... */
 }
 ```
 
-**Usage:** `rgb(var(--color-text))`, `bg-[rgb(var(--color-bg-secondary))]`
+**Usage:** `bg-background`, `text-foreground`, `text-primary`, `border-border`, `bg-card`, etc.
 
-### Component Classes
+> Legacy variables (`--color-bg`, `--color-text`, etc.) are still defined for backward compatibility in unmigrated components. New code should always use the shadcn tokens.
 
-Global CSS classes defined in `index.css` `@layer components`:
+### UI Components (`components/ui/`)
+
+All components use the `cn()` utility (clsx + tailwind-merge) and follow shadcn/ui conventions:
+
+| Component | File | Description |
+|---|---|---|
+| Button | `button.jsx` | 6 variants (default, destructive, outline, secondary, ghost, link) × 4 sizes |
+| Avatar | `avatar.jsx` | Radix Avatar with image + fallback (gradient initials) |
+| Tooltip | `tooltip.jsx` | Radix Tooltip with portal, used in collapsed sidebar |
+| Separator | `separator.jsx` | Horizontal/vertical divider |
+| LoadingSpinner | `loading-spinner.jsx` | Themed spinner, fullscreen overlay or inline |
+| ThemeToggle | `theme-toggle.jsx` | Animated Sun/Moon icons with rotation transition |
+
+### Global CSS Classes
+
+Defined in `index.css` `@layer components`:
 
 | Class | Description |
 |---|---|
-| `.btn-primary` | Gradient button (cyan → purple) |
+| `.btn-primary` | Brand gradient button (cyan → purple, 135deg) |
 | `.btn-secondary` | Transparent bordered button |
 | `.input-field` | Styled input with focus ring |
 | `.input-error` | Red border variant for validation errors |
@@ -301,12 +347,12 @@ Global CSS classes defined in `index.css` `@layer components`:
 
 `ThemeContext` provides `theme`, `toggleTheme`, `isDark`, `isLight`. Reads from `localStorage`, falls back to system preference.
 
-**Toggle:** Sets `dark` class on `<html>` element.
+**Toggle:** Sets `dark` class on `<html>` element. All CSS variables swap via `.dark { ... }`.
 
 ### Typography
 
-- **Headings:** `font-family: 'Outfit', sans-serif`
-- **Body:** System font stack via Tailwind defaults
+- **Font:** `Inter`, system-ui, sans-serif (registered via `@theme inline`)
+- **Headings and body** use the same font stack for consistency
 
 ---
 
@@ -362,11 +408,12 @@ DB_PORT=5432
 
 1. **Backend:** Create models in the appropriate app, add serializers, ViewSet, register in `urls.py`
 2. **Frontend:**
-   - API calls → `features/<feature>/api/`
-   - Components → `features/<feature>/components/`
-   - Hooks → `features/<feature>/hooks/`
-   - Page → `pages/<feature>/`
-   - Route → `App.jsx`
+   - **Complex feature** (own state, multiple components, API): create `features/<feature>/` with `api/`, `components/`, `hooks/`
+   - **Simple CRUD page**: create `pages/<feature>/` with the page + optional `tabs/`
+   - **Page-specific components**: co-locate inside the page folder (e.g., `pages/landing/components/`)
+   - **Shared primitive**: add to `components/ui/` following shadcn/ui conventions (kebab-case filename, `cn()` utility, `forwardRef`)
+   - **Route**: register in `App.jsx`
+3. **New shadcn component:** `npx shadcn@latest add <component>` or create manually in `components/ui/`
 
 ### Code Conventions
 
@@ -425,4 +472,3 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 - [Quick Start](./QUICK_START.md) — Get running in minutes
 - [API Reference](./API_ENDPOINTS.md) — Complete endpoint documentation
 - [Frontend](./frontend/README.md) — Frontend setup, structure, and routes
-- [Component Library](./frontend/src/components/README.md) — UI components with props reference

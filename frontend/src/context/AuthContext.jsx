@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/api/authService';
 import apiClient, { AuthenticationError } from '../services/api/apiClient';
-import LoadingSpinner from '../components/common/LoadingSpinner/LoadingSpinner';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 const AuthContext = createContext(undefined);
 

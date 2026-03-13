@@ -165,19 +165,23 @@ class JWTAuthenticationTest(APITestCase):
         self.assertEqual(response.cookies['access_token'].value, '')
         self.assertEqual(response.cookies['refresh_token'].value, '')
 
-        # Verify refresh token is blacklisted by trying to use it
-        refresh_data = {'refresh': refresh_token}
-        refresh_response = self.client.post(self.refresh_url, refresh_data)
+        # Verify refresh token is blacklisted by trying to use the OLD cookie value.
+        # Logout cleared the client's cookies, so we simulate a client
+        # that still holds the old token to confirm blacklisting (not just missing cookie).
+        self.client.cookies['refresh_token'] = refresh_token
+        refresh_response = self.client.post(self.refresh_url)
 
-        # Should fail because token is blacklisted
+        # Should fail because token is blacklisted (not just missing)
         self.assertEqual(refresh_response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_logout_unauthenticated(self):
-        """Test logout requires authentication"""
-        # Try to logout without being authenticated
+        """Test logout works even without authentication (clears cookies)"""
+        # Logout without being authenticated should still succeed
+        # so users with expired access tokens can clear their httpOnly cookies
         response = self.client.post(self.logout_url)
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['detail'], 'Logout successful')
 
     def test_logout_with_cookie_only(self):
         """Test logout works when authenticated via cookie (no Authorization header)"""

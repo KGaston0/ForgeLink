@@ -3,7 +3,7 @@
 A graph-based knowledge management application for worldbuilding, story design, and complex creative projects. Model knowledge as interconnected graphs with typed relationships, visual canvases, and project-scoped isolation.
 
 - **Backend:** Django 4.2+ with Django REST Framework
-- **Frontend:** React 19 + Vite 7 + Tailwind CSS v4
+- **Frontend:** React 19 + Vite 7 + Tailwind CSS v4 + shadcn/ui
 - **Database:** PostgreSQL (production) / SQLite (development)
 - **Auth:** JWT with httpOnly cookies
 - **Graph Editor:** @xyflow/react 12
@@ -18,7 +18,6 @@ A graph-based knowledge management application for worldbuilding, story design, 
 | **[Development Guide](./DEVELOPMENT.md)** | Architecture, conventions, workflows, and design system |
 | **[API Reference](./API_ENDPOINTS.md)** | Complete REST API documentation |
 | **[Frontend](./frontend/README.md)** | Frontend setup, structure, routes, and styling |
-| **[Component Library](./frontend/src/components/README.md)** | All 13 UI components with props reference |
 
 ---
 
@@ -50,7 +49,7 @@ A graph-based knowledge management application for worldbuilding, story design, 
 ### Security
 - UUID-based public identifiers (no sequential IDs exposed in URLs)
 - JWT authentication with httpOnly cookies (XSS protection)
-- Security headers (XSS filter, X-Frame-Options, Content-Type nosniff)
+- Security headers (X-Frame-Options, Content-Type nosniff)
 - Owner-scoped queries (users can only access their own data)
 
 ---
@@ -73,11 +72,12 @@ A graph-based knowledge management application for worldbuilding, story design, 
 |---|---|
 | React 19 | UI library |
 | Vite 7 | Build tool / dev server |
-| Tailwind CSS v4 | Utility-first CSS with CSS variables |
+| Tailwind CSS v4 | Utility-first CSS with HSL variables |
+| shadcn/ui | Component primitives (Radix UI + CVA) |
+| lucide-react | Icon library |
 | @xyflow/react 12 | Interactive graph editor |
 | axios | HTTP client with interceptors |
 | react-router-dom 7 | Routing (nested routes) |
-| @heroicons/react | Icon library |
 
 ---
 
@@ -134,16 +134,25 @@ ForgeLink/
 │   └── connections/              # ConnectionTypes + NodeConnections
 │
 ├── frontend/src/                 # React SPA
-│   ├── components/               # Reusable UI
-│   │   ├── common/               # Badge, Button, Card, LoadingSpinner, ThemeToggle
-│   │   ├── landing/              # HeroSection, BentoGrid, DualPurpose, PricingSection, CTASection
-│   │   └── layout/               # Footer, Navigation, Sidebar
+│   ├── components/               # Shared UI
+│   │   ├── layout/Sidebar/       # Collapsible sidebar (shadcn + lucide-react)
+│   │   └── ui/                   # shadcn/ui primitives + app-level components
+│   │       ├── avatar.jsx        #   Avatar with fallback
+│   │       ├── button.jsx        #   Button with CVA variants
+│   │       ├── loading-spinner.jsx  # Spinner (fullscreen / inline)
+│   │       ├── separator.jsx     #   Horizontal/vertical separator
+│   │       ├── theme-toggle.jsx  #   Dark/light mode toggle
+│   │       └── tooltip.jsx       #   Radix tooltip
 │   ├── pages/                    # Route pages
 │   │   ├── auth/                 # LoginPage, RegisterPage
 │   │   ├── home/                 # Dashboard, useDashboardStats
+│   │   ├── landing/              # LandingPage + all landing components
+│   │   │   └── components/       #   Navigation, Footer, Hero, Bento, Pricing, CTA, DualPurpose
 │   │   ├── projects/             # ProjectsPage, ProjectDetailLayout
-│   │   │   └── tabs/             # OverviewTab, SettingsTab
+│   │   │   └── tabs/             #   OverviewTab, SettingsTab
 │   │   ├── graphs/               # GraphCanvasPage
+│   │   ├── nodelab/              # NodeLabPage
+│   │   │   └── tabs/             #   BlueprintsTab, NodeListsTab
 │   │   └── settings/             # SettingsPage
 │   ├── features/graphs/          # Graph editor feature module
 │   │   ├── api/                  # graphService.js
@@ -151,10 +160,12 @@ ForgeLink/
 │   │   │   ├── nodes/            # BaseNode, StandardNode, FrameNode
 │   │   │   └── edges/            # CustomEdge, edgeConstants
 │   │   └── hooks/                # useUndoRedo
+│   ├── lib/                      # Utility functions (cn for tailwind-merge)
 │   ├── services/api/             # apiClient (axios + interceptors)
 │   ├── context/                  # AuthContext, ThemeContext
 │   ├── config/                   # apiConfig
-│   └── routes/                   # ProtectedRoute
+│   ├── routes/                   # ProtectedRoute
+│   └── types/                    # Type definitions (NodeType)
 │
 ├── dev.sh                        # Start backend + frontend (tmux)
 ├── setup.sh                      # Initial project setup
@@ -178,7 +189,9 @@ ForgeLink/
 
 ### Frontend
 - [x] Landing page with modular components
-- [x] Design system with dark/light mode (CSS variables + Tailwind v4)
+- [x] Design system with dark/light mode (shadcn/ui + HSL variables + Tailwind v4)
+- [x] shadcn/ui integration (Button, Avatar, Tooltip, Separator, ThemeToggle)
+- [x] Collapsible sidebar with animated transitions and tooltips
 - [x] JWT authentication flow (login, register, refresh, logout)
 - [x] Dashboard with real-time stats and recent projects
 - [x] Projects page with CRUD

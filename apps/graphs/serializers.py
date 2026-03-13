@@ -5,18 +5,17 @@ from .models import Graph, GraphNode
 
 class GraphSerializer(serializers.ModelSerializer):
     """Serializer for Graph model."""
-
+    project_name = serializers.CharField(source='project.name', read_only=True)
     node_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Graph
-        fields = ['id', 'uuid', 'project', 'name', 'description', 'created_at', 'updated_at', 'node_count']
+
+        fields = ['id', 'uuid', 'project', 'project_name', 'name', 'description', 'created_at', 'updated_at', 'node_count']
         read_only_fields = ['id', 'uuid', 'created_at', 'updated_at', 'node_count']
 
     def get_node_count(self, obj):
         return obj.graph_nodes.count()
-
-
 class GraphNodeSerializer(serializers.ModelSerializer):
     """Serializer for GraphNode model (node membership and layout in a graph)."""
 

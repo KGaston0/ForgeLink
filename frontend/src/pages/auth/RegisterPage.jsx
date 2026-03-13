@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
-import LoadingSpinner from '../../components/common/LoadingSpinner/LoadingSpinner';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -108,7 +109,7 @@ export default function RegisterPage() {
     setLoading(false);
   };
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[rgb(var(--color-bg))]">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       {loading && <LoadingSpinner />}
       <div className="w-full max-w-2xl bg-[rgb(var(--color-bg-secondary))] rounded-2xl shadow-xl p-8 border border-[rgb(var(--color-border))]">
         <div className="text-center mb-8">
@@ -127,7 +128,7 @@ export default function RegisterPage() {
             <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49L4.405 11.9z" fill="#FBBC05"/>
             <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#EA4335"/>
           </svg>
-          Continue with Google (Coming soon)
+          {t('auth.register.signUp')} (Coming soon)
         </button>
         <div className="flex items-center gap-4 my-6">
           <div className="flex-1 h-px bg-[rgb(var(--color-border))]"></div>
@@ -313,14 +314,14 @@ export default function RegisterPage() {
             disabled={loading || !isFormValid()}
             aria-busy={loading}
           >
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? `${t('auth.register.signUp')}...` : t('auth.register.signUp')}
           </button>
         </form>
         <div className="mt-6 text-center space-y-3">
           <p className="text-sm text-[rgb(var(--color-text-secondary))]">
-            Already have an account?{' '}
+            {t('auth.register.haveAccount')}{' '}
             <Link to="/login" className="text-cyan-500 hover:text-cyan-600 font-medium transition-colors">
-              Sign in
+              {t('auth.register.login')}
             </Link>
           </p>
           <Link to="/" className="inline-block text-sm text-[rgb(var(--color-text-muted))] hover:text-[rgb(var(--color-text))] transition-colors">

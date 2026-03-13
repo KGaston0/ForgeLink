@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Cog6ToothIcon,
   ExclamationTriangleIcon,
@@ -12,12 +13,6 @@ function validateName(value) {
   if (value.length > 255) return 'Name must be 255 characters or less.';
   return '';
 }
-
-// ── Settings sidebar nav items ────────────────────────────────────────────────
-const SECTIONS = [
-  { id: 'general', label: 'General', icon: Cog6ToothIcon },
-  { id: 'danger', label: 'Danger Zone', icon: ExclamationTriangleIcon, danger: true },
-];
 
 // ── Delete Confirmation Modal ─────────────────────────────────────────────────
 function DeleteProjectModal({ isOpen, onClose, onConfirm, projectName, deleting }) {
@@ -82,6 +77,12 @@ function DeleteProjectModal({ isOpen, onClose, onConfirm, projectName, deleting 
 export default function SettingsTab() {
   const { project, updateProject, projectUuid } = useOutletContext();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const SECTIONS = [
+    { id: 'general', label: t('projectDetail.settings'), icon: Cog6ToothIcon },
+    { id: 'danger', label: t('settings.dangerZone.title'), icon: ExclamationTriangleIcon, danger: true },
+  ];
 
   const [activeSection, setActiveSection] = useState('general');
 
@@ -112,7 +113,7 @@ export default function SettingsTab() {
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditForm((prev) => ({ ...prev, [name]: value }));
-    if (name === 'name') setEditErrors((prev) => ({ ...prev, name: validateName(value) }));
+    if (name === 'name') setEditErrors((prev) => ({ ...prev, name: validateName(value, t) }));
     setSaveSuccess('');
     setSaveError('');
   };
@@ -120,7 +121,7 @@ export default function SettingsTab() {
   const handleEditBlur = (e) => {
     const { name, value } = e.target;
     setEditTouched((prev) => ({ ...prev, [name]: true }));
-    if (name === 'name') setEditErrors((prev) => ({ ...prev, name: validateName(value) }));
+    if (name === 'name') setEditErrors((prev) => ({ ...prev, name: validateName(value, t) }));
   };
 
   const editHasErrors = Object.values(editErrors).some(Boolean);
@@ -134,7 +135,7 @@ export default function SettingsTab() {
     setSaveSuccess('');
     setSaveError('');
 
-    const nameErr = validateName(editForm.name);
+    const nameErr = validateName(editForm.name, t);
     setEditErrors({ name: nameErr });
     setEditTouched({ name: true });
     if (nameErr) return;
@@ -146,10 +147,10 @@ export default function SettingsTab() {
         description: editForm.description.trim(),
       });
       updateProject(data);
-      setSaveSuccess('Project updated successfully.');
+      setSaveSuccess(t('projectDetail.settings.success'));
     } catch (err) {
       const detail =
-        err.response?.data?.name?.[0] || err.response?.data?.detail || 'Could not save changes.';
+        err.response?.data?.name?.[0] || err.response?.data?.detail || t('projectDetail.settings.error');
       setSaveError(detail);
     } finally {
       setSaving(false);
@@ -201,7 +202,7 @@ export default function SettingsTab() {
       <div className="flex-1 min-w-0">
         {activeSection === 'general' && (
           <section>
-            <h2 className="text-xl font-bold text-[rgb(var(--color-text))] mb-6">General</h2>
+            <h2 className="text-xl font-bold text-[rgb(var(--color-text))] mb-6">{t('projectDetail.settings')}</h2>
 
             <form onSubmit={handleSave} className="p-6 bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] rounded-xl space-y-5">
               {saveSuccess && (
@@ -217,7 +218,7 @@ export default function SettingsTab() {
 
               <div>
                 <label htmlFor="edit-name" className="block text-sm font-medium text-[rgb(var(--color-text))] mb-1">
-                  Project Name
+                  {t('projectDetail.settings.projectName')}
                 </label>
                 <input
                   id="edit-name"
@@ -241,7 +242,7 @@ export default function SettingsTab() {
 
               <div>
                 <label htmlFor="edit-description" className="block text-sm font-medium text-[rgb(var(--color-text))] mb-1">
-                  Description
+                  {t('projects.newProjectModal.description')}
                 </label>
                 <textarea
                   id="edit-description"
@@ -262,7 +263,7 @@ export default function SettingsTab() {
                   disabled={saving || editHasErrors || !isDirty}
                   aria-busy={saving}
                 >
-                  {saving ? 'Saving…' : 'Save Changes'}
+                  {saving ? `${t('projectDetail.settings.savingButton')}…` : t('projectDetail.settings.saveButton')}
                 </button>
               </div>
             </form>
@@ -294,21 +295,21 @@ export default function SettingsTab() {
           <section>
             <h2 className="text-xl font-bold text-red-400 mb-6 flex items-center gap-2">
               <ExclamationTriangleIcon className="h-5 w-5" />
-              Danger Zone
+              {t('settings.dangerZone.title')}
             </h2>
 
             <div className="p-6 bg-[rgb(var(--color-bg-secondary))] border border-red-500/30 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h3 className="text-sm font-semibold text-[rgb(var(--color-text))]">Delete this project</h3>
+                <h3 className="text-sm font-semibold text-[rgb(var(--color-text))]">{t('projectDetail.settings.deleteButton')}</h3>
                 <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
-                  Once deleted, all graphs, nodes and connections will be permanently removed.
+                  {t('settings.dangerZone.deleteAccount.description')}
                 </p>
               </div>
               <button
                 onClick={() => setDeleteModalOpen(true)}
                 className="px-4 py-2 rounded-lg border border-red-500/50 text-red-400 text-sm font-medium hover:bg-red-500/10 transition shrink-0"
               >
-                Delete Project
+                {t('projectDetail.settings.deleteButton')}
               </button>
             </div>
           </section>

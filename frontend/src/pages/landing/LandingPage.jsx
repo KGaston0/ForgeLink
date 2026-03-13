@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { Navigation } from '../components/layout/Navigation/Navigation';
-import { Footer } from '../components/layout/Footer/Footer';
-import { HeroSection } from '../components/landing/HeroSection/HeroSection';
-import { BentoGrid } from '../components/landing/BentoGrid/BentoGrid';
-import { DualPurpose } from '../components/landing/DualPurpose/DualPurpose';
-import { PricingSection } from '../components/landing/PricingSection/PricingSection';
-import { CTASection } from '../components/landing/CTASection/CTASection';
+import { Navigation } from './components/Navigation/Navigation';
+import { Footer } from './components/Footer/Footer';
+import { HeroSection } from './components/HeroSection/HeroSection';
+import { BentoGrid } from './components/BentoGrid/BentoGrid';
+import { DualPurpose } from './components/DualPurpose/DualPurpose';
+import { PricingSection } from './components/PricingSection/PricingSection';
+import { CTASection } from './components/CTASection/CTASection';
 
 function LandingPage() {
   useEffect(() => {
@@ -32,7 +32,7 @@ function LandingPage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-[rgb(var(--color-bg))]">
+    <div className="relative min-h-screen bg-background">
       {/* Grain Texture Overlay */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.015] z-10" style={{
         backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
