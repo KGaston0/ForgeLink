@@ -61,6 +61,7 @@
       "saveButton": "Guardar Cambios",
       "savingButton": "Guardando...",
       "deleteButton": "Eliminar Proyecto",
+      "deleteDescription": "Elimina permanentemente tu proyecto y todos los datos asociados.",
       "success": "Proyecto actualizado correctamente",
       "error": "No se pudo actualizar el proyecto"
     }

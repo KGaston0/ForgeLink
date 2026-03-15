@@ -15,7 +15,7 @@ function validateName(value) {
 }
 
 // ── Delete Confirmation Modal ─────────────────────────────────────────────────
-function DeleteProjectModal({ isOpen, onClose, onConfirm, projectName, deleting }) {
+function DeleteProjectModal({ isOpen, onClose, onConfirm, projectName, deleting, error }) {
   const [confirmation, setConfirmation] = useState('');
 
   useEffect(() => {
@@ -35,6 +35,12 @@ function DeleteProjectModal({ isOpen, onClose, onConfirm, projectName, deleting 
         </div>
 
         <div className="px-6 py-5 space-y-4">
+          {error && (
+            <p role="alert" className="text-sm text-red-400 bg-red-400/10 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
           <p className="text-sm text-[rgb(var(--color-text-secondary))]">
             This action <strong className="text-red-400">cannot be undone</strong>. It will permanently delete the project
             <strong className="text-[rgb(var(--color-text))]"> {projectName}</strong>, all its graphs, nodes and connections.
@@ -53,6 +59,7 @@ function DeleteProjectModal({ isOpen, onClose, onConfirm, projectName, deleting 
               className="input-field"
               placeholder={projectName}
               aria-required="true"
+              disabled={deleting}
             />
           </div>
 
@@ -80,7 +87,7 @@ export default function SettingsTab() {
   const { t } = useTranslation();
 
   const SECTIONS = [
-    { id: 'general', label: t('projectDetail.settings'), icon: Cog6ToothIcon },
+    { id: 'general', label: t('projectDetail.tabs.settings'), icon: Cog6ToothIcon },
     { id: 'danger', label: t('settings.dangerZone.title'), icon: ExclamationTriangleIcon, danger: true },
   ];
 
@@ -97,6 +104,7 @@ export default function SettingsTab() {
   // Delete modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   // Sync form when project changes
   useEffect(() => {
@@ -160,10 +168,14 @@ export default function SettingsTab() {
   // ── Delete handler ──────────────────────────────────────────────────────
   const handleDeleteProject = async () => {
     setDeleting(true);
+    setDeleteError('');
     try {
       await apiClient.delete(`/projects/${projectUuid}/`);
+      // Redirect after successful deletion
       navigate('/projects', { replace: true });
-    } catch {
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || 'Failed to delete project. Please try again.';
+      setDeleteError(errorMessage);
       setDeleting(false);
     }
   };
@@ -202,7 +214,7 @@ export default function SettingsTab() {
       <div className="flex-1 min-w-0">
         {activeSection === 'general' && (
           <section>
-            <h2 className="text-xl font-bold text-[rgb(var(--color-text))] mb-6">{t('projectDetail.settings')}</h2>
+            <h2 className="text-xl font-bold text-[rgb(var(--color-text))] mb-6">{t('projectDetail.tabs.settings')}</h2>
 
             <form onSubmit={handleSave} className="p-6 bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] rounded-xl space-y-5">
               {saveSuccess && (
@@ -302,7 +314,7 @@ export default function SettingsTab() {
               <div>
                 <h3 className="text-sm font-semibold text-[rgb(var(--color-text))]">{t('projectDetail.settings.deleteButton')}</h3>
                 <p className="text-sm text-[rgb(var(--color-text-secondary))] mt-1">
-                  {t('settings.dangerZone.deleteAccount.description')}
+                  {t('projectDetail.settings.deleteDescription')}
                 </p>
               </div>
               <button
@@ -319,10 +331,14 @@ export default function SettingsTab() {
       {/* Delete modal */}
       <DeleteProjectModal
         isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeleteError('');
+        }}
         onConfirm={handleDeleteProject}
         projectName={project?.name || ''}
         deleting={deleting}
+        error={deleteError}
       />
     </div>
   );

@@ -232,56 +232,7 @@ export default function SettingsPage() {
               />
             </Section>
 
-            {/* ── Language ─────────────────────────────────────────── */}
-            <Section title={t('settings.language.title')} description={t('settings.language.description')}>
-              <SelectField
-                id="settings-language"
-                label={t('settings.language.interfaceLanguage.label')}
-                description={t('settings.language.interfaceLanguage.description')}
-                value={settings.language}
-                onChange={update('language')}
-                options={[
-                  { value: 'en', label: t('settings.language.interfaceLanguage.english') },
-                  { value: 'es', label: t('settings.language.interfaceLanguage.spanish') },
-                  { value: 'pt', label: t('settings.language.interfaceLanguage.portuguese') },
-                  { value: 'fr', label: t('settings.language.interfaceLanguage.french') },
-                  { value: 'de', label: t('settings.language.interfaceLanguage.german') },
-                  { value: 'ja', label: t('settings.language.interfaceLanguage.japanese') },
-                  { value: 'ko', label: t('settings.language.interfaceLanguage.korean') },
-                  { value: 'zh', label: t('settings.language.interfaceLanguage.chinese') },
-                ]}
-              />
 
-              <SelectField
-                id="settings-dateformat"
-                label={t('settings.language.dateFormat.label')}
-                description={t('settings.language.dateFormat.description')}
-                value="dmy"
-                onChange={() => {}}
-                options={[
-                  { value: 'dmy', label: t('settings.language.dateFormat.dmy') },
-                  { value: 'mdy', label: t('settings.language.dateFormat.mdy') },
-                  { value: 'ymd', label: t('settings.language.dateFormat.ymd') },
-                  { value: 'relative', label: t('settings.language.dateFormat.relative') },
-                ]}
-              />
-
-              <SelectField
-                id="settings-timezone"
-                label={t('settings.language.timezone.label')}
-                description={t('settings.language.timezone.description')}
-                value="auto"
-                onChange={() => {}}
-                options={[
-                  { value: 'auto', label: t('settings.language.timezone.auto') },
-                  { value: 'utc', label: t('settings.language.timezone.utc') },
-                  { value: 'est', label: t('settings.language.timezone.eastern') },
-                  { value: 'pst', label: t('settings.language.timezone.pacific') },
-                  { value: 'cet', label: t('settings.language.timezone.centralEurope') },
-                  { value: 'jst', label: t('settings.language.timezone.japan') },
-                ]}
-              />
-            </Section>
 
             {/* ── Canvas & Editor ──────────────────────────────────── */}
             <Section title={t('settings.canvas.title')} description={t('settings.canvas.description')}>

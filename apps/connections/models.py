@@ -51,7 +51,7 @@ class NodeConnection(models.Model):
     # Reference to user-defined connection type (project-scoped)
     connection_type = models.ForeignKey(
         ConnectionType,
-        on_delete=models.PROTECT,  # Prevent deletion if connections exist
+        on_delete=models.CASCADE,  # Allow cascade deletion when ConnectionType is deleted
         related_name='connections'
     )
     label = models.CharField(max_length=255, blank=True)

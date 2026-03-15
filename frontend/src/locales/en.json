@@ -61,6 +61,7 @@
       "saveButton": "Save Changes",
       "savingButton": "Saving...",
       "deleteButton": "Delete Project",
+      "deleteDescription": "Permanently delete your project and all associated data.",
       "success": "Project updated successfully",
       "error": "Failed to update project"
     }

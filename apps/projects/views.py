@@ -38,6 +38,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
             raise NotAuthenticated('You must be logged in to create a project.')
         serializer.save(owner=self.request.user)
 
+    def perform_destroy(self, instance):
+        """
+        Delete a project and cascade delete all related objects.
+        This override ensures the owner verification happens before deletion.
+        """
+        # Verify owner
+        if instance.owner != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('You do not have permission to delete this project.')
+        
+        # Delete the instance (cascades will handle related objects)
+        instance.delete()
+
     @action(detail=False, methods=['get'], url_path='recent')
     def recent(self, request):
         """
