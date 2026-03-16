@@ -114,11 +114,48 @@
       "save": "Save",
       "zoomIn": "Zoom In",
       "zoomOut": "Zoom Out",
-      "fitView": "Fit View"
+      "goUp": "Go Up",
+      "fitView": "Fit View",
+      "addPortal": "Add Link to Graph",
+      "addNode": "Add Node",
+      "addFrame": "Add Frame",
+      "defaultTypes": "Default Types",
+      "defaultFrames": "Default Frames",
+      "pinnedBlueprints": "Pinned Blueprints",
+      "noPinnedFrames": "No pinned frames",
+      "exploreNodeLab": "Explore Node Lab",
+      "status": {
+        "synced": "Synced",
+        "unsaved": "Unsaved Changes",
+        "saving": "Saving...",
+        "error": "Sync Error"
+      }
+    },
+    "contextMenu": {
+      "properties": "Properties",
+      "convertToNode": "Convert to Normal Node",
+      "convertToFrame": "Convert to Frame",
+      "deleteNode": "Delete Node",
+      "configureEdge": "Configure Relationship",
+      "deleteEdge": "Delete Connection"
+    },
+    "creation": {
+      "newNode": "New {{type}}",
+      "newFrame": "New Frame"
     },
     "errors": {
       "notFound": "Graph not found",
       "loadFailed": "Failed to load graph"
+    }
+  },
+  "graphs": {
+    "portalModal": {
+      "title": "Create Cross-Graph Portal",
+      "description": "Select a target graph to create a shortcut node.",
+      "selectLabel": "Target Graph",
+      "placeholder": "Select a graph...",
+      "confirm": "Create Portal",
+      "errorFetching": "Error fetching graphs"
     }
   },
   "nodeLab": {
@@ -325,6 +362,14 @@
         "straight": "Straight",
         "step": "Step",
         "smoothStep": "Smooth Step"
+      },
+      "canvasDepth": {
+        "label": "Canvas Depth",
+        "description": "How many levels of children to load at once.",
+        "level2": "2 Levels",
+        "level3": "3 Levels (Default)",
+        "level5": "5 Levels",
+        "infinite": "Infinite"
       }
     },
     "notifications": {

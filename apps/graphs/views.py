@@ -34,16 +34,110 @@ class GraphViewSet(viewsets.ModelViewSet):
     def canvas(self, request, uuid=None):
         """Returns nodes (with layout) and connections for the graph in a single response."""
         graph = self.get_object()
+        folder_id = request.query_params.get('folder_id')
+        depth_param = request.query_params.get('depth', '3')
 
-        graph_nodes = graph.graph_nodes.select_related('node').all()
-        connections = graph.connections.select_related(
-            'source_node', 'target_node', 'connection_type'
-        ).all()
+        try:
+            depth = int(depth_param)
+        except (ValueError, TypeError):
+            depth = 3
+
+        # 1. Traemos TODOS los nodos a la memoria (es más rápido procesar el árbol en Python)
+        all_graph_nodes = list(graph.graph_nodes.select_related('node').all())
+
+        current_level_node_ids = []
+        accumulated_node_ids = set()
+        current_folder_data = None
+
+        if folder_id:
+            try:
+                current_folder = next(gn for gn in all_graph_nodes if str(gn.id) == str(folder_id))
+                current_folder_data = GraphNodeSerializer(current_folder).data
+                current_level_node_ids = [gn.id for gn in all_graph_nodes if gn.parent_node_id == current_folder.id]
+            except StopIteration:
+                return Response({'detail': 'Folder not found.'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            current_level_node_ids = [gn.id for gn in all_graph_nodes if gn.parent_node_id is None]
+
+        accumulated_node_ids.update(current_level_node_ids)
+
+        # 2. Profundidad dinámica
+        current_depth = 1
+        while current_level_node_ids and (depth == -1 or current_depth < depth):
+            next_level_node_ids = [gn.id for gn in all_graph_nodes if gn.parent_node_id in current_level_node_ids]
+            if not next_level_node_ids:
+                break
+            accumulated_node_ids.update(next_level_node_ids)
+            current_level_node_ids = next_level_node_ids
+            current_depth += 1
+
+        # --- MAGIA 1: FUNCION DE RASTREO (EDGE HOISTING) ---
+        def get_visible_node_id(gn):
+            """Sube por el árbol genealógico hasta encontrar un ancestro visible."""
+            current = gn
+            while current and current.id not in accumulated_node_ids:
+                if not current.parent_node_id:
+                    return None
+                current = next((g for g in all_graph_nodes if g.id == current.parent_node_id), None)
+            return current.node_id if current else None
+
+        node_to_gn = {gn.node_id: gn for gn in all_graph_nodes}
+
+        # --- MAGIA 2: ENRUTAMIENTO INTELIGENTE DE CABLES ---
+        connections = graph.connections.select_related('source_node', 'target_node', 'connection_type').all()
+        processed_connections = []
+
+        for conn in connections:
+            source_gn = node_to_gn.get(conn.source_node_id)
+            target_gn = node_to_gn.get(conn.target_node_id)
+            if not source_gn or not target_gn:
+                continue
+
+            # Calculamos a dónde deberían ir los enchufes realmente
+            vis_source_id = get_visible_node_id(source_gn)
+            vis_target_id = get_visible_node_id(target_gn)
+
+            # Si ambos extremos tienen al menos un padre visible y no son el mismo marco (evita cables en bucle)
+            if vis_source_id and vis_target_id and vis_source_id != vis_target_id:
+                conn_data = NodeConnectionSerializer(conn).data
+                conn_data['source_node'] = vis_source_id
+                conn_data['target_node'] = vis_target_id
+
+                # TASK 1: Flag hoisted edges
+                is_hoisted = vis_source_id != conn.source_node_id or vis_target_id != conn.target_node_id
+                conn_data['is_hoisted'] = is_hoisted
+
+                # Si el cable fue "elevado" a un marco, le borramos la posición exacta del enchufe
+                # para que React Flow lo conecte suavemente al centro del marco
+                if vis_source_id != conn.source_node_id:
+                    conn_data['source_handle_position'] = None
+                if vis_target_id != conn.target_node_id:
+                    conn_data['target_handle_position'] = None
+
+                processed_connections.append(conn_data)
+
+        # --- MAGIA 3: RADAR DE NODOS OCULTOS ---
+        hidden_counts = {}
+        for gn in all_graph_nodes:
+            if gn.id not in accumulated_node_ids:
+                vis_ancestor_id = get_visible_node_id(gn)
+                if vis_ancestor_id:
+                    hidden_counts[vis_ancestor_id] = hidden_counts.get(vis_ancestor_id, 0) + 1
+
+        # Empaquetamos todo para el frontend
+        visible_graph_nodes = [gn for gn in all_graph_nodes if gn.id in accumulated_node_ids]
+        nodes_data = []
+        for gn in visible_graph_nodes:
+            data = GraphNodeSerializer(gn).data
+            # Le inyectamos la cantidad de hijos ocultos al JSON
+            data['hidden_children_count'] = hidden_counts.get(gn.node_id, 0)
+            nodes_data.append(data)
 
         return Response({
             'graph': GraphSerializer(graph).data,
-            'nodes': GraphNodeSerializer(graph_nodes, many=True).data,
-            'connections': NodeConnectionSerializer(connections, many=True).data,
+            'current_folder': current_folder_data,
+            'nodes': nodes_data,
+            'connections': processed_connections,
         })
 
     @action(detail=True, methods=['put'], url_path='canvas/bulk')
@@ -277,7 +371,7 @@ class GraphViewSet(viewsets.ModelViewSet):
                     ['title', 'node_type', 'custom_properties'],
                 )
 
-        # --- Phase 4: Resolve parent_node references ---
+        # --- Phase 4: Resolve parent_node references with validation ---
         parent_updates = []
         all_gn_entries = list(graph_nodes_to_create) + [
             (entry, gn)
@@ -304,11 +398,37 @@ class GraphViewSet(viewsets.ModelViewSet):
             if parent_mapping:
                 parent_gn_id = parent_mapping['graph_node_id']
                 if gn.parent_node_id != parent_gn_id:
+                    # Validate no circular reference before assigning
+                    if parent_gn_id == gn.id:
+                        logger.warning('Cannot set node %s as its own parent', gn.id)
+                        continue
                     gn.parent_node_id = parent_gn_id
                     parent_updates.append(gn)
+            elif isinstance(parent_ref, str) and parent_ref.startswith('gn-'):
+                # Handle gn-X references to existing nodes that might NOT be in the current view
+                try:
+                    parent_gn_id = int(parent_ref.replace('gn-', ''))
+                    if gn.parent_node_id != parent_gn_id:
+                        # Validate no self-reference
+                        if parent_gn_id == gn.id:
+                            logger.warning('Cannot set node %s as its own parent', gn.id)
+                            continue
+                        gn.parent_node_id = parent_gn_id
+                        parent_updates.append(gn)
+                except ValueError:
+                    pass
 
         if parent_updates:
-            GraphNode.objects.bulk_update(parent_updates, ['parent_node_id'])
+            # Validate each update to ensure no circular references
+            for gn in parent_updates:
+                try:
+                    gn.clean()  # This will check for cycles
+                except Exception as e:
+                    logger.warning('Validation error for parent_node assignment on %s: %s', gn.id, str(e))
+                    parent_updates.remove(gn)
+            
+            if parent_updates:
+                GraphNode.objects.bulk_update(parent_updates, ['parent_node_id'])
 
         return {
             'created': created_response,
@@ -400,20 +520,32 @@ class GraphViewSet(viewsets.ModelViewSet):
                 if not conn:
                     continue
 
+                # FIX CRÍTICO: Si el cable es "elevado" (proxy), NO tocamos sus nodos en la base de datos
+                is_hoisted = entry.get('is_hoisted', False)
+                if not is_hoisted:
+                    source_mapping = temp_id_map.get(entry.get('source_temp_id', ''), {})
+                    target_mapping = temp_id_map.get(entry.get('target_temp_id', ''), {})
+
+                    new_source_id = source_mapping.get('node_id')
+                    new_target_id = target_mapping.get('node_id')
+
+                    if new_source_id:
+                        conn.source_node_id = new_source_id
+                    if new_target_id:
+                        conn.target_node_id = new_target_id
+
                 conn.label = entry.get('label', conn.label)
                 conn.direction = entry.get('direction', conn.direction)
-                conn.source_handle_position = entry.get(
-                    'source_handle_position', conn.source_handle_position
-                )
-                conn.target_handle_position = entry.get(
-                    'target_handle_position', conn.target_handle_position
-                )
+                conn.source_handle_position = entry.get('source_handle_position', conn.source_handle_position)
+                conn.target_handle_position = entry.get('target_handle_position', conn.target_handle_position)
+
                 update_objects.append(conn)
 
             if update_objects:
                 NodeConnection.objects.bulk_update(
                     update_objects,
-                    ['label', 'direction', 'source_handle_position', 'target_handle_position'],
+                    ['label', 'direction', 'source_handle_position', 'target_handle_position', 'source_node_id',
+                     'target_node_id'],
                 )
 
         return {

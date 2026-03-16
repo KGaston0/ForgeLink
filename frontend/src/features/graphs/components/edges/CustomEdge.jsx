@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { getSmoothStepPath, EdgeLabelRenderer, BaseEdge } from '@xyflow/react';
+import { Folder } from 'lucide-react';
 import { EDGE_DIRECTIONS, DIRECTION_LABELS } from './edgeConstants';
 
 const CustomEdge = ({
@@ -15,6 +16,7 @@ const CustomEdge = ({
   style,
 }) => {
   const direction = data?.direction || EDGE_DIRECTIONS.FORWARD;
+  const isHoisted = data?.isHoisted || false;
   const edgeColor = selected ? 'rgb(6, 182, 212)' : 'rgb(100, 116, 139)'; // cyan-500 : slate-500
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
@@ -57,6 +59,7 @@ const CustomEdge = ({
           ...style,
           stroke: edgeColor,
           strokeWidth: selected ? 2.5 : 1.5,
+          strokeDasharray: isHoisted ? '5 5' : 'none',
           transition: 'stroke 0.2s ease, stroke-width 0.2s ease',
         }}
         markerEnd={showEnd ? `url(#${markerEndId})` : undefined}
@@ -81,6 +84,13 @@ const CustomEdge = ({
           {selected && (
             <div className="text-[10px] px-2 py-0.5 rounded-full bg-[rgb(var(--color-bg-secondary))] border border-cyan-500/30 text-cyan-400 font-semibold shadow-sm tracking-wide">
               {DIRECTION_LABELS[direction]}
+            </div>
+          )}
+
+          {isHoisted && (
+            <div className="flex items-center gap-1 px-2 py-1 text-[9px] font-semibold rounded-full bg-slate-700/90 border border-slate-600 text-amber-300 shadow-md">
+              <Folder size={12} className="shrink-0" />
+              <span>Hoisted</span>
             </div>
           )}
         </div>

@@ -114,11 +114,48 @@
       "save": "Guardar",
       "zoomIn": "Acercar",
       "zoomOut": "Alejar",
-      "fitView": "Ajustar Vista"
+      "goUp": "Subir",
+      "fitView": "Ajustar Vista",
+      "addPortal": "Añadir Enlace a Grafo",
+      "addNode": "Añadir Nodo",
+      "addFrame": "Añadir Marco",
+      "defaultTypes": "Tipos por Defecto",
+      "defaultFrames": "Marcos por Defecto",
+      "pinnedBlueprints": "Plantillas Fijadas",
+      "noPinnedFrames": "Sin marcos fijados",
+      "exploreNodeLab": "Explorar Laboratorio",
+      "status": {
+        "synced": "Sincronizado",
+        "unsaved": "Cambios sin guardar",
+        "saving": "Guardando...",
+        "error": "Error de sincronización"
+      }
+    },
+    "contextMenu": {
+      "properties": "Propiedades",
+      "convertToNode": "Convertir en Nodo Normal",
+      "convertToFrame": "Convertir en Marco",
+      "deleteNode": "Eliminar Nodo",
+      "configureEdge": "Configurar Relación",
+      "deleteEdge": "Eliminar Conexión"
+    },
+    "creation": {
+      "newNode": "Nuevo {{type}}",
+      "newFrame": "Nuevo Marco"
     },
     "errors": {
       "notFound": "Grafo no encontrado",
       "loadFailed": "No se pudo cargar el grafo"
+    }
+  },
+  "graphs": {
+    "portalModal": {
+      "title": "Crear Portal entre Grafos",
+      "description": "Selecciona un grafo de destino para crear un nodo de acceso directo.",
+      "selectLabel": "Grafo de Destino",
+      "placeholder": "Selecciona un grafo...",
+      "confirm": "Crear Portal",
+      "errorFetching": "Error al obtener los grafos"
     }
   },
   "nodeLab": {
@@ -325,6 +362,14 @@
         "straight": "Recto",
         "step": "Escalonado",
         "smoothStep": "Escalonado Suave"
+      },
+      "canvasDepth": {
+        "label": "Profundidad del Lienzo",
+        "description": "Cuántos niveles de hijos cargar a la vez.",
+        "level2": "2 Niveles",
+        "level3": "3 Niveles (Predeterminado)",
+        "level5": "5 Niveles",
+        "infinite": "Infinito"
       }
     },
     "notifications": {

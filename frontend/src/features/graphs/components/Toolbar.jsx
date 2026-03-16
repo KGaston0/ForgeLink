@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import NodeLabModal from './NodeLabModal';
 
 const DEFAULT_NODES = [
@@ -14,12 +15,13 @@ const DEFAULT_FRAMES = [
   { type: 'standard', label: 'Standard Frame', color: 'bg-slate-600' },
 ];
 
-const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canUndo, canRedo }) => {
+const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canUndo, canRedo, onZoomOut, onAddPortal }) => {
+  const { t } = useTranslation();
   const [isNodeLabOpen, setIsNodeLabOpen] = useState(false);
 
   const STATUS_CONFIG = {
     saved: {
-      text: 'Synced',
+      text: t('graphCanvas.toolbar.status.synced'),
       color: 'text-emerald-400',
       bgColor: 'bg-emerald-500/10',
       borderColor: 'border-emerald-500/20',
@@ -30,7 +32,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
       ),
     },
     unsaved: {
-      text: 'Unsaved Changes',
+      text: t('graphCanvas.toolbar.status.unsaved'),
       color: 'text-amber-400',
       bgColor: 'bg-amber-500/10',
       borderColor: 'border-amber-500/20',
@@ -42,7 +44,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
       ),
     },
     saving: {
-      text: 'Saving...',
+      text: t('graphCanvas.toolbar.status.saving'),
       color: 'text-cyan-400',
       bgColor: 'bg-cyan-500/10',
       borderColor: 'border-cyan-500/20',
@@ -54,7 +56,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
       ),
     },
     error: {
-      text: 'Sync Error',
+      text: t('graphCanvas.toolbar.status.error'),
       color: 'text-red-400',
       bgColor: 'bg-red-500/10',
       borderColor: 'border-red-500/20',
@@ -75,6 +77,19 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
 
           {/* --- LEFT SECTION: CREATION --- */}
           <div className="flex items-center gap-3">
+            {onZoomOut && (
+              <button
+                type="button"
+                onClick={onZoomOut}
+                className="px-3 py-1.5 rounded-lg bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] transition-all font-medium text-sm cursor-pointer shadow-sm flex items-center gap-2 mr-2"
+                title={t('graphCanvas.toolbar.goUp')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                {t('graphCanvas.toolbar.goUp')}
+              </button>
+            )}
 
             {/* NODES MENU */}
             <div className="relative group">
@@ -82,7 +97,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                 type="button"
                 className="px-4 py-1.5 rounded-lg bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] hover:border-[rgb(var(--color-text-secondary))/20] transition-all font-medium text-sm cursor-pointer shadow-sm flex items-center gap-1.5"
               >
-                Add Node
+                {t('graphCanvas.toolbar.addNode')}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-[rgb(var(--color-text-secondary))] group-hover:text-[rgb(var(--color-text))] transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -92,7 +107,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                 <div className="min-w-[200px] bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-xl shadow-2xl py-2 px-1 context-menu">
 
                   <div className="px-3 pb-1 pt-1 text-[10px] font-bold text-[rgb(var(--color-text-secondary))] uppercase tracking-wider">
-                    Default Types
+                    {t('graphCanvas.toolbar.defaultTypes')}
                   </div>
                   {DEFAULT_NODES.map(({ type, label, color }) => (
                     <button
@@ -107,7 +122,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                   ))}
 
                   <div className="mt-2 px-3 pb-1 pt-2 border-t border-[rgb(var(--color-border))] text-[10px] font-bold text-[rgb(var(--color-text-secondary))] uppercase tracking-wider flex items-center justify-between">
-                    <span>Pinned Blueprints</span>
+                    <span>{t('graphCanvas.toolbar.pinnedBlueprints')}</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-[rgb(var(--color-text-secondary))]"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                   </div>
                   <button
@@ -134,7 +149,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                       className="w-full px-3 py-1.5 rounded-md text-left text-xs text-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-400 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                      Explore Node Lab
+                      {t('graphCanvas.toolbar.exploreNodeLab')}
                     </button>
                   </div>
                 </div>
@@ -151,7 +166,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2v2H3V3zm16 0h2v2h-2V3zM3 19h2v2H3v-2zm16 0h2v2h-2v-2z" />
                 </svg>
-                Add Frame
+                {t('graphCanvas.toolbar.addFrame')}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-0.5 text-[rgb(var(--color-text-secondary))] group-hover:text-[rgb(var(--color-text))] transition-transform duration-200 group-hover:rotate-180" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
@@ -161,7 +176,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                 <div className="min-w-[200px] bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-xl shadow-2xl py-2 px-1 context-menu">
 
                   <div className="px-3 pb-1 pt-1 text-[10px] font-bold text-[rgb(var(--color-text-secondary))] uppercase tracking-wider">
-                    Default Frames
+                    {t('graphCanvas.toolbar.defaultFrames')}
                   </div>
                   {DEFAULT_FRAMES.map(({ type, label, color }) => (
                     <button
@@ -176,11 +191,11 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                   ))}
 
                   <div className="mt-2 px-3 pb-1 pt-2 border-t border-[rgb(var(--color-border))] text-[10px] font-bold text-[rgb(var(--color-text-secondary))] uppercase tracking-wider flex items-center justify-between">
-                    <span>Pinned Blueprints</span>
+                    <span>{t('graphCanvas.toolbar.pinnedBlueprints')}</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-[rgb(var(--color-text-secondary))]"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                   </div>
                   <div className="px-3 py-1.5 text-xs text-[rgb(var(--color-text-secondary))] italic opacity-50">
-                    No pinned frames
+                    {t('graphCanvas.toolbar.noPinnedFrames')}
                   </div>
 
                   <div className="mt-2 pt-2 border-t border-[rgb(var(--color-border))] px-1">
@@ -190,7 +205,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                       className="w-full px-3 py-1.5 rounded-md text-left text-xs text-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-400 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                      Explore Node Lab
+                      {t('graphCanvas.toolbar.exploreNodeLab')}
                     </button>
                   </div>
                 </div>
@@ -198,26 +213,41 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
             </div>
           </div>
 
+          {/* --- MIDDLE SECTION: PORTALS --- */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onAddPortal}
+              className="px-4 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/50 transition-all font-bold text-sm cursor-pointer shadow-sm flex items-center gap-2"
+              title={t('graphCanvas.toolbar.addPortal')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              {t('graphCanvas.toolbar.addPortal')}
+            </button>
+          </div>
+
           {/* --- RIGHT SECTION: STATUS AND ACTIONS --- */}
           <div className="flex items-center gap-2.5">
             <div className="flex items-center bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-full shadow-inner p-0.5">
               <div className="relative group">
-                <button type="button" onClick={onUndo} disabled={!canUndo} className="p-1.5 flex items-center justify-center rounded-full text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer transition-all duration-150" aria-label="Deshacer">
+                <button type="button" onClick={onUndo} disabled={!canUndo} className="p-1.5 flex items-center justify-center rounded-full text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer transition-all duration-150" aria-label={t('graphCanvas.toolbar.undo')}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
                 </button>
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2.5 py-1.5 bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-md shadow-lg text-[10px] font-semibold text-[rgb(var(--color-text))] whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50">
-                  Deshacer (Ctrl+Z)
+                  {t('graphCanvas.toolbar.undo')} (Ctrl+Z)
                 </div>
               </div>
 
               <div className="w-px h-4 bg-[rgb(var(--color-border))] mx-0.5"></div>
 
               <div className="relative group">
-                <button type="button" onClick={onRedo} disabled={!canRedo} className="p-1.5 flex items-center justify-center rounded-full text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer transition-all duration-150" aria-label="Rehacer">
+                <button type="button" onClick={onRedo} disabled={!canRedo} className="p-1.5 flex items-center justify-center rounded-full text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer transition-all duration-150" aria-label={t('graphCanvas.toolbar.redo')}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 7v6h-6"></path><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"></path></svg>
                 </button>
                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2.5 py-1.5 bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-md shadow-lg text-[10px] font-semibold text-[rgb(var(--color-text))] whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50">
-                  Rehacer (Ctrl+Y)
+                  {t('graphCanvas.toolbar.redo')} (Ctrl+Y)
                 </div>
               </div>
             </div>

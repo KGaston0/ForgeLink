@@ -41,7 +41,7 @@ class GraphNodeSerializer(serializers.ModelSerializer):
         """
         from django.core.exceptions import ObjectDoesNotExist, ValidationError as DjangoValidationError
         from rest_framework.exceptions import ValidationError
-        from apps.graphs.models import Graph
+        from apps.graphs.models import Graph, GraphNode
         from apps.nodes.models import Node
 
         # For updates, start with existing instance
@@ -67,6 +67,10 @@ class GraphNodeSerializer(serializers.ModelSerializer):
                     instance.node = attrs['node']
                 elif instance.node_id is not None:
                     instance.node = Node.objects.get(pk=instance.node_id)
+            
+            # Load parent_node if it's being set or already exists
+            if instance.parent_node_id is not None and (not hasattr(instance, 'parent_node') or instance.parent_node is None):
+                instance.parent_node = GraphNode.objects.get(pk=instance.parent_node_id)
         except ObjectDoesNotExist as e:
             raise ValidationError(f"Related object does not exist: {str(e)}")
 

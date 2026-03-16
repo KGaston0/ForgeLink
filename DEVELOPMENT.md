@@ -458,6 +458,41 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 
 ---
 
+---
+
+## ZUI Drill-down and Portals
+
+The Zoomable User Interface (ZUI) allows users to navigate complex graphs using a folder-like drill-down approach and cross-graph portals.
+
+### Architecture Overview
+
+#### 1. Folder-like Drill-down (Nesting)
+Instead of a literal camera zoom, the canvas implements a "memory-wipe" navigation where drilling into a frame clears the current nodes and loads only the children of that frame.
+
+- **State Management:** The frontend tracks `currentFolderId` (the ID of the frame being viewed).
+- **Backend Filtering:** When `folder_id` is provided to `GET /graphs/{uuid}/canvas/`, the API returns only nodes where `parent_node == folder_id`. If `folder_id` is null, it returns only root-level nodes.
+- **Context-Aware Creation:** New nodes created while drilled down are automatically assigned the `currentFolderId` as their `parent_node`.
+- **Navigation:** 
+  - **Drill-down:** Double-clicking a FrameNode sets `currentFolderId` to that frame's ID and re-fetches data.
+  - **Go Up:** Navigating back sets `currentFolderId` to the parent of the current folder (provided in the `current_folder` metadata from the API).
+- **Atomic Navigation:** To prevent data loss, a bulk save (`PUT /graphs/{uuid}/canvas/bulk/`) MUST complete successfully before changing `currentFolderId` and re-fetching.
+
+#### 2. Canvas Rendering & Physics
+React Flow requires a specific `parentId` property for nested rendering, which can cause crashes if the parent is not present in the current node array (the "memory-wipe" scenario).
+
+- **Conditional parentId:** In the frontend, `reactFlowNode.parentId` is assigned ONLY if the parent node exists in the current visible subset of nodes.
+- **Top-level floating:** If a node's parent is the `currentFolderId` (and thus not rendered), the node is treated as a top-level root node in the current view to prevent coordinate clamping crashes.
+- **Cascade Deletion:** Deleting a frame recursively deletes all nested children both in the frontend state and the backend (via `models.CASCADE` on the `parent_node` ForeignKey).
+
+#### 3. Cross-Graph Portals
+Portals allow users to link different graphs within the same project without breaking the 2D layout logic.
+
+- **PortalNode:** A special node type that stores `target_graph_uuid` in its `custom_properties`.
+- **Navigation:** Double-clicking a PortalNode triggers a route change to `/graphs/{target_graph_uuid}`.
+- **Creation UI:** A dedicated modal allows users to select a target graph from the current project to create a new portal.
+
+---
+
 ## Access Points
 
 | Service | URL |

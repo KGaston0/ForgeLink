@@ -3,9 +3,13 @@ import apiClient from '../../../services/api/apiClient';
 /**
  * Fetch full canvas data (graph info, nodes, connections) for a given graph.
  * @param {string} graphUuid - The graph UUID for the API URL
+ * @param {number|null} folderId - Optional ID of the GraphNode to use as a folder root
+ * @param {number} depth - Optional depth of nesting to fetch (default: 3)
  */
-export async function fetchCanvasData(graphUuid) {
-  const response = await apiClient.get(`/graphs/${graphUuid}/canvas/`);
+export async function fetchCanvasData(graphUuid, folderId = null, depth = 3) {
+  const params = { depth };
+  if (folderId) params.folder_id = folderId;
+  const response = await apiClient.get(`/graphs/${graphUuid}/canvas/`, { params });
   return response.data;
 }
 

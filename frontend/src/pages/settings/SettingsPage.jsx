@@ -72,27 +72,38 @@ export default function SettingsPage() {
   const { isDark, setLightTheme, setDarkTheme, resetToSystem } = useTheme();
 
   // Mock settings state
-  const [settings, setSettings] = useState({
-    language: 'en',
-    themeMode: isDark ? 'dark' : 'light',
-    accentColor: 'cyan',
-    canvasSnap: true,
-    canvasGrid: true,
-    canvasMinimap: false,
-    autoSave: true,
-    autoSaveInterval: '5',
-    animateEdges: true,
-    notifyEmail: true,
-    notifyCollabJoin: true,
-    notifyWeeklyDigest: false,
-    notifySounds: false,
-    profilePublic: false,
-    shareAnalytics: false,
-    showOnlineStatus: true,
-    twoFactorAuth: false,
+  // Modificamos el estado para que lea de localStorage al iniciar
+  const [settings, setSettings] = useState(() => {
+    const savedDepth = localStorage.getItem('forgeLink_canvasDepth') || '3';
+    return {
+      language: 'en',
+      themeMode: isDark ? 'dark' : 'light',
+      accentColor: 'cyan',
+      canvasSnap: true,
+      canvasGrid: true,
+      canvasMinimap: false,
+      autoSave: true,
+      autoSaveInterval: '5',
+      animateEdges: true,
+      notifyEmail: true,
+      notifyCollabJoin: true,
+      notifyWeeklyDigest: false,
+      notifySounds: false,
+      profilePublic: false,
+      shareAnalytics: false,
+      showOnlineStatus: true,
+      twoFactorAuth: false,
+      canvasDepth: savedDepth, // <-- Ahora lee el valor guardado
+    };
   });
 
-  const update = (key) => (value) => setSettings(s => ({ ...s, [key]: value }));
+  // Modificamos la función update para que guarde en localStorage si es la profundidad
+  const update = (key) => (value) => {
+    setSettings(s => ({ ...s, [key]: value }));
+    if (key === 'canvasDepth') {
+      localStorage.setItem('forgeLink_canvasDepth', value);
+    }
+  };
 
   const handleThemeChange = (mode) => {
     setSettings(s => ({ ...s, themeMode: mode }));
@@ -295,6 +306,19 @@ export default function SettingsPage() {
                   { value: 'straight', label: t('settings.canvas.defaultEdgeType.straight') },
                   { value: 'step', label: t('settings.canvas.defaultEdgeType.step') },
                   { value: 'smoothstep', label: t('settings.canvas.defaultEdgeType.smoothStep') },
+                ]}
+              />
+              <SelectField
+                id="settings-canvas-depth"
+                label={t('settings.canvas.canvasDepth.label')}
+                description={t('settings.canvas.canvasDepth.description')}
+                value={settings.canvasDepth}
+                onChange={update('canvasDepth')}
+                options={[
+                  { value: '2', label: t('settings.canvas.canvasDepth.level2') },
+                  { value: '3', label: t('settings.canvas.canvasDepth.level3') },
+                  { value: '5', label: t('settings.canvas.canvasDepth.level5') },
+                  { value: '-1', label: t('settings.canvas.canvasDepth.infinite') },
                 ]}
               />
             </Section>

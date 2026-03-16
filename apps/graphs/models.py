@@ -46,7 +46,7 @@ class GraphNode(models.Model):
     # Nesting: self-referencing FK to support parent frames
     parent_node = models.ForeignKey(
         'self',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         null=True,
         blank=True,
         related_name='children',
@@ -67,3 +67,25 @@ class GraphNode(models.Model):
         """Domain validations to maintain consistency between projects."""
         if self.graph_id and self.node_id and self.node.project_id != self.graph.project_id:
             raise ValidationError("Node must belong to the same project as the graph")
+        
+        # Prevent self-referencing parent
+        if self.parent_node_id and self.parent_node_id == self.id:
+            raise ValidationError("A node cannot be its own parent")
+        
+        # Prevent circular references (cycles in hierarchy)
+        if self.parent_node_id:
+            visited = set()
+            current = self.parent_node
+            
+            while current is not None:
+                if current.id in visited:
+                    raise ValidationError("Circular parent_node reference detected")
+                if current.id == self.id:
+                    raise ValidationError("A node cannot be an ancestor of itself")
+                
+                visited.add(current.id)
+                current = current.parent_node
+            
+            # Also check that parent is in the same graph
+            if self.graph_id and current and current.graph_id != self.graph_id:
+                raise ValidationError("Parent node must belong to the same graph")

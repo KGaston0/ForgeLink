@@ -142,10 +142,27 @@ const BaseNode = ({ id, data, selected }) => {
     ToggleButton,
   };
 
-  return data.isFrame ? (
-    <FrameNode {...sharedProps} />
-  ) : (
-    <StandardNode {...sharedProps} />
+  return (
+    <>
+      {data.isFrame ? (
+        <FrameNode {...sharedProps} />
+      ) : (
+        <StandardNode {...sharedProps} />
+      )}
+
+      {/* Indicador de Nodos Ocultos (Edge Hoisting Proxy) */}
+      {data.isFrame && data.hiddenChildrenCount > 0 && (
+        <div
+          className="absolute -top-3 -right-3 flex items-center gap-1 bg-indigo-500 border-2 border-[rgb(var(--color-bg))] text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md z-50 cursor-help transition-transform hover:scale-105"
+          title={`${data.hiddenChildrenCount} nodos ocultos por límite de profundidad`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          +{data.hiddenChildrenCount}
+        </div>
+      )}
+    </>
   );
 };
 
