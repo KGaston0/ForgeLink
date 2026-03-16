@@ -20,10 +20,73 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronDown,
+  FolderOpen,
+  Folder,
 } from 'lucide-react';
 
 /**
- * Sidebar navigation with collapsible state and animated transitions.
+ * Recursive tree item component for displaying nested frames.
+ * Supports expansion/collapse and active state highlighting.
+ */
+function TreeItem({ node, currentId, level = 0, onSelect }) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const isActive = node.id === currentId;
+  const hasChildren = node.children && node.children.length > 0;
+
+  return (
+    <div>
+      <button
+        onClick={() => {
+          onSelect(node.id);
+          if (hasChildren) setIsExpanded(!isExpanded);
+        }}
+        className={cn(
+          'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-all duration-200',
+          isActive
+            ? 'bg-cyan-500/20 text-cyan-400 border-l-2 border-cyan-400 font-semibold'
+            : 'text-[hsl(var(--explorer-foreground))] hover:bg-[hsl(var(--explorer-hover))]'
+        )}
+        style={{ paddingLeft: `${level * 16 + 8}px` }}
+      >
+        {hasChildren && (
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 shrink-0 transition-transform duration-200',
+              !isExpanded && '-rotate-90'
+            )}
+          />
+        )}
+        {!hasChildren && <div className="h-4 w-4 shrink-0" />}
+
+        {isActive ? (
+          <FolderOpen className="h-4 w-4 shrink-0 text-cyan-400" />
+        ) : (
+          <Folder className="h-4 w-4 shrink-0" style={{ color: 'hsl(var(--explorer-muted-foreground))' }} />
+        )}
+
+        <span className="truncate">{node.name}</span>
+      </button>
+
+      {hasChildren && isExpanded && (
+        <div className="space-y-0">
+          {node.children.map((child) => (
+            <TreeItem
+              key={child.id}
+              node={child}
+              currentId={currentId}
+              level={level + 1}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Sidebar navigation with collapsible state, horizontal nav icons, and recursive frame explorer.
  * Uses shadcn/ui primitives (Button, Avatar, Tooltip, Separator).
  */
 export default function Sidebar() {
@@ -31,6 +94,45 @@ export default function Sidebar() {
   const location = useLocation();
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  const [currentFrameId, setCurrentFrameId] = useState('frame-a-1');
+
+  // Dummy frames data for tree explorer
+  const DUMMY_FRAMES = [
+    {
+      id: 'root',
+      name: 'Root Frame',
+      children: [
+        {
+          id: 'frame-a',
+          name: 'Frame A',
+          children: [
+            {
+              id: 'frame-a-1',
+              name: 'Frame A.1',
+              children: [],
+            },
+            {
+              id: 'frame-a-2',
+              name: 'Frame A.2',
+              children: [],
+            },
+          ],
+        },
+        {
+          id: 'frame-b',
+          name: 'Frame B',
+          children: [
+            {
+              id: 'frame-b-1',
+              name: 'Frame B.1',
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+  ];
 
   const NAV_ITEMS = [
     { name: t('sidebar.dashboard'), href: '/dashboard', icon: LayoutDashboard },
@@ -48,7 +150,7 @@ export default function Sidebar() {
       <aside
         className={cn(
           'group/sidebar flex h-full flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-in-out',
-          collapsed ? 'w-[68px]' : 'w-64'
+          collapsed ? 'w-17' : 'w-64'
         )}
       >
         {/* ── Header ──────────────────────────────────────────────────── */}
@@ -69,7 +171,7 @@ export default function Sidebar() {
                 <path d="M6 6L12 18M18 6L12 18" stroke="currentColor" strokeWidth="2" opacity="0.35" />
               </svg>
             </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent whitespace-nowrap">
+            <span className="text-lg font-bold bg-linear-to-r from-primary to-accent bg-clip-text text-transparent whitespace-nowrap">
               ForgeLink
             </span>
           </Link>
@@ -99,70 +201,160 @@ export default function Sidebar() {
 
         <Separator className="bg-sidebar-border" />
 
-        {/* ── Navigation ──────────────────────────────────────────────── */}
-        <nav className="flex flex-1 flex-col gap-1 px-2 py-3" role="navigation">
-          <ul role="list" className="flex flex-col gap-0.5">
-            {NAV_ITEMS.map((item) => {
-              const isActive =
-                location.pathname === item.href ||
-                (item.href !== '/' && location.pathname.startsWith(item.href + '/'));
-
-              const linkContent = (
-                <Link
-                  to={item.href}
-                  className={cn(
-                    'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
-                    collapsed && 'justify-center px-0'
-                  )}
+        {/* ── Collapsible Top Navigation ──────────────────────────────────── */}
+        <div className="flex flex-col gap-2 px-2 py-3 shrink-0">
+          {/* Navigation toggle button */}
+          {!collapsed && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setNavCollapsed(!navCollapsed)}
+                  className="h-8 w-full justify-between px-2 text-xs font-medium text-sidebar-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-muted"
+                  aria-label={navCollapsed ? 'Expand nav' : 'Collapse nav'}
                 >
-                  {/* Active indicator — animated left bar */}
-                  <span
+                  <span className="truncate">NAVIGATION</span>
+                  <ChevronDown
                     className={cn(
-                      'absolute left-0 top-1/2 -translate-y-1/2 h-0 w-[3px] rounded-full bg-primary transition-all duration-300',
-                      isActive && 'h-5'
+                      'h-4 w-4 shrink-0 transition-transform duration-200',
+                      navCollapsed && '-rotate-90'
                     )}
                   />
+                </Button>
+              </TooltipTrigger>
+            </Tooltip>
+          )}
 
-                  <item.icon
-                    className={cn(
-                      'h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110',
-                      isActive ? 'text-primary' : 'text-sidebar-muted-foreground group-hover:text-sidebar-foreground'
-                    )}
-                    strokeWidth={isActive ? 2.25 : 1.75}
-                    aria-hidden="true"
-                  />
+          {/* Navigation: Expanded (vertical) or collapsed (horizontal icons) */}
+          <nav role="navigation">
+            {navCollapsed && !collapsed ? (
+              // Horizontal icon layout
+              <ul role="list" className="flex flex-row gap-1 flex-wrap">
+                {NAV_ITEMS.map((item) => {
+                  const isActive =
+                    location.pathname === item.href ||
+                    (item.href !== '/' && location.pathname.startsWith(item.href + '/'));
 
-                  <span
-                    className={cn(
-                      'truncate transition-[opacity,width] duration-200',
-                      collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
-                    )}
-                  >
-                    {item.name}
-                  </span>
-                </Link>
-              );
+                  return (
+                    <li key={item.name}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link
+                            to={item.href}
+                            className={cn(
+                              'flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-200',
+                              isActive
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground'
+                            )}
+                          >
+                            <item.icon
+                              className={cn(
+                                'h-[18px] w-[18px] transition-transform duration-200',
+                                isActive && 'text-primary'
+                              )}
+                              strokeWidth={isActive ? 2.25 : 1.75}
+                              aria-hidden="true"
+                            />
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="font-medium text-xs">
+                          {item.name}
+                        </TooltipContent>
+                      </Tooltip>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              // Vertical layout (default)
+              <ul role="list" className="flex flex-col gap-0.5">
+                {NAV_ITEMS.map((item) => {
+                  const isActive =
+                    location.pathname === item.href ||
+                    (item.href !== '/' && location.pathname.startsWith(item.href + '/'));
 
-              return (
-                <li key={item.name}>
-                  {collapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                      <TooltipContent side="right" className="font-medium">
+                  const linkContent = (
+                    <Link
+                      to={item.href}
+                      className={cn(
+                        'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-sidebar-muted-foreground hover:bg-sidebar-muted hover:text-sidebar-foreground',
+                        collapsed && 'justify-center px-0'
+                      )}
+                    >
+                      {/* Active indicator — animated left bar */}
+                      <span
+                        className={cn(
+                          'absolute left-0 top-1/2 -translate-y-1/2 h-0 w-[3px] rounded-full bg-primary transition-all duration-300',
+                          isActive && 'h-5'
+                        )}
+                      />
+
+                      <item.icon
+                        className={cn(
+                          'h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110',
+                          isActive ? 'text-primary' : 'text-sidebar-muted-foreground group-hover:text-sidebar-foreground'
+                        )}
+                        strokeWidth={isActive ? 2.25 : 1.75}
+                        aria-hidden="true"
+                      />
+
+                      <span
+                        className={cn(
+                          'truncate transition-[opacity,width] duration-200',
+                          collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                        )}
+                      >
                         {item.name}
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    linkContent
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+                      </span>
+                    </Link>
+                  );
+
+                  return (
+                    <li key={item.name}>
+                      {collapsed ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                          <TooltipContent side="right" className="font-medium">
+                            {item.name}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        linkContent
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </nav>
+        </div>
+
+        {/* ── Frame Explorer ──────────────────────────────────────────── */}
+        {!collapsed && (
+          <>
+            <Separator className="bg-sidebar-border" />
+            <div className="flex flex-col flex-1 overflow-hidden px-2 py-3">
+              <h3 className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-sidebar-muted-foreground">
+                Explorer
+              </h3>
+              <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
+                {DUMMY_FRAMES.map((frame) => (
+                  <TreeItem
+                    key={frame.id}
+                    node={frame}
+                    currentId={currentFrameId}
+                    onSelect={setCurrentFrameId}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── User section ────────────────────────────────────────────── */}
         <div className="mt-auto px-2 pb-3">
@@ -175,7 +367,7 @@ export default function Sidebar() {
             )}
           >
             <Avatar className="h-8 w-8 shrink-0 ring-2 ring-primary/20 transition-shadow duration-200 hover:ring-primary/40">
-              <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-xs font-bold text-white">
+              <AvatarFallback className="bg-linear-to-br from-primary to-accent text-xs font-bold text-white">
                 {initial}
               </AvatarFallback>
             </Avatar>
