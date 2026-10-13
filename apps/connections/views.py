@@ -1,7 +1,5 @@
-from rest_framework import viewsets, filters, status
-from rest_framework.response import Response
+from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models.deletion import ProtectedError
 
 from .models import NodeConnection, ConnectionType
 from .serializers import NodeConnectionSerializer
@@ -23,16 +21,6 @@ class ConnectionTypeViewSet(viewsets.ModelViewSet):
         if not user or not user.is_authenticated:
             return ConnectionType.objects.none()
         return ConnectionType.objects.filter(project__owner=user)
-
-    def destroy(self, request, *args, **kwargs):
-        """Handle ProtectedError when deleting connection type with existing connections"""
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except ProtectedError:
-            return Response(
-                {"detail": "Cannot delete connection type that is being used by connections."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
 
 class NodeConnectionViewSet(viewsets.ModelViewSet):

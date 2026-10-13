@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from django.test import TestCase
+from django.utils import timezone
 from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
@@ -47,7 +50,9 @@ class ProjectModelTest(TestCase):
             name='Second Project',
             owner=self.user
         )
-        projects = list(Project.objects.all())
+        # Force a distinct timestamp: two saves can share the same clock tick on some platforms
+        Project.objects.filter(pk=project2.pk).update(updated_at=timezone.now() + timedelta(seconds=1))
+        projects = list(Project.objects.filter(owner=self.user))
         self.assertEqual(projects[0], project2)  # Most recent first
 
 
@@ -66,6 +71,9 @@ class ProjectAPITest(APITestCase):
             email='other@example.com',
             password='testpass123'
         )
+        # Creating a user auto-creates a starter project (see projects/signals.py);
+        # start these API tests from a clean slate.
+        Project.objects.all().delete()
         self.project = Project.objects.create(
             name='Test Project',
             description='Test Description',
@@ -126,7 +134,7 @@ class ProjectAPITest(APITestCase):
     def test_retrieve_project(self):
         """Test retrieving a specific project"""
         self.client.force_authenticate(user=self.user)
-        url = reverse('project-detail', kwargs={'pk': self.project.pk})
+        url = reverse('project-detail', kwargs={'uuid': self.project.uuid})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Test Project')
@@ -134,7 +142,7 @@ class ProjectAPITest(APITestCase):
     def test_update_project(self):
         """Test project update"""
         self.client.force_authenticate(user=self.user)
-        url = reverse('project-detail', kwargs={'pk': self.project.pk})
+        url = reverse('project-detail', kwargs={'uuid': self.project.uuid})
         data = {'name': 'Updated Project'}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -144,7 +152,7 @@ class ProjectAPITest(APITestCase):
     def test_delete_project(self):
         """Test project deletion"""
         self.client.force_authenticate(user=self.user)
-        url = reverse('project-detail', kwargs={'pk': self.project.pk})
+        url = reverse('project-detail', kwargs={'uuid': self.project.uuid})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Project.objects.count(), 0)
@@ -156,7 +164,7 @@ class ProjectAPITest(APITestCase):
             owner=self.other_user
         )
         self.client.force_authenticate(user=self.user)
-        url = reverse('project-detail', kwargs={'pk': other_project.pk})
+        url = reverse('project-detail', kwargs={'uuid': other_project.uuid})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 

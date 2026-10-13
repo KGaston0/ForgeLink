@@ -49,15 +49,12 @@ class NodeModelTest(TestCase):
         """Test for __str__ method"""
         self.assertEqual(str(self.node), 'Test Node (character)')
 
-    def test_node_types(self):
-        """Test for types of available nodes"""
-        node_types = [choice[0] for choice in Node.NODE_TYPES]
-        self.assertIn('character', node_types)
-        self.assertIn('location', node_types)
-        self.assertIn('event', node_types)
-        self.assertIn('item', node_types)
-        self.assertIn('concept', node_types)
-        self.assertIn('note', node_types)
+    def test_node_type_is_free_text(self):
+        """node_type is a free-form semantic type, not a fixed list of choices"""
+        for node_type in ['character', 'Dragon', 'Spell']:
+            node = Node.objects.create(project=self.project, title=node_type, node_type=node_type)
+            node.full_clean()
+            self.assertEqual(Node.objects.get(pk=node.pk).node_type, node_type)
 
     def test_node_hierarchy(self):
         """Test for hierarchy de nodos (parent-child)"""
