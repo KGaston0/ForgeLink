@@ -74,11 +74,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         Get all nodes for a specific project
         """
-        from nodes.serializers import NodeSerializer
+        from apps.nodes.serializers import NodeSerializer
 
         project = self.get_object()
         nodes = project.nodes.all()
-        serializer = NodeSerializer(nodes, many=True)
+        serializer = NodeSerializer(nodes, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
@@ -86,7 +86,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         Get all connections for a specific project
         """
-        from connections.serializers import NodeConnectionSerializer
+        from apps.connections.serializers import NodeConnectionSerializer
         from apps.connections.models import NodeConnection
 
         project = self.get_object()

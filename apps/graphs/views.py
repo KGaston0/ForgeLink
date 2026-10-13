@@ -8,11 +8,16 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.connections.models import NodeConnection
 from apps.connections.serializers import NodeConnectionSerializer
-from apps.nodes.models import Node
+from apps.connections.models import ConnectionType
+from apps.nodes.models import Node, NodeBlueprint
 from .models import Graph, GraphNode
 from .serializers import GraphSerializer, GraphNodeSerializer
 
 logger = logging.getLogger(__name__)
+
+
+class BulkValidationError(Exception):
+    """Raised when a bulk canvas payload references objects the user cannot use."""
 
 
 class GraphViewSet(viewsets.ModelViewSet):
@@ -210,12 +215,14 @@ class GraphViewSet(viewsets.ModelViewSet):
 
         try:
             with transaction.atomic():
-                node_results = self._process_nodes_bulk(graph, project, nodes_data)
+                node_results = self._process_nodes_bulk(graph, project, nodes_data, user)
                 connection_results = self._process_connections_bulk(
                     graph, project, connections_data, node_results['temp_id_map'],
                 )
                 graph.save(update_fields=['updated_at'])
-        except Exception as e:
+        except BulkValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
             logger.exception('Bulk canvas save failed for graph %s', uuid)
             return Response(
                 {'detail': 'Bulk save failed due to an internal error.'},
@@ -238,7 +245,7 @@ class GraphViewSet(viewsets.ModelViewSet):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _process_nodes_bulk(graph, project, nodes_data):
+    def _process_nodes_bulk(graph, project, nodes_data, user):
         """
         Process all nodes: bulk_create new ones, bulk_update existing ones.
         Returns a dict with created info and a temp_id → node_id mapping.
@@ -248,10 +255,19 @@ class GraphViewSet(viewsets.ModelViewSet):
         graph_nodes_to_update = []
         nodes_to_update = []
 
-        # Collect existing GraphNodes in a single query for validation
-        existing_gn_ids = set(
-            graph.graph_nodes.values_list('id', flat=True)
+        # Collect existing GraphNodes in a single query for validation.
+        # gn id -> node id comes from the DB, never from the client payload.
+        existing_gn_nodes = dict(graph.graph_nodes.values_list('id', 'node_id'))
+        existing_gn_ids = set(existing_gn_nodes)
+
+        # Blueprints the user may reference
+        allowed_blueprint_ids = set(
+            NodeBlueprint.objects.filter(creator=user).values_list('id', flat=True)
         )
+        for entry in nodes_data:
+            blueprint_id = entry.get('blueprint_id')
+            if blueprint_id is not None and blueprint_id not in allowed_blueprint_ids:
+                raise BulkValidationError(f'Blueprint {blueprint_id} not found.')
 
         # Separate new vs existing
         new_node_entries = []
@@ -325,8 +341,8 @@ class GraphViewSet(viewsets.ModelViewSet):
         for entry in existing_node_entries:
             temp_id = entry.get('temp_id', '')
             temp_id_map[temp_id] = {
-                'node_id': entry.get('node_id'),
-                'graph_node_id': entry.get('graph_node_id'),
+                'node_id': existing_gn_nodes[entry['graph_node_id']],
+                'graph_node_id': entry['graph_node_id'],
             }
 
         # --- Phase 3: Bulk update existing GraphNodes + Nodes ---
@@ -425,6 +441,10 @@ class GraphViewSet(viewsets.ModelViewSet):
                 # Handle gn-X references to existing nodes that might NOT be in the current view
                 try:
                     parent_gn_id = int(parent_ref.replace('gn-', ''))
+                    if parent_gn_id not in existing_gn_ids:
+                        # Only graph nodes of this very graph can be parents
+                        logger.warning('Ignoring parent %s: not part of graph', parent_ref)
+                        continue
                     if gn.parent_node_id != parent_gn_id:
                         # Validate no self-reference
                         if parent_gn_id == gn.id:
@@ -437,15 +457,17 @@ class GraphViewSet(viewsets.ModelViewSet):
 
         if parent_updates:
             # Validate each update to ensure no circular references
+            valid_updates = []
             for gn in parent_updates:
                 try:
                     gn.clean()  # This will check for cycles
                 except Exception as e:
                     logger.warning('Validation error for parent_node assignment on %s: %s', gn.id, str(e))
-                    parent_updates.remove(gn)
-            
-            if parent_updates:
-                GraphNode.objects.bulk_update(parent_updates, ['parent_node_id'])
+                    continue
+                valid_updates.append(gn)
+
+            if valid_updates:
+                GraphNode.objects.bulk_update(valid_updates, ['parent_node_id'])
 
         return {
             'created': created_response,
@@ -465,6 +487,9 @@ class GraphViewSet(viewsets.ModelViewSet):
         # Collect existing connection IDs for validation
         existing_conn_ids = set(
             graph.connections.values_list('id', flat=True)
+        )
+        allowed_connection_type_ids = set(
+            ConnectionType.objects.filter(project=project).values_list('id', flat=True)
         )
 
         for entry in connections_data:
@@ -496,6 +521,8 @@ class GraphViewSet(viewsets.ModelViewSet):
                 if not conn_type_id:
                     logger.warning('Skipping new connection: no connection_type_id')
                     continue
+                if conn_type_id not in allowed_connection_type_ids:
+                    raise BulkValidationError(f'Connection type {conn_type_id} not found.')
 
                 connections_to_create.append(
                     NodeConnection(

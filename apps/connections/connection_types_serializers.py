@@ -1,10 +1,14 @@
 from rest_framework import serializers
 
+from forgelink_backend.serializer_mixins import OwnerScopedRelatedFieldsMixin
+
 from .models import ConnectionType
 
 
-class ConnectionTypeSerializer(serializers.ModelSerializer):
+class ConnectionTypeSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """Serializer for ConnectionType model (project-scoped connection types)."""
+
+    owner_scoped_fields = {'project': 'owner'}
 
     class Meta:
         model = ConnectionType

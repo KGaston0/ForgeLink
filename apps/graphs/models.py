@@ -72,6 +72,10 @@ class GraphNode(models.Model):
         if self.parent_node_id and self.parent_node_id == self.id:
             raise ValidationError("A node cannot be its own parent")
         
+        # The parent must be in the same graph
+        if self.parent_node_id and self.graph_id and self.parent_node.graph_id != self.graph_id:
+            raise ValidationError("Parent node must belong to the same graph")
+
         # Prevent circular references (cycles in hierarchy)
         if self.parent_node_id:
             visited = set()
@@ -86,6 +90,4 @@ class GraphNode(models.Model):
                 visited.add(current.id)
                 current = current.parent_node
             
-            # Also check that parent is in the same graph
-            if self.graph_id and current and current.graph_id != self.graph_id:
-                raise ValidationError("Parent node must belong to the same graph")
+

@@ -1,10 +1,19 @@
 from rest_framework import serializers
 
+from forgelink_backend.serializer_mixins import OwnerScopedRelatedFieldsMixin
+
 from .models import NodeConnection
 
 
-class NodeConnectionSerializer(serializers.ModelSerializer):
+class NodeConnectionSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """Serializer for NodeConnection (graph-scoped)."""
+
+    owner_scoped_fields = {
+        'graph': 'project__owner',
+        'source_node': 'project__owner',
+        'target_node': 'project__owner',
+        'connection_type': 'project__owner',
+    }
 
     source_node_title = serializers.CharField(source='source_node.title', read_only=True)
     target_node_title = serializers.CharField(source='target_node.title', read_only=True)

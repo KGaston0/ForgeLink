@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from forgelink_backend.serializer_mixins import OwnerScopedRelatedFieldsMixin
 from .models import Node, NodeBlueprint, BlueprintList
 
 
@@ -48,12 +50,14 @@ class BlueprintListSerializer(serializers.ModelSerializer):
         read_only_fields = ['creator', 'created_at', 'updated_at']
 
 
-class BlueprintListWriteSerializer(serializers.ModelSerializer):
+class BlueprintListWriteSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """
     Write serializer for BlueprintList.
     
     Accepts blueprint IDs instead of full nested objects for create/update operations.
     """
+
+    owner_scoped_fields = {'blueprint_ids': 'creator'}
 
     creator = serializers.StringRelatedField(read_only=True)
     blueprint_ids = serializers.PrimaryKeyRelatedField(
@@ -93,13 +97,19 @@ class BlueprintListWriteSerializer(serializers.ModelSerializer):
         return instance
 
 
-class NodeSerializer(serializers.ModelSerializer):
+class NodeSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """
     Serializer for Node model.
     
     Represents an entity in a project. Can be spawned from a NodeBlueprint
     via the 'blueprint' foreign key.
     """
+
+    owner_scoped_fields = {
+        'project': 'owner',
+        'parent_node': 'project__owner',
+        'blueprint_id': 'creator',
+    }
 
     child_count = serializers.SerializerMethodField()
     depth_level = serializers.SerializerMethodField()
@@ -122,6 +132,16 @@ class NodeSerializer(serializers.ModelSerializer):
             'child_count', 'depth_level', 'graph_ids'
         ]
         read_only_fields = ['created_at', 'updated_at', 'graph_ids', 'blueprint']
+
+    def validate(self, attrs):
+        # The parent must live in the same project as the node
+        project = attrs.get('project') or getattr(self.instance, 'project', None)
+        parent = attrs.get('parent_node')
+        if parent is not None and project is not None and parent.project_id != project.id:
+            raise serializers.ValidationError(
+                {'parent_node': 'Parent node must belong to the same project.'}
+            )
+        return attrs
 
     def get_child_count(self, obj):
         """Return the count of direct child nodes."""

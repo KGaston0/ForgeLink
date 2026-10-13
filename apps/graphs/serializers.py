@@ -1,10 +1,13 @@
 from rest_framework import serializers
 
+from forgelink_backend.serializer_mixins import OwnerScopedRelatedFieldsMixin
+
 from .models import Graph, GraphNode
 
 
-class GraphSerializer(serializers.ModelSerializer):
+class GraphSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """Serializer for Graph model."""
+    owner_scoped_fields = {'project': 'owner'}
     project_name = serializers.CharField(source='project.name', read_only=True)
     node_count = serializers.SerializerMethodField()
 
@@ -16,8 +19,14 @@ class GraphSerializer(serializers.ModelSerializer):
 
     def get_node_count(self, obj):
         return obj.graph_nodes.count()
-class GraphNodeSerializer(serializers.ModelSerializer):
+class GraphNodeSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """Serializer for GraphNode model (node membership and layout in a graph)."""
+
+    owner_scoped_fields = {
+        'graph': 'project__owner',
+        'node': 'project__owner',
+        'parent_node': 'graph__project__owner',
+    }
 
     node_title = serializers.CharField(source='node.title', read_only=True)
     node_type = serializers.CharField(source='node.node_type', read_only=True)
