@@ -14,6 +14,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     """
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
+    lookup_field = 'uuid'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering_fields = ['created_at', 'updated_at', 'name']
@@ -37,8 +38,39 @@ class ProjectViewSet(viewsets.ModelViewSet):
             raise NotAuthenticated('You must be logged in to create a project.')
         serializer.save(owner=self.request.user)
 
+    def perform_destroy(self, instance):
+        """
+        Delete a project and cascade delete all related objects.
+        This override ensures the owner verification happens before deletion.
+        """
+        # Verify owner
+        if instance.owner != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('You do not have permission to delete this project.')
+        
+        # Delete the instance (cascades will handle related objects)
+        instance.delete()
+
+    @action(detail=False, methods=['get'], url_path='recent')
+    def recent(self, request):
+        """
+        Return the last 3 projects updated by the authenticated user,
+        with prefetched relations to avoid N+1 queries.
+        """
+        if not request.user or not request.user.is_authenticated:
+            raise NotAuthenticated('You must be logged in to view recent projects.')
+
+        recent_projects = (
+            Project.objects
+            .filter(owner=request.user)
+            .prefetch_related('nodes', 'graphs')
+            .order_by('-updated_at')[:3]
+        )
+        serializer = ProjectListSerializer(recent_projects, many=True)
+        return Response(serializer.data)
+
     @action(detail=True, methods=['get'])
-    def nodes(self, request, pk=None):
+    def nodes(self, request, uuid=None):
         """
         Get all nodes for a specific project
         """
@@ -50,7 +82,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
-    def connections(self, request, pk=None):
+    def connections(self, request, uuid=None):
         """
         Get all connections for a specific project
         """

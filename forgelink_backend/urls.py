@@ -18,17 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from . import auth_views
-from .mvp_views import mvp_index
 
 urlpatterns = [
     # Root redirects to API (DRF browsable API)
     path('', RedirectView.as_view(url='/api/', permanent=False)),
 
-    # MVP Frontend
-    path('mvp/', mvp_index, name='mvp_frontend'),
 
     # Django Admin
     path('admin/', admin.site.urls),
@@ -36,8 +32,9 @@ urlpatterns = [
     # API endpoints
     path('api/', include([
         # Authentication
-        path('auth/jwt/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-        path('auth/jwt/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+        path('auth/jwt/login/', auth_views.CookieTokenObtainPairView.as_view(), name='token_obtain_pair'),
+        path('auth/jwt/refresh/', auth_views.CookieTokenRefreshView.as_view(), name='token_refresh'),
+        path('auth/jwt/logout/', auth_views.logout, name='logout'),
         path('auth/me/', auth_views.me, name='auth_me'),
 
         # App endpoints

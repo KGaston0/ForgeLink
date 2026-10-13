@@ -1,0 +1,453 @@
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "nodeLab": "Node Lab",
+    "settings": "Settings",
+    "expandTooltip": "Expand sidebar",
+    "collapseTooltip": "Collapse sidebar",
+    "logoutTooltip": "Log out",
+    "brand": "ForgeLink"
+  },
+  "projects": {
+    "header": "Projects",
+    "subtitle": "Manage your projects",
+    "newProjectModal": {
+      "title": "New Project",
+      "name": "Name",
+      "description": "Description",
+      "placeholder": {
+        "name": "My Awesome Project",
+        "description": "A brief description..."
+      },
+      "createButton": "Create",
+      "cancelButton": "Cancel",
+      "errors": {
+        "nameRequired": "Project name is required.",
+        "nameMaxLength": "Name must be 255 characters or less.",
+        "creationFailed": "Could not create the project. Please try again."
+      }
+    },
+    "emptyState": {
+      "title": "No projects yet",
+      "description": "Create your first project to get started"
+    },
+    "projectCard": {
+      "graphs": "Graphs",
+      "openProject": "Open project",
+      "delete": "Delete project",
+      "lastUpdated": "Last updated"
+    },
+    "deleteConfirm": {
+      "title": "Delete Project",
+      "message": "Are you sure you want to delete this project? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  },
+  "projectDetail": {
+    "tabs": {
+      "overview": "Overview",
+      "settings": "Settings"
+    },
+    "overview": {
+      "graphs": "Graphs",
+      "noGraphs": "No graphs yet. Create your first graph.",
+      "newGraph": "New Graph"
+    },
+    "settings": {
+      "projectName": "Project Name",
+      "description": "Description",
+      "saveButton": "Save Changes",
+      "savingButton": "Saving...",
+      "deleteButton": "Delete Project",
+      "deleteDescription": "Permanently delete your project and all associated data.",
+      "success": "Project updated successfully",
+      "error": "Failed to update project"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your ForgeLink account",
+      "username": "Username",
+      "password": "Password",
+      "signIn": "Sign In",
+      "noAccount": "Don't have an account?",
+      "register": "Register here",
+      "errors": {
+        "invalidCredentials": "Invalid username or password",
+        "network": "Network error. Please try again."
+      },
+      "googleSignIn": "Sign in with Google (Coming soon)"
+    },
+    "register": {
+      "title": "Create account",
+      "subtitle": "Start building your knowledge network",
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "signUp": "Sign Up",
+      "haveAccount": "Already have an account?",
+      "login": "Sign in here",
+      "errors": {
+        "usernameMinLength": "Username must be at least 3 characters",
+        "usernameInvalid": "Username can only contain letters, numbers, and underscores",
+        "emailInvalid": "Please enter a valid email address",
+        "passwordMinLength": "Password must be at least 8 characters",
+        "passwordLowercase": "Password must contain at least one lowercase letter",
+        "passwordUppercase": "Password must contain at least one uppercase letter",
+        "passwordNumber": "Password must contain at least one number",
+        "passwordSpecial": "Password must contain at least one special character",
+        "passwordMismatch": "Passwords do not match"
+      }
+    }
+  },
+  "graphCanvas": {
+    "selectGraph": "Select a graph to visualize",
+    "toolbar": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "save": "Save",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "goUp": "Go Up",
+      "fitView": "Fit View",
+      "addPortal": "Add Link to Graph",
+      "addNode": "Add Node",
+      "addFrame": "Add Frame",
+      "defaultTypes": "Default Types",
+      "defaultFrames": "Default Frames",
+      "pinnedBlueprints": "Pinned Blueprints",
+      "noPinnedFrames": "No pinned frames",
+      "exploreNodeLab": "Explore Node Lab",
+      "status": {
+        "synced": "Synced",
+        "unsaved": "Unsaved Changes",
+        "saving": "Saving...",
+        "error": "Sync Error"
+      }
+    },
+    "contextMenu": {
+      "properties": "Properties",
+      "convertToNode": "Convert to Normal Node",
+      "convertToFrame": "Convert to Frame",
+      "deleteNode": "Delete Node",
+      "configureEdge": "Configure Relationship",
+      "deleteEdge": "Delete Connection"
+    },
+    "creation": {
+      "newNode": "New {{type}}",
+      "newFrame": "New Frame"
+    },
+    "errors": {
+      "notFound": "Graph not found",
+      "loadFailed": "Failed to load graph"
+    }
+  },
+  "graphs": {
+    "portalModal": {
+      "title": "Create Cross-Graph Portal",
+      "description": "Select a target graph to create a shortcut node.",
+      "selectLabel": "Target Graph",
+      "placeholder": "Select a graph...",
+      "confirm": "Create Portal",
+      "errorFetching": "Error fetching graphs"
+    }
+  },
+  "nodeLab": {
+    "header": "Node Lab",
+    "subtitle": "Manage and create node blueprints",
+    "tabs": {
+      "blueprints": "Blueprints",
+      "nodeLists": "Node Lists"
+    },
+    "blueprints": {
+      "title": "Node Blueprints",
+      "create": "Create Blueprint",
+      "empty": "No blueprints yet. Create your first blueprint."
+    },
+    "nodeLists": {
+      "title": "Node Lists",
+      "create": "Create List",
+      "empty": "No lists yet. Create your first list."
+    }
+  },
+  "dashboard": {
+    "commandCenter": "Command Center",
+    "recentActivity": "Recent Activity",
+    "newProject": "New Project",
+    "header": {
+      "greeting": "Welcome back, {username}."
+    },
+    "resumeWork": {
+      "title": "Last Modified",
+      "noGraphs": "No recent graphs. Create your first graph to get started!",
+      "continueEditing": "Continue Editing",
+      "ariaLabel": "Continue editing graph: {graphName}"
+    },
+    "quickActions": {
+      "newProject": {
+        "label": "New Project",
+        "description": "Create a new project"
+      },
+      "quickNote": {
+        "label": "Quick Note",
+        "description": "Create a quick note"
+      },
+      "globalSearch": {
+        "label": "Global Search",
+        "description": "Search across projects"
+      }
+    },
+    "activityFeed": {
+      "title": "Recent Activity",
+      "noActivity": "No recent activity yet",
+      "startMessage": "Create a project or graph to get started",
+      "actions": {
+        "created": "Created",
+        "updated": "Updated",
+        "linked": "Linked",
+        "deleted": "Deleted"
+      }
+    },
+    "systemUpdates": {
+      "title": "What's New",
+      "updates": [
+        {
+          "version": "v1.2.0",
+          "title": "Canvas Auto-Save",
+          "description": "Your changes are now saved automatically as you work",
+          "date": "2026-03-10",
+          "icon": "💾"
+        },
+        {
+          "version": "v1.1.5",
+          "title": "Improved Node Types",
+          "description": "New customizable node types with enhanced metadata support",
+          "date": "2026-03-05",
+          "icon": "✨"
+        },
+        {
+          "version": "v1.1.0",
+          "title": "Dark Mode Released",
+          "description": "Full dark mode support for a comfortable experience",
+          "date": "2026-02-28",
+          "icon": "🌙"
+        }
+      ]
+    }
+  },
+  "settings": {
+    "header": {
+      "title": "Settings",
+      "description": "Manage your account, preferences and application behavior."
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "Your public identity on ForgeLink.",
+      "editButton": "Edit Profile",
+      "displayName": "Display Name",
+      "bio": "Bio",
+      "bioPlaceholder": "A short bio about you..."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize how ForgeLink looks.",
+      "theme": {
+        "label": "Theme",
+        "description": "Choose between light, dark, or system theme.",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "accentColor": {
+        "label": "Accent Color",
+        "description": "Primary highlight color used across the UI.",
+        "cyan": "Cyan (Default)",
+        "purple": "Purple",
+        "emerald": "Emerald",
+        "rose": "Rose",
+        "amber": "Amber",
+        "blue": "Blue"
+      },
+      "fontFamily": {
+        "label": "Font Family",
+        "description": "Typography used in the application.",
+        "outfit": "Outfit (Default)",
+        "inter": "Inter",
+        "jakarta": "Plus Jakarta Sans",
+        "mono": "JetBrains Mono"
+      },
+      "density": {
+        "label": "UI Density",
+        "description": "Controls spacing and padding across the interface.",
+        "compact": "Compact",
+        "comfortable": "Comfortable (Default)",
+        "spacious": "Spacious"
+      }
+    },
+    "language": {
+      "title": "Language & Region",
+      "description": "Set your preferred language and regional formats.",
+      "interfaceLanguage": {
+        "label": "Interface Language",
+        "description": "The language used for menus, buttons and labels.",
+        "english": "🇬🇧  English",
+        "spanish": "🇪🇸  Español",
+        "portuguese": "🇧🇷  Português",
+        "french": "🇫🇷  Français",
+        "german": "🇩🇪  Deutsch",
+        "japanese": "🇯🇵  日本語",
+        "korean": "🇰🇷  한국어",
+        "chinese": "🇨🇳  中文"
+      },
+      "dateFormat": {
+        "label": "Date Format",
+        "description": "How dates are displayed in the application.",
+        "dmy": "DD/MM/YYYY",
+        "mdy": "MM/DD/YYYY",
+        "ymd": "YYYY-MM-DD",
+        "relative": "Relative (2 days ago)"
+      },
+      "timezone": {
+        "label": "Timezone",
+        "description": "Used for timestamps and scheduling.",
+        "auto": "Auto-detect (Default)",
+        "utc": "UTC",
+        "eastern": "Eastern (UTC-5)",
+        "pacific": "Pacific (UTC-8)",
+        "centralEurope": "Central Europe (UTC+1)",
+        "japan": "Japan (UTC+9)"
+      }
+    },
+    "canvas": {
+      "title": "Canvas & Editor",
+      "description": "Configure the graph canvas behavior.",
+      "autoSave": {
+        "label": "Auto-Save",
+        "description": "Automatically save your canvas changes."
+      },
+      "autoSaveInterval": {
+        "label": "Auto-Save Interval",
+        "description": "How often changes are saved automatically.",
+        "every2s": "Every 2 seconds",
+        "every5s": "Every 5 seconds (Default)",
+        "every10s": "Every 10 seconds",
+        "every30s": "Every 30 seconds"
+      },
+      "snapToGrid": {
+        "label": "Snap to Grid",
+        "description": "Nodes snap to an invisible grid when moved."
+      },
+      "showGrid": {
+        "label": "Show Grid",
+        "description": "Display the background dot grid on the canvas."
+      },
+      "showMinimap": {
+        "label": "Show Minimap",
+        "description": "Display a navigation minimap on the canvas."
+      },
+      "animateEdges": {
+        "label": "Animated Edges",
+        "description": "Show flow animation on connection edges."
+      },
+      "defaultEdgeType": {
+        "label": "Default Edge Type",
+        "description": "The style used when creating new connections.",
+        "bezier": "Bezier (Default)",
+        "straight": "Straight",
+        "step": "Step",
+        "smoothStep": "Smooth Step"
+      },
+      "canvasDepth": {
+        "label": "Canvas Depth",
+        "description": "How many levels of children to load at once.",
+        "level2": "2 Levels",
+        "level3": "3 Levels (Default)",
+        "level5": "5 Levels",
+        "infinite": "Infinite"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Control how and when you receive notifications.",
+      "emailNotifications": {
+        "label": "Email Notifications",
+        "description": "Receive important updates via email."
+      },
+      "collaboratorJoins": {
+        "label": "Collaborator Joins",
+        "description": "Get notified when someone joins your project."
+      },
+      "weeklyDigest": {
+        "label": "Weekly Digest",
+        "description": "Receive a weekly summary of your activity."
+      },
+      "soundEffects": {
+        "label": "Sound Effects",
+        "description": "Play sounds for actions and notifications."
+      }
+    },
+    "privacy": {
+      "title": "Privacy & Data",
+      "description": "Manage your data and privacy preferences.",
+      "publicProfile": {
+        "label": "Public Profile",
+        "description": "Allow other users to see your profile and projects."
+      },
+      "usageAnalytics": {
+        "label": "Usage Analytics",
+        "description": "Help improve ForgeLink by sharing anonymous usage data."
+      },
+      "showOnlineStatus": {
+        "label": "Show Online Status",
+        "description": "Let collaborators see when you're online."
+      },
+      "twoFactorAuth": {
+        "label": "Two-Factor Authentication",
+        "description": "Add an extra layer of security to your account."
+      },
+      "exportData": {
+        "label": "Export Data",
+        "description": "Download a copy of all your projects and data.",
+        "button": "Export JSON"
+      }
+    },
+    "shortcuts": {
+      "title": "Keyboard Shortcuts",
+      "description": "Customize keyboard bindings for common actions.",
+      "actions": {
+        "undo": "Undo",
+        "redo": "Redo",
+        "save": "Save",
+        "deleteNode": "Delete Node",
+        "selectAll": "Select All",
+        "zoomIn": "Zoom In",
+        "zoomOut": "Zoom Out",
+        "fitView": "Fit View"
+      }
+    },
+    "dangerZone": {
+      "title": "Danger Zone",
+      "description": "Irreversible actions. Proceed with caution.",
+      "deleteProjects": {
+        "label": "Delete All Projects",
+        "description": "Permanently remove all your projects and their data.",
+        "button": "Delete All"
+      },
+      "deleteAccount": {
+        "label": "Delete Account",
+        "description": "Permanently delete your account and all associated data.",
+        "button": "Delete Account"
+      }
+    },
+    "footer": {
+      "note": "Settings are saved locally. Server-side sync coming in a future update."
+    }
+  }
+}
+

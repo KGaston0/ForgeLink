@@ -1,148 +1,161 @@
-\`\`\`bash
-## Expanding the ESLint configuration
-\`\`\`
-## React Compiler
-\`\`\`bash
-\`\`\`
-Currently, two official plugins are available:
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-# React + Vite
+# ForgeLink — Frontend
+
+React SPA for ForgeLink. Interactive graph editor, project management, and dashboard.
+
 ---
-## 🚀 Quick Start
+
+## Quick Start
 
 ```bash
 cd frontend
-\`\`\`bash
-```
-
-### Development
-
-```bash
-\`\`\`
-
-\`\`\`
-
-### Production Build
-
-```bash
-│   ├── components/         # Reusable components
-│   │   ├── layout/         # Navigation, Footer
-│   │   ├── common/         # Button, Card, Badge
-│   │   └── landing/        # Landing page sections
-│   ├── context/            # React Context providers (Theme, Auth)
-│   ├── routes/             # Route configuration
-│   ├── styles/             # Design system and global styles
-│   │   ├── variables.css   #   CSS variables (colors, typography, spacing)
-│   │   ├── globals.css     #   Global reset and base styles
-│   │   └── theme/          #   Theme system files
-│   ├── utils/              # Utility functions
-│   ├── types/              # TypeScript types (if using TS)
-│   ├── config/             # App configuration
-│   └── assets/             # Static assets (images, icons)
-├── public/                 # Static files
-└── README.md               # This file
-```
-
-> **Note:** See [DEVELOPMENT.md](../DEVELOPMENT.md) for detailed architecture documentation.
----
-## 📚 Documentation
-- **Components:** See [src/components/README.md](./src/components/README.md)
-- **Design System:** See [src/styles/README.md](./src/styles/README.md)
-- **Backend API:** See [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
----
-## 🎨 Tech Stack
-│   │   ├── variables.css   # CSS variables (colors, typography, spacing)
-│   │   ├── globals.css     # Global reset and base styles
-│   │   └── README.md       # Design system documentation
-│   ├── context/            # React contexts (Theme, Auth)
-│   ├── pages/              # Application pages
-│   ├── services/           # API calls and services
-│   └── utils/              # Utilities and helpers
-├── public/                 # Static assets
-- [x] Modular and scalable architecture
-- [x] Navigation and footer
-\`\`\`
-### 🚧 In Development
-- [ ] Authentication system (JWT)
-- [ ] Main dashboard
-- [ ] Project management
-- [ ] Node canvas (graph editor)
-- [ ] Node and connection CRUD
-### 📋 Roadmap
-- [ ] Complete authentication
-- [ ] Visual graph editor
-- [ ] Node and connection management
-- [ ] Real-time collaboration
-- [ ] Data export/import
-- [ ] Customizable themes
-- [ ] Unit tests
-- [ ] Component Storybook
----
-## 🔗 Backend
-Frontend connects to Django REST API backend:
-- **Backend URL:** http://localhost:8000/api/
-- **Documentation:** [../README.md](../README.md)
-- **API Endpoints:** [../API_ENDPOINTS.md](../API_ENDPOINTS.md)
----
-## 🛠️ Useful Commands
-
-```bash
-# Development
+npm install
 npm run dev
+```
 
-# Build
-npm run build
+Frontend: http://localhost:5173/ — Requires backend running on http://localhost:8000/
 
-# Preview build
-npm run preview
+---
 
-# Linting
-npm run lint
-\`\`\`
+## Commands
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+
+---
+
+## Tech Stack
+
+| Package | Version | Purpose                                                    |
+|---|---|------------------------------------------------------------|
+| React | 19.2 | UI library                                                 |
+| Vite | 7 | Build tool / dev server                                    |
+| Tailwind CSS | v4 | Utility-first CSS (CSS-based config, HSL variables)        |
+| shadcn/ui | — | Component primitives (Radix UI + class-variance-authority) |
+| lucide-react | — | Icon library                                               |
+| @xyflow/react | 12 | Interactive graph canvas editor                            |
+| axios | 1.13 | HTTP client with cookie-based auth                         |
+| react-router-dom | 7 | Nested routing                                             |
+| clsx + tailwind-merge | — | Class merging via `cn()` utility                           |
+
+---
+
+## Structure
+
+```
+src/
+├── App.jsx                          # Route definitions
+├── index.css                        # Theme variables (HSL), component classes, React Flow overrides
+├── main.jsx                         # Entry point
+│
+├── components/                      # Shared UI
+│   ├── layout/Sidebar/              # Explorer sidebar with real-time hierarchy tree
+│   │                                # (listens to canvas-frames-updated event)
+│   └── ui/                          # shadcn/ui primitives + app-level components
+│       ├── avatar.jsx               #   Avatar with gradient fallback
+│       ├── button.jsx               #   Button with CVA variants (default, ghost, outline, etc.)
+│       ├── loading-spinner.jsx      #   Themed spinner (fullscreen / inline)
+│       ├── separator.jsx            #   Horizontal/vertical divider
+│       ├── theme-toggle.jsx         #   Animated dark/light toggle
+│       └── tooltip.jsx              #   Radix tooltip with portal
+│
+├── pages/                           # Route pages
+│   ├── auth/                        # LoginPage, RegisterPage
+│   ├── home/                        # Dashboard + useDashboardStats hook
+│   ├── landing/                     # LandingPage + co-located components
+│   │   └── components/              #   Navigation, UserMenu, Footer, HeroSection,
+│   │                                #   BentoGrid, DualPurpose, PricingSection, CTASection
+│   ├── projects/                    # ProjectsPage, ProjectDetailLayout
+│   │   └── tabs/                    #   OverviewTab (graphs), SettingsTab (edit/delete)
+│   ├── graphs/                      # GraphCanvasPage
+│   ├── nodelab/                     # NodeLabPage
+│   │   └── tabs/                    #   BlueprintsTab, NodeListsTab
+│   └── settings/                    # SettingsPage
+│
+├── features/graphs/                 # Graph editor feature module
+│   ├── api/graphService.js          # Canvas API (fetch, save bulk, CRUD)
+│   ├── components/
+│   │   ├── GraphCanvas.jsx          # Main canvas with auto-save + undo/redo
+│   │   ├── Toolbar.jsx              # Drag-and-drop node creation
+│   │   ├── NodeEditorModal.jsx      # Edit node properties
+│   │   ├── EdgeEditorModal.jsx      # Edit connection properties
+│   │   ├── nodes/                   # BaseNode, StandardNode, FrameNode, ConnectionHandles
+│   │   └── edges/                   # CustomEdge, edgeConstants
+│   └── hooks/useUndoRedo.js         # History state management
+│
+├── lib/utils.js                     # cn() utility (clsx + tailwind-merge)
+├── services/api/                    # apiClient (axios + token refresh interceptor)
+├── context/                         # AuthContext, ThemeContext
+├── config/apiConfig.js              # API base URL + endpoint constants
+├── routes/ProtectedRoute.jsx        # Auth guard → redirects to /login
+└── types/NodeType.js                # Type definitions
+```
+
+### Architecture Principles
+
+- **`components/ui/`** — Shared primitives reusable across the entire app. Follow shadcn/ui conventions (kebab-case filenames, `cn()`, `forwardRef`).
+- **`components/layout/`** — Layout components shared across multiple pages (currently only Sidebar).
+- **`pages/`** — Each route has its own folder. Page-specific components are co-located (e.g., `pages/landing/components/`).
+- **`features/`** — Reserved for complex, self-contained domain modules with their own API, components, and hooks (currently only `graphs`).
+- Simple CRUD pages (projects, settings, nodelab) stay in `pages/` — no need for a feature folder.
+
+---
+
+## Routes
+
+| Path | Page | Auth |
+|---|---|---|
+| `/` | Landing Page | Public |
+| `/login` | Login | Public |
+| `/register` | Register | Public |
+| `/dashboard` | Dashboard (stats + recent projects) | Protected |
+| `/projects` | Projects list + create modal | Protected |
+| `/projects/:uuid` | Project detail → Overview tab (graphs) | Protected |
+| `/projects/:uuid/settings` | Project detail → Settings tab | Protected |
+| `/graphs/:uuid` | Graph canvas editor | Protected |
+| `/node-types` | Node Lab | Protected |
+| `/settings` | User settings | Protected |
+
+> URL `:uuid` params are UUID strings, not integer IDs.
+
+---
+
+## Styling
+
+### shadcn/ui + Tailwind CSS v4
+
+All design tokens defined as **HSL values** in `index.css` via `@theme inline`. No `tailwind.config.js` needed (Tailwind v4 uses CSS-based configuration).
+
+**Key tokens:**
+- Surfaces: `bg-background`, `bg-card`, `bg-muted`, `bg-sidebar`
+- Text: `text-foreground`, `text-muted-foreground`, `text-primary`
+- Brand: `text-primary` (cyan), `text-accent` (purple)
+- Borders: `border-border`, `border-input`
+- Focus: `ring-ring` (cyan)
+- Errors: `text-destructive`, `border-destructive`
+
+**Light theme:** Warm grays (not pure white) for a softer, premium feel.
+**Dark theme:** Deep charcoal grays (not black).
+
+**Legacy classes** (`.btn-primary`, `.btn-secondary`, `.input-field`, `.input-error`) are still available for components not yet migrated to shadcn Button.
+
+### Path Alias
+
+`@/` maps to `src/` — configured in `vite.config.js` and `jsconfig.json`. Use for all imports:
+```js
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 ```
 
 ---
 
-## 📦 Available Components
+## Documentation
 
-Total: **10  components**
-
-### Layout (2):
-- \`Navigation\` - Navbar with dark mode toggle
-- \`Footer\` - Site footer
-- `Navigation` - Navbar with dark mode toggle
-- `Footer` - Site footer
-
-### Common (3):
-- \`Button\` - Button with variants (primary/secondary) and sizes
-- \`Card\` - Card with spotlight effect
-- \`Badge\` - Labels with 5 variants
-- `Button` - Button with variants (primary/secondary) and sizes
-- `Card` - Card with spotlight effect
-- `Badge` - Labels with 5 variants
-
-### Landing (5):
-- \`HeroSection\` - Hero with animated node canvas
-- \`BentoGrid\` - Feature grid
-- \`DualPurpose\` - Use cases (PM + Creative)
-- \`PricingSection\` - Pricing table
-- \`CTASection\` - Final call to action
-- `HeroSection` - Hero with animated node canvas
-- `BentoGrid` - Feature grid
-- `DualPurpose` - Use cases (PM + Creative)
-- `PricingSection` - Pricing table
-- `CTASection` - Final call to action
-**See complete documentation:** [src/components/README.md](./src/components/README.md)
----
-## 🎨 Design System
-Centralized design system with CSS variables:
-- **Colors:** Auto light/dark mode
-- **Typography:** 3 font families
-- **Spacing:** 8pt grid system
-- **Shadows:** 7 elevation levels
-\`\`\`bash
-- **Transitions:** 3 speeds
----
-## 📄 License
----
-**Last Updated:** 2026-01-24
+| Document | Description |
+|---|---|
+| [Development Guide](../DEVELOPMENT.md) | Architecture, data models, design system, workflows |
+| [API Reference](../API_ENDPOINTS.md) | Complete backend endpoint documentation |
+| [Quick Start](../QUICK_START.md) | Full project setup instructions |
