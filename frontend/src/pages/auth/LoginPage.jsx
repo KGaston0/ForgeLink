@@ -44,7 +44,7 @@ export default function LoginPage() {
         } else {
           navigate('/dashboard');
         }
-      } catch (e) {
+      } catch {
         // If API fails, fallback to dashboard
         navigate('/dashboard');
       }

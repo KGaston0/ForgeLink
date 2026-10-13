@@ -100,7 +100,7 @@ function GraphCanvasInner({ graphUuid }) {
   const [saveStatus, setSaveStatus] = useState('saved');
 
   // ISSUE 3 FIX: Store backend hierarchy for real-time merge with live nodes
-  const [backendHierarchy, setBackendHierarchy] = useState([]);
+  const [, setBackendHierarchy] = useState([]);
 
   const [contextMenu, setContextMenu] = useState(null);
   const [editingNode, setEditingNode] = useState(null);

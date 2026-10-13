@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Lightbulb, Search } from 'lucide-react';
 
@@ -11,7 +10,6 @@ import { Plus, Lightbulb, Search } from 'lucide-react';
  * - Global Search: Mock action for future search
  */
 export default function QuickActions({ onNewProject }) {
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
   const actions = [

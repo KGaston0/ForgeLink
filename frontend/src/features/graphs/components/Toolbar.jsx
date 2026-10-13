@@ -19,19 +19,6 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
   const { t } = useTranslation();
   const [pinnedBlueprints, setPinnedBlueprints] = useState([]);
 
-  // Load pinned blueprint IDs from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('forgelink_pinned_blueprints');
-    if (saved) {
-      try {
-        const pinnedIds = JSON.parse(saved);
-        loadPinnedBlueprints(pinnedIds);
-      } catch (err) {
-        console.error('Failed to parse pinned blueprints:', err);
-      }
-    }
-  }, []);
-
   const loadPinnedBlueprints = async (pinnedIds) => {
     if (!pinnedIds || pinnedIds.length === 0) {
       setPinnedBlueprints([]);
@@ -47,6 +34,19 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
       console.error('Failed to load pinned blueprints:', err);
     }
   };
+
+  // Load pinned blueprint IDs from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('forgelink_pinned_blueprints');
+    if (saved) {
+      try {
+        const pinnedIds = JSON.parse(saved);
+        loadPinnedBlueprints(pinnedIds);
+      } catch (err) {
+        console.error('Failed to parse pinned blueprints:', err);
+      }
+    }
+  }, []);
 
   const STATUS_CONFIG = {
     saved: {
