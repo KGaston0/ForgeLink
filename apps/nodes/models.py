@@ -142,15 +142,6 @@ class Node(models.Model):
         related_name='nodes'
     )
 
-    # Hierarchy: a node can be inside another node (within the same project)
-    parent_node = models.ForeignKey(
-        'self',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='child_nodes'
-    )
-
     # Blueprint connection: "umbilical cord" to the template this node was spawned from
     blueprint = models.ForeignKey(
         NodeBlueprint,
@@ -185,49 +176,3 @@ class Node(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.node_type})"
-
-    def clean(self):
-        """
-        Validate node relationships.
-        
-        Ensures:
-        - No self-parenting
-        - Parent belongs to same project
-        - No cyclic hierarchies
-        """
-        if self.parent_node is not None:
-            # Prevent self-parenting
-            if self.parent_node_id == self.id:
-                raise ValidationError("A node cannot be its own parent")
-
-            # Prevent cross-project parents
-            if self.parent_node.project_id != self.project_id:
-                raise ValidationError("Parent node must belong to the same project")
-
-            # Prevent cyclic hierarchies
-            ancestor = self.parent_node
-            seen_ids = {self.id} if self.id else set()
-            while ancestor is not None:
-                if ancestor.id in seen_ids:
-                    raise ValidationError("Cyclic parent relationship is not allowed")
-                seen_ids.add(ancestor.id)
-                ancestor = ancestor.parent_node
-
-    def get_depth(self):
-        """
-        Returns the depth level in the hierarchy (0 = root).
-        
-        Defensive: includes cycle detection to prevent infinite loops
-        if corrupted data exists in the database.
-        """
-        depth = 0
-        ancestor = self.parent_node
-        seen_ids = {self.id} if self.id else set()
-        while ancestor is not None:
-            if ancestor.id in seen_ids:
-                # Defensive: avoid infinite loops if bad data exists
-                break
-            seen_ids.add(ancestor.id)
-            depth += 1
-            ancestor = ancestor.parent_node
-        return depth

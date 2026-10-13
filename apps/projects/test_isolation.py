@@ -41,14 +41,6 @@ class CrossUserIsolationTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(Node.objects.filter(title='Injected').exists())
 
-    def test_cannot_use_foreign_parent_node(self):
-        response = self.client.post(reverse('node-list'), {
-            'project': self.attacker_project.id,
-            'title': 'Child',
-            'parent_node': self.victim_node.id,
-        })
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_cannot_use_foreign_blueprint(self):
         response = self.client.post(reverse('node-list'), {
             'project': self.attacker_project.id,

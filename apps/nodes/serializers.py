@@ -25,7 +25,7 @@ class NodeBlueprintSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['creator', 'created_at', 'updated_at']
 
-    def get_spawned_nodes_count(self, obj):
+    def get_spawned_nodes_count(self, obj) -> int:
         """Return the number of nodes spawned from this blueprint."""
         return obj.spawned_nodes.count()
 
@@ -107,12 +107,9 @@ class NodeSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer)
 
     owner_scoped_fields = {
         'project': 'owner',
-        'parent_node': 'project__owner',
         'blueprint_id': 'creator',
     }
 
-    child_count = serializers.SerializerMethodField()
-    depth_level = serializers.SerializerMethodField()
     graph_ids = serializers.SerializerMethodField()
     blueprint = NodeBlueprintSerializer(read_only=True)
     blueprint_id = serializers.PrimaryKeyRelatedField(
@@ -126,44 +123,13 @@ class NodeSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer)
     class Meta:
         model = Node
         fields = [
-            'id', 'project', 'parent_node', 'title', 'node_type', 'content',
+            'id', 'project', 'title', 'node_type', 'content',
             'custom_properties', 'blueprint', 'blueprint_id',
             'created_at', 'updated_at',
-            'child_count', 'depth_level', 'graph_ids'
+            'graph_ids'
         ]
         read_only_fields = ['created_at', 'updated_at', 'graph_ids', 'blueprint']
 
-    def validate(self, attrs):
-        # The parent must live in the same project as the node
-        project = attrs.get('project') or getattr(self.instance, 'project', None)
-        parent = attrs.get('parent_node')
-        if parent is not None and project is not None and parent.project_id != project.id:
-            raise serializers.ValidationError(
-                {'parent_node': 'Parent node must belong to the same project.'}
-            )
-        return attrs
-
-    def get_child_count(self, obj):
-        """Return the count of direct child nodes."""
-        return obj.child_nodes.count()
-
-    def get_depth_level(self, obj):
-        """Return the depth level in the hierarchy."""
-        return obj.get_depth()
-
-    def get_graph_ids(self, obj):
+    def get_graph_ids(self, obj) -> list[int]:
         """Return list of graph IDs this node belongs to."""
         return list(obj.graph_nodes.values_list('graph_id', flat=True))
-
-
-class NodeDetailSerializer(NodeSerializer):
-    """
-    Detailed serializer with nested children.
-    
-    Includes full child node data for hierarchical browsing.
-    """
-
-    child_nodes = NodeSerializer(many=True, read_only=True)
-
-    class Meta(NodeSerializer.Meta):
-        fields = NodeSerializer.Meta.fields + ['child_nodes']
