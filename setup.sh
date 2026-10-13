@@ -76,8 +76,7 @@ fi
 
 # 7. Database migration info
 print_step "Database Migration Info"
-echo -e "${YELLOW}Before running migrations, ensure PostgreSQL is running with correct credentials in .env${NC}"
-echo -e "${YELLOW}If you want to use SQLite for development, you can modify the DATABASES setting.${NC}"
+echo -e "${YELLOW}SQLite is used by default, no setup needed. To use PostgreSQL, set DB_ENGINE=postgresql and the DB_* variables in .env.${NC}"
 
 # 8. Check Node.js
 print_step "Checking Node.js installation..."
@@ -108,12 +107,13 @@ echo -e "${BLUE}========================================${NC}"
 
 echo -e "\n${YELLOW}Next steps:${NC}\n"
 
-echo "1. ${BLUE}Configure database (if using PostgreSQL):${NC}"
-echo "   Edit .env with your PostgreSQL credentials"
-echo "   Then run: python manage.py migrate\n"
+echo "1. ${BLUE}Create the database tables:${NC}"
+echo "   python manage.py migrate"
+echo ""
 
-echo "2. ${BLUE}Or use SQLite for quick development:${NC}"
-echo "   - Backend will use db.sqlite3 by default\n"
+echo "2. ${BLUE}Optional: use PostgreSQL instead of SQLite:${NC}"
+echo "   Set DB_ENGINE=postgresql and the DB_* variables in .env"
+echo ""
 
 echo "3. ${BLUE}Create a superuser:${NC}"
 echo "   python manage.py createsuperuser\n"

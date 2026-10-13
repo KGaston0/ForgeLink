@@ -1,4 +1,6 @@
-# Instrucciones Personalizadas para GitHub Copilot
+# Instrucciones para asistentes de código (AGENTS.md)
+
+Archivo único para Copilot, Junie, Claude Code y otros asistentes. `CLAUDE.md` lo importa.
 
 ## Contexto del Proyecto: ForgeLink
 
@@ -8,26 +10,27 @@
 - **Backend:** Django 4.2+ con Django REST Framework
 - **Frontend:** React 19 + Vite 7 + Tailwind CSS v4
 - **Base de datos:** PostgreSQL (producción) / SQLite (desarrollo)
+- **Documentación de API:** generada con drf-spectacular en `/api/docs/` (solo con `DEBUG=True`); no se escribe a mano
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`): check, migraciones, tests, lint y build
 - **Autenticación:** JWT con httpOnly cookies
 - **Visualización de grafos:** @xyflow/react 12
 - **Internacionalización (i18n):** react-i18next con i18next-browser-languagedetector
 
 ### Arquitectura Backend
 - **Apps Django:** `apps/users/`, `apps/projects/`, `apps/nodes/`, `apps/graphs/`, `apps/connections/`
-- **Modelos principales:** User, Project, Node, Graph, GraphNode, NodeConnection, ConnectionType
+- **Modelos principales:** User, Project, Node, NodeBlueprint, BlueprintList, Graph, GraphNode, NodeConnection, ConnectionType
+- **Aislamiento entre usuarios:** todo queryset se filtra por dueño, y los serializers con claves foráneas usan `OwnerScopedRelatedFieldsMixin` (`owner_scoped_fields`). Todo cambio en esa zona lleva un test cruzado entre usuarios
 - **UUID como identificador público:** Projects y Graphs usan `lookup_field = 'uuid'` en sus ViewSets
 - **Signal implementado:** `post_save` en User crea automáticamente "Mi Primer Proyecto" y "Grafo Principal"
 - **Bulk canvas save:** `PUT /graphs/{uuid}/canvas/bulk/` guarda todo el estado del canvas en una sola petición
 
 ### Arquitectura Frontend
-- **Estructura:** Feature-based (cada feature tiene components/, hooks/, api/)
+- **Estructura:** `features/<nombre>/` para dominios complejos (api/, components/, hooks/); `pages/<nombre>/` para páginas simples
 - **i18n:** Archivo de configuración `i18n.js` y diccionarios en `src/locales/en.json` y `es.json`
-- **Componentes comunes:** Badge, Button, Card, LoadingSpinner, ThemeToggle
-- **Componentes landing:** HeroSection, BentoGrid, DualPurpose, PricingSection, CTASection
-- **Componentes layout:** Footer, Navigation, Sidebar
-- **Páginas:** Landing, Login, Register, Dashboard, ProjectsPage, ProjectDetailLayout (tabs: OverviewTab, SettingsTab), GraphCanvasPage, SettingsPage
-- **Graph editor:** GraphCanvas con @xyflow/react, nodos custom (BaseNode, StandardNode, FrameNode), edges custom, Toolbar, modales de edición, auto-save con debounce, undo/redo
-- **Context:** AuthContext, ThemeContext
+- **Componentes compartidos:** `components/ui/` (primitivas shadcn: button, avatar, tooltip, separator, theme-toggle, loading-spinner) y `components/layout/Sidebar`
+- **Páginas:** Landing, Login, Register, Dashboard, ProjectsPage, ProjectDetailLayout (tabs: OverviewTab, SettingsTab), GraphCanvasPage, NodeLab y BlueprintBuilder, SettingsPage
+- **Graph editor:** GraphCanvas con @xyflow/react, nodos custom (BaseNode, StandardNode, FrameNode, PortalNode), edges custom, Toolbar, modales de edición, drill-down en frames, auto-save con debounce, undo/redo
+- **Context:** AuthContext, ThemeContext, ActivityFeedContext
 - **Rutas protegidas:** ProtectedRoute con redirección automática
 - **Rutas anidadas:** `/projects/:uuid` usa Outlet con tabs (Overview/Settings)
 
@@ -35,7 +38,7 @@
 - **Backend:** Nombres en inglés, docstrings en inglés, PEP 8, owner-scoped querysets
 - **Frontend:** Componentes funcionales con hooks, un componente por archivo
 - **URLs:** Projects y Graphs usan UUID; Nodes, GraphNodes, Connections usan int ID
-- **Estilos:** Tailwind CSS v4 con CSS variables para theming (dark/light mode) en `index.css`
+- **Estilos:** Tailwind CSS v4 con tokens HSL en `index.css` (dark/light mode); en código nuevo usar los tokens y `components/ui`, no las clases legacy
 - **API:** RESTful, paginación de 100 items, filtros con django-filter
 
 ## Internacionalización (i18n) 
@@ -50,19 +53,23 @@
 - Responde siempre en **español**.
 - El código generado debe estar siempre en **inglés** (nombres de variables, funciones, comentarios en código, etc.).
 
+## Documentación
+- Documentos vigentes: `README.md` (qué es y cómo arrancar), `DEVELOPMENT.md` (arquitectura y flujos), `frontend/README.md` (frontend y design system). Si un cambio altera algo descrito allí, actualizar el documento en el mismo commit.
+- No duplicar información entre documentos: enlazar en lugar de copiar.
+
 ## Archivos Markdown
 - **NO** crear archivos `.md` a menos que se solicite explícitamente.
 - Los `.md` del proyecto son **documentación**, no notas de cambios.
 - **NUNCA** incluir en los `.md`:
-  - Secciones tipo "Cambios realizados" o "Por qué se tomó esta decisión"
+  - Secciones tipo "Cambios realizados"
   - Comparaciones "Antes/Después" o "Viejo/Nuevo"
-  - Explicaciones de decisiones de implementación
   - Historial de cambios
 - **Los `.md` deben contener únicamente:**
   - Documentación técnica clara y directa
   - Instrucciones de uso
   - Referencias y ejemplos
   - Estructura y arquitectura
+  - Notas de diseño: el porqué de las decisiones de arquitectura que no se deducen del código (en `DEVELOPMENT.md`, sección "Design notes")
 - Los resúmenes y explicaciones de cambios se muestran en la conversación, **NO se guardan en archivos**.
 
 ## Calidad del Código
