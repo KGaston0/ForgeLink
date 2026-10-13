@@ -33,6 +33,7 @@ import {
 //
 import useUndoRedo from '../hooks/useUndoRedo';
 import { useActivityFeedInvalidation } from '../../../context/ActivityFeedContext';
+import { buildFrameTree } from '../utils/buildFrameTree';
 
 const nodeTypes = { custom: BaseNode, portal: PortalNode };
 const edgeTypes = { custom: CustomEdge };
@@ -100,7 +101,7 @@ function GraphCanvasInner({ graphUuid }) {
   const [saveStatus, setSaveStatus] = useState('saved');
 
   // ISSUE 3 FIX: Store backend hierarchy for real-time merge with live nodes
-  const [, setBackendHierarchy] = useState([]);
+  const [backendHierarchy, setBackendHierarchy] = useState([]);
 
   const [contextMenu, setContextMenu] = useState(null);
   const [editingNode, setEditingNode] = useState(null);
@@ -230,8 +231,7 @@ function GraphCanvasInner({ graphUuid }) {
         setEdges(loadedEdges);
         setSaveStatus('saved');
 
-        // ISSUE 3 FIX: Store backend hierarchy for real-time merge with live nodes
-        // (tree building moved to separate useEffect for live updates)
+        // The sidebar explorer tree is built from this list (see the effect below)
         setBackendHierarchy(data.hierarchy || []);
 
         // Fix 3: Viewport Centering
@@ -241,6 +241,18 @@ function GraphCanvasInner({ graphUuid }) {
       })
       .catch((err) => console.error('Error loading canvas:', err));
   }, [graphUuid, currentFolderId, setNodes, setEdges, fitView]);
+
+  // --- Publish the node tree to the Sidebar explorer ---
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('canvas-frames-updated', { detail: buildFrameTree(backendHierarchy) })
+    );
+  }, [backendHierarchy]);
+
+  // Clear the explorer when leaving the canvas
+  useEffect(() => () => {
+    window.dispatchEvent(new CustomEvent('canvas-frames-updated', { detail: [] }));
+  }, []);
 
   // --- GLOBAL AUTO-SAVE LISTENER ---
   useEffect(() => {

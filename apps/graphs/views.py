@@ -1,6 +1,7 @@
 import logging
 
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -610,3 +611,33 @@ class GraphNodeViewSet(viewsets.ModelViewSet):
         if not user or not user.is_authenticated:
             return GraphNode.objects.none()
         return GraphNode.objects.select_related('graph', 'node').filter(graph__project__owner=user)
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        """
+        Remove a node from a graph.
+
+        Deleting a placement also removes the placements nested inside it (a frame's
+        contents) and the connections of this graph that touch any of them. A Node is
+        deleted too, but only when it is no longer placed on any graph; a node that
+        also appears on another graph stays in the project.
+        """
+        graph_id = instance.graph_id
+        node_ids = {instance.node_id}
+
+        # Collect the nested placements that CASCADE will remove together with this one
+        frontier = [instance.id]
+        while frontier:
+            children = list(
+                GraphNode.objects.filter(parent_node_id__in=frontier).values_list('id', 'node_id')
+            )
+            frontier = [gn_id for gn_id, _ in children]
+            node_ids.update(node_id for _, node_id in children)
+
+        NodeConnection.objects.filter(graph_id=graph_id).filter(
+            Q(source_node_id__in=node_ids) | Q(target_node_id__in=node_ids)
+        ).delete()
+
+        instance.delete()
+
+        Node.objects.filter(id__in=node_ids, graph_nodes__isnull=True).delete()
