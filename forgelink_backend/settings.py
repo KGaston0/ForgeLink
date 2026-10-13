@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',  # For token blacklisting on logout
     'corsheaders',
     'django_filters',
+    'drf_spectacular',
     # Local apps
     'apps.nodes',
     'apps.projects',
@@ -178,6 +179,15 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# OpenAPI schema. Interactive docs are served at /api/docs/ (only when DEBUG is on).
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'ForgeLink API',
+    'DESCRIPTION': 'Graph-based knowledge management API. Authentication uses JWT in httpOnly cookies.',
+    'VERSION': '0.1.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # JWT settings (reasonable values for dev)

@@ -18,10 +18,10 @@ class ProjectSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'uuid', 'owner', 'created_at', 'updated_at', 'node_count', 'graph_count']
 
-    def get_node_count(self, obj):
+    def get_node_count(self, obj) -> int:
         return obj.nodes.count()
 
-    def get_graph_count(self, obj):
+    def get_graph_count(self, obj) -> int:
         return obj.graphs.count()
 
 
@@ -39,9 +39,9 @@ class ProjectListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'uuid', 'created_at', 'updated_at', 'node_count', 'graph_count']
 
-    def get_node_count(self, obj):
+    def get_node_count(self, obj) -> int:
         return obj.nodes.count()
 
-    def get_graph_count(self, obj):
+    def get_graph_count(self, obj) -> int:
         return obj.graphs.count()
 

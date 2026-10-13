@@ -17,7 +17,7 @@ class GraphSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer
         fields = ['id', 'uuid', 'project', 'project_name', 'name', 'description', 'created_at', 'updated_at', 'node_count']
         read_only_fields = ['id', 'uuid', 'created_at', 'updated_at', 'node_count']
 
-    def get_node_count(self, obj):
+    def get_node_count(self, obj) -> int:
         return obj.graph_nodes.count()
 class GraphNodeSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """Serializer for GraphNode model (node membership and layout in a graph)."""
