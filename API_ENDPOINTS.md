@@ -113,6 +113,11 @@ Lookup by **UUID**. Filtered to graphs belonging to the authenticated user's pro
 ```json
 {
   "graph": { "id": 1, "uuid": "...", "project": 1, "name": "...", ... },
+  "current_folder": {
+    "node_id": 5,
+    "node_title": "Main Chapter",
+    "parent_node": null
+  },
   "nodes": [
     {
       "id": 1, "graph": 1, "node": 1,
@@ -120,7 +125,8 @@ Lookup by **UUID**. Filtered to graphs belonging to the authenticated user's pro
       "color": "#3B82F6", "is_frame": false,
       "width": 160, "height": 80,
       "node_title": "Character A", "node_type": "character",
-      "node_custom_properties": {}
+      "node_custom_properties": {},
+      "hidden_children_count": 2
     }
   ],
   "connections": [
@@ -128,7 +134,22 @@ Lookup by **UUID**. Filtered to graphs belonging to the authenticated user's pro
       "id": 1, "graph": 1,
       "source_node": 1, "target_node": 2,
       "connection_type": 1,
-      "label": "knows", "direction": "forward"
+      "label": "knows", "direction": "forward",
+      "is_hoisted": false
+    }
+  ],
+  "hierarchy": [
+    {
+      "id": 1,
+      "name": "Character A",
+      "parent_id": null,
+      "is_frame": false
+    },
+    {
+      "id": 2,
+      "name": "Main Chapter",
+      "parent_id": 1,
+      "is_frame": true
     }
   ]
 }
@@ -169,6 +190,19 @@ Lookup by **UUID**. Filtered to graphs belonging to the authenticated user's pro
 - `?project__uuid=uuid` — Filter by project UUID
 - `?search=term` — Search by name or description
 - `?ordering=field` — Order by `created_at`, `updated_at`, `name`
+
+**Canvas query parameters:**
+- `?folder_id=id` — Filter nodes by parent frame (default: null for root-level nodes only)
+- `?depth=n` — Depth of nested node traversal (default: 3)
+
+**Response fields:**
+- `graph` — Graph metadata
+- `current_folder` — Metadata of the currently drilled-down frame (null if at root)
+- `nodes` — Visible graph nodes with layout and properties
+  - `hidden_children_count` — Number of child nodes not shown in current view (due to depth)
+- `connections` — Visible connections between nodes
+  - `is_hoisted` — true if connection links nodes from different depth levels
+- `hierarchy` — Full tree structure of all nodes for sidebar/explorer (includes frames and all nodes)
 
 ---
 

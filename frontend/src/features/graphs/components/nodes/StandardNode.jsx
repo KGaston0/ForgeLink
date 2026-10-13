@@ -68,11 +68,11 @@ const StandardNode = ({
       />
 
 
-      <div className={`relative h-full w-full rounded-xl border-2 bg-[rgb(var(--color-bg))] min-w-[160px] transition-all duration-200 z-10 flex flex-col ${nodeColor} ${nodeShadow}`}>
+      <div className={`relative w-full h-auto rounded-xl border-2 bg-[rgb(var(--color-bg))] min-w-[160px] transition-all duration-200 z-10 flex flex-col ${nodeColor} ${nodeShadow}`}>
 
         <ConnectionHandles id={id} isFrame={false} isPropsExpanded={isPropsExpanded} />
 
-        <div className="flex-1 flex flex-col rounded-[10px] overflow-hidden">
+        <div className="flex flex-col rounded-[10px] overflow-hidden">
           <div className={`custom-drag-handle flex items-center justify-between px-4 py-2 cursor-grab active:cursor-grabbing flex-shrink-0 ${headerClass}`} style={headerStyle}>
             <span className="text-xs font-semibold text-white uppercase tracking-wide">
               {data.nodeType || 'Node'}
@@ -80,7 +80,7 @@ const StandardNode = ({
             <ToggleButton />
           </div>
 
-          <div className="flex-1 px-4 py-3 bg-[rgb(var(--color-bg))] flex flex-col overflow-y-auto">
+          <div className="px-4 py-3 bg-[rgb(var(--color-bg))] flex flex-col overflow-visible">
             {renderLabel('text-sm font-bold text-[rgb(var(--color-text))]', 'New Node')}
 
             {isPropsExpanded && hasCustomProps && (

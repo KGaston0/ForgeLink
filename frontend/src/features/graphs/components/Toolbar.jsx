@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import NodeLabModal from './NodeLabModal';
+import { fetchBlueprints } from '@/features/graphs/api/graphService';
 
 const DEFAULT_NODES = [
   { type: 'character', label: 'Character', color: 'bg-purple-500' },
@@ -15,9 +15,38 @@ const DEFAULT_FRAMES = [
   { type: 'standard', label: 'Standard Frame', color: 'bg-slate-600' },
 ];
 
-const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canUndo, canRedo, onZoomOut, onAddPortal }) => {
+const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canUndo, canRedo, onZoomOut, onAddPortal, onOpenNodeLab }) => {
   const { t } = useTranslation();
-  const [isNodeLabOpen, setIsNodeLabOpen] = useState(false);
+  const [pinnedBlueprints, setPinnedBlueprints] = useState([]);
+
+  // Load pinned blueprint IDs from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('forgelink_pinned_blueprints');
+    if (saved) {
+      try {
+        const pinnedIds = JSON.parse(saved);
+        loadPinnedBlueprints(pinnedIds);
+      } catch (err) {
+        console.error('Failed to parse pinned blueprints:', err);
+      }
+    }
+  }, []);
+
+  const loadPinnedBlueprints = async (pinnedIds) => {
+    if (!pinnedIds || pinnedIds.length === 0) {
+      setPinnedBlueprints([]);
+      return;
+    }
+
+    try {
+      const response = await fetchBlueprints({ limit: 100 });
+      const allBlueprints = response.results || response;
+      const pinned = allBlueprints.filter(bp => pinnedIds.includes(bp.id));
+      setPinnedBlueprints(pinned);
+    } catch (err) {
+      console.error('Failed to load pinned blueprints:', err);
+    }
+  };
 
   const STATUS_CONFIG = {
     saved: {
@@ -125,27 +154,43 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                     <span>{t('graphCanvas.toolbar.pinnedBlueprints')}</span>
                     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-[rgb(var(--color-text-secondary))]"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onCreateNode('custom_npc')}
-                    className="w-full px-3 py-1.5 rounded-md text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer transition-colors flex items-center gap-2"
-                  >
-                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                    NPC Profile
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onCreateNode('custom_spell')}
-                    className="w-full px-3 py-1.5 rounded-md text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer transition-colors flex items-center gap-2"
-                  >
-                    <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
-                    Magic Spell
-                  </button>
+                  {pinnedBlueprints.length > 0 ? (
+                    pinnedBlueprints.map(bp => (
+                      <button
+                        key={bp.id}
+                        type="button"
+                        onClick={() => onCreateNode(bp.name)}
+                        className="w-full px-3 py-1.5 rounded-md text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer transition-colors flex items-center gap-2"
+                      >
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: bp.color || '#06b6d4' }}></span>
+                        {bp.name}
+                      </button>
+                    ))
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onCreateNode('custom_npc')}
+                        className="w-full px-3 py-1.5 rounded-md text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer transition-colors flex items-center gap-2"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                        NPC Profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onCreateNode('custom_spell')}
+                        className="w-full px-3 py-1.5 rounded-md text-left text-sm text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] cursor-pointer transition-colors flex items-center gap-2"
+                      >
+                        <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                        Magic Spell
+                      </button>
+                    </>
+                  )}
 
                   <div className="mt-2 pt-2 border-t border-[rgb(var(--color-border))] px-1">
                     <button
                       type="button"
-                      onClick={() => setIsNodeLabOpen(true)}
+                      onClick={onOpenNodeLab}
                       className="w-full px-3 py-1.5 rounded-md text-left text-xs text-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-400 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -201,7 +246,7 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
                   <div className="mt-2 pt-2 border-t border-[rgb(var(--color-border))] px-1">
                     <button
                       type="button"
-                      onClick={() => setIsNodeLabOpen(true)}
+                      onClick={onOpenNodeLab}
                       className="w-full px-3 py-1.5 rounded-md text-left text-xs text-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-400 font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -259,20 +304,6 @@ const Toolbar = ({ onCreateNode, onCreateFrame, saveStatus, onUndo, onRedo, canU
           </div>
         </div>
       </div>
-
-      <NodeLabModal
-        isOpen={isNodeLabOpen}
-        onClose={() => setIsNodeLabOpen(false)}
-        onSpawnNode={(type) => {
-          // If the type includes 'frame', create a frame; otherwise create a regular node
-          if (type.includes('frame')) {
-             onCreateFrame(type);
-          } else {
-             onCreateNode(type);
-          }
-          setIsNodeLabOpen(false);
-        }}
-      />
     </>
   );
 };

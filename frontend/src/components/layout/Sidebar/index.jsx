@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/context/AuthContext';
@@ -23,6 +23,7 @@ import {
   ChevronDown,
   FolderOpen,
   Folder,
+  FileText,
 } from 'lucide-react';
 
 /**
@@ -32,37 +33,85 @@ import {
 function TreeItem({ node, currentId, level = 0, onSelect }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const isActive = node.id === currentId;
+  const isFrame = node.is_frame === true;
   const hasChildren = node.children && node.children.length > 0;
+
+  // ISSUE 1 & 2 FIX: Separate click handlers
+  const handleToggleExpand = (e) => {
+    // ISSUE 2 FIX: Stop propagation to prevent parent double-click navigation
+    e.stopPropagation();
+    if (hasChildren) {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
+  const handleNavigateFrame = () => {
+    // ISSUE 1 FIX: Only navigate if it's a frame
+    if (!isFrame) return;
+
+    // Update local state in sidebar
+    onSelect(node.id);
+    
+    // Dispatch event to notify canvas
+    window.dispatchEvent(
+      new CustomEvent('sidebar-navigate', { detail: node.id })
+    );
+  };
+
+  // ISSUE 1 FIX: Different styling for non-frame nodes (not clickable for navigation)
+  const itemClassName = cn(
+    'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-all duration-200',
+    isFrame ? (
+      isActive
+        ? 'bg-cyan-500/20 text-cyan-400 border-l-2 border-cyan-400 font-semibold cursor-pointer'
+        : 'text-[hsl(var(--explorer-foreground))] hover:bg-[hsl(var(--explorer-hover))] cursor-pointer'
+    ) : (
+      isActive
+        ? 'bg-cyan-500/20 text-cyan-400 border-l-2 border-cyan-400 font-semibold'
+        : 'text-[hsl(var(--explorer-foreground))]'
+    )
+  );
 
   return (
     <div>
       <button
-        onClick={() => {
-          onSelect(node.id);
-          if (hasChildren) setIsExpanded(!isExpanded);
-        }}
-        className={cn(
-          'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-all duration-200',
-          isActive
-            ? 'bg-cyan-500/20 text-cyan-400 border-l-2 border-cyan-400 font-semibold'
-            : 'text-[hsl(var(--explorer-foreground))] hover:bg-[hsl(var(--explorer-hover))]'
-        )}
+        onClick={handleToggleExpand}
+        onDoubleClick={isFrame ? handleNavigateFrame : undefined}
+        className={itemClassName}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
       >
-        {hasChildren && (
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 shrink-0 transition-transform duration-200',
-              !isExpanded && '-rotate-90'
-            )}
-          />
+        {/* ISSUE 2 FIX: Only show chevron for frames with children */}
+        {isFrame && hasChildren && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleToggleExpand(e);
+            }}
+            onDoubleClick={(e) => e.stopPropagation()}
+            className="p-0 hover:opacity-70 transition-opacity"
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 shrink-0 transition-transform duration-200',
+                !isExpanded && '-rotate-90'
+              )}
+            />
+          </button>
         )}
-        {!hasChildren && <div className="h-4 w-4 shrink-0" />}
+        {/* Hide chevron space for non-frames or frames without children */}
+        {(!isFrame || !hasChildren) && <div className="h-4 w-4 shrink-0" />}
 
-        {isActive ? (
-          <FolderOpen className="h-4 w-4 shrink-0 text-cyan-400" />
+        {/* ISSUE 1 FIX: Different icons for frames vs non-frame nodes */}
+        {isFrame ? (
+          isActive ? (
+            <FolderOpen className="h-4 w-4 shrink-0 text-cyan-400" />
+          ) : (
+            <Folder className="h-4 w-4 shrink-0" style={{ color: 'hsl(var(--explorer-muted-foreground))' }} />
+          )
         ) : (
-          <Folder className="h-4 w-4 shrink-0" style={{ color: 'hsl(var(--explorer-muted-foreground))' }} />
+          <FileText className="h-4 w-4 shrink-0" style={{ color: 'hsl(var(--explorer-muted-foreground))' }} />
         )}
 
         <span className="truncate">{node.name}</span>
@@ -95,44 +144,29 @@ export default function Sidebar() {
   const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(false);
-  const [currentFrameId, setCurrentFrameId] = useState('frame-a-1');
+  
+  // STEP 3: Replace dummy state with dynamic state from canvas
+  const [framesTree, setFramesTree] = useState([]);
+  const [currentFrameId, setCurrentFrameId] = useState(null);
 
-  // Dummy frames data for tree explorer
-  const DUMMY_FRAMES = [
-    {
-      id: 'root',
-      name: 'Root Frame',
-      children: [
-        {
-          id: 'frame-a',
-          name: 'Frame A',
-          children: [
-            {
-              id: 'frame-a-1',
-              name: 'Frame A.1',
-              children: [],
-            },
-            {
-              id: 'frame-a-2',
-              name: 'Frame A.2',
-              children: [],
-            },
-          ],
-        },
-        {
-          id: 'frame-b',
-          name: 'Frame B',
-          children: [
-            {
-              id: 'frame-b-1',
-              name: 'Frame B.1',
-              children: [],
-            },
-          ],
-        },
-      ],
-    },
-  ];
+  // STEP 3: Listen for canvas frame updates
+  useEffect(() => {
+    const handleFramesUpdated = (e) => {
+      setFramesTree(e.detail || []);
+    };
+
+    const handleFolderChanged = (e) => {
+      setCurrentFrameId(e.detail);
+    };
+
+    window.addEventListener('canvas-frames-updated', handleFramesUpdated);
+    window.addEventListener('canvas-folder-changed', handleFolderChanged);
+
+    return () => {
+      window.removeEventListener('canvas-frames-updated', handleFramesUpdated);
+      window.removeEventListener('canvas-folder-changed', handleFolderChanged);
+    };
+  }, []);
 
   const NAV_ITEMS = [
     { name: t('sidebar.dashboard'), href: '/dashboard', icon: LayoutDashboard },
@@ -343,14 +377,20 @@ export default function Sidebar() {
                 Explorer
               </h3>
               <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
-                {DUMMY_FRAMES.map((frame) => (
-                  <TreeItem
-                    key={frame.id}
-                    node={frame}
-                    currentId={currentFrameId}
-                    onSelect={setCurrentFrameId}
-                  />
-                ))}
+                {framesTree && framesTree.length > 0 ? (
+                  framesTree.map((frame) => (
+                    <TreeItem
+                      key={frame.id}
+                      node={frame}
+                      currentId={currentFrameId}
+                      onSelect={setCurrentFrameId}
+                    />
+                  ))
+                ) : (
+                  <p className="px-2 py-2 text-xs text-sidebar-muted-foreground">
+                    {t('sidebar.noFrames', { defaultValue: 'No frames yet' })}
+                  </p>
+                )}
               </div>
             </div>
           </>

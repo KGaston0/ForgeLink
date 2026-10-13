@@ -1,17 +1,49 @@
 import { useState, useEffect } from 'react';
-
-const MOCK_BLUEPRINTS = [
-  { id: 'bp-1', type: 'custom_npc', name: 'NPC Profile', category: 'Characters', color: 'bg-purple-500', isPinned: true },
-  { id: 'bp-2', type: 'custom_quest', name: 'Quest Objective', category: 'Gameplay', color: 'bg-amber-500', isPinned: false },
-  { id: 'bp-3', type: 'custom_spell', name: 'Magic Spell', category: 'Lore', color: 'bg-cyan-500', isPinned: true },
-  { id: 'bp-4', type: 'custom_tavern', name: 'Tavern', category: 'Locations', color: 'bg-orange-500', isPinned: false },
-  { id: 'bp-5', type: 'custom_artifact', name: 'Artifact', category: 'Lore', color: 'bg-rose-500', isPinned: false },
-  { id: 'bp-6', type: 'custom_faction', name: 'Faction Base', category: 'World', color: 'bg-indigo-500', isPinned: false },
-];
+import { fetchBlueprints } from '@/features/graphs/api/graphService';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
 const NodeLabModal = ({ isOpen, onClose, onSpawnNode }) => {
+  const [blueprints, setBlueprints] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [categories, setCategories] = useState(['All']);
+
+  // Load blueprints from API when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const loadBlueprints = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const params = {};
+        if (searchTerm) params.search = searchTerm;
+        if (activeCategory !== 'All') params.category = activeCategory;
+
+        const response = await fetchBlueprints(params);
+        const data = response.results || response;
+        
+        setBlueprints(data);
+
+        // Extract unique categories
+        const uniqueCategories = new Set(['All']);
+        data.forEach(bp => {
+          if (bp.category) uniqueCategories.add(bp.category);
+        });
+        setCategories(Array.from(uniqueCategories));
+      } catch (err) {
+        console.error('[NodeLabModal] Error fetching blueprints:', err);
+        setError('Failed to load blueprints');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBlueprints();
+  }, [isOpen, searchTerm, activeCategory]);
 
   // Close on Escape key
   useEffect(() => {
@@ -24,13 +56,17 @@ const NodeLabModal = ({ isOpen, onClose, onSpawnNode }) => {
 
   if (!isOpen) return null;
 
-  const categories = ['All', ...new Set(MOCK_BLUEPRINTS.map(bp => bp.category))];
-
-  const filteredBlueprints = MOCK_BLUEPRINTS.filter(bp => {
-    const matchesSearch = bp.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = activeCategory === 'All' || bp.category === activeCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const handleSpawnNode = (blueprint) => {
+    onSpawnNode({
+      blueprintId: blueprint.id,
+      nodeType: blueprint.name,
+      label: blueprint.name,
+      isFrame: blueprint.is_frame || false,
+      customProps: blueprint.schema || {},
+      color: blueprint.color || '#06b6d4',
+    });
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeInShort">
@@ -54,89 +90,128 @@ const NodeLabModal = ({ isOpen, onClose, onSpawnNode }) => {
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] rounded-full transition-colors"
+            className="p-2 text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] hover:bg-[rgb(var(--color-bg-secondary))] rounded-full transition-colors cursor-pointer"
             aria-label="Close Node Lab"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
 
-        {/* Toolbar: Search & Filters */}
-        <div className="px-6 py-4 border-b border-[rgb(var(--color-border))] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-64">
-            <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgb(var(--color-text-secondary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input
-              type="text"
-              placeholder="Search blueprints..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[rgb(var(--color-bg-secondary))] border border-[rgb(var(--color-border))] rounded-lg text-sm text-[rgb(var(--color-text))] focus:outline-none focus:border-cyan-500 transition-colors"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 hide-scrollbar">
-            {categories.map(category => (
-              <button
-                key={category}
-                type="button"
-                onClick={() => setActiveCategory(category)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${activeCategory === category ? 'bg-[rgb(var(--color-text))] text-[rgb(var(--color-bg))]' : 'bg-[rgb(var(--color-bg-secondary))] text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))]'}`}
+        {/* Content Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Search & Filters */}
+          <div className="p-4 border-b border-[rgb(var(--color-border))] bg-[rgb(var(--color-bg-secondary))]/25 space-y-3">
+            <div className="relative">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgb(var(--color-text-secondary))]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Grid Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[rgb(var(--color-bg))] min-h-[400px]">
-          {filteredBlueprints.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-[rgb(var(--color-text-secondary))]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="mb-4 opacity-50"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-              <p>No blueprints found.</p>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search blueprints..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-[rgb(var(--color-bg))] border border-[rgb(var(--color-border))] rounded-lg text-sm text-[rgb(var(--color-text))] focus:outline-none focus:border-cyan-500 transition-colors"
+              />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {filteredBlueprints.map(bp => (
-                <div key={bp.id} className="group relative bg-[rgb(var(--color-bg-secondary))]/50 border border-[rgb(var(--color-border))] rounded-xl p-4 hover:border-cyan-500/50 hover:shadow-lg transition-all duration-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${bp.color} shadow-sm`}></span>
-                      <span className="text-xs font-bold text-[rgb(var(--color-text-secondary))] uppercase tracking-wider">{bp.category}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className={`text-[rgb(var(--color-text-secondary))] hover:text-amber-400 transition-colors ${bp.isPinned ? 'text-amber-400' : ''}`}
-                      title={bp.isPinned ? "Unpin from Toolbar" : "Pin to Toolbar"}
-                      aria-label="Toggle pin"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={bp.isPinned ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                    </button>
-                  </div>
-                  <h3 className="text-[rgb(var(--color-text))] font-semibold text-base mb-1">{bp.name}</h3>
-                  <p className="text-xs text-[rgb(var(--color-text-secondary))] line-clamp-2 mb-4">
-                    Custom properties structure ready to be deployed into the canvas.
-                  </p>
 
-                  <div className="pt-3 border-t border-[rgb(var(--color-border))] flex items-center justify-between">
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))] transition-colors"
-                    >
-                      Edit Blueprint
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onSpawnNode(bp.type)}
-                      className="px-3 py-1.5 bg-[rgb(var(--color-text))] text-[rgb(var(--color-bg))] rounded-md text-xs font-bold hover:opacity-90 transition-opacity"
-                    >
-                      Spawn Node
-                    </button>
-                  </div>
-                </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-2">
+              {categories.map(category => (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setActiveCategory(category)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                    activeCategory === category
+                      ? 'bg-cyan-500 text-white'
+                      : 'bg-[rgb(var(--color-bg-secondary))] text-[rgb(var(--color-text-secondary))] hover:text-[rgb(var(--color-text))]'
+                  }`}
+                >
+                  {category}
+                </button>
               ))}
             </div>
-          )}
+          </div>
+
+          {/* Blueprints Grid or Loading/Error State */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <LoadingSpinner />
+              </div>
+            ) : error ? (
+              <div role="alert" className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm">
+                {error}
+              </div>
+            ) : blueprints.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-12 w-12 mb-3 text-[rgb(var(--color-text-secondary))] opacity-50"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                <p className="text-[rgb(var(--color-text-secondary))] mb-1">No blueprints found</p>
+                <p className="text-xs text-[rgb(var(--color-text-secondary))] opacity-75">Try different search terms or filters</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {blueprints.map(blueprint => (
+                  <button
+                    key={blueprint.id}
+                    type="button"
+                    onClick={() => handleSpawnNode(blueprint)}
+                    className="group relative bg-[rgb(var(--color-bg-secondary))]/50 border border-[rgb(var(--color-border))] rounded-lg overflow-hidden hover:border-cyan-500/50 hover:shadow-md hover:bg-[rgb(var(--color-bg-secondary))] transition-all duration-150 flex flex-col text-left"
+                  >
+                    {/* Top color indicator bar */}
+                    <div 
+                      className="h-1 w-full flex-shrink-0"
+                      style={{ backgroundColor: blueprint.color || '#06b6d4' }}
+                    />
+
+                    {/* Content - more compact */}
+                    <div className="flex-1 flex flex-col p-2.5 gap-1.5">
+                      {/* Category badge */}
+                      <div className="flex items-center gap-1.5">
+                        <span 
+                          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: blueprint.color || '#06b6d4' }}
+                        ></span>
+                        <span className="text-[9px] font-bold text-[rgb(var(--color-text-secondary))] uppercase tracking-wider truncate">
+                          {blueprint.category || 'General'}
+                        </span>
+                      </div>
+
+                      {/* Blueprint name */}
+                      <h3 className="text-[rgb(var(--color-text))] font-semibold text-xs group-hover:text-cyan-400 transition-colors line-clamp-1">
+                        {blueprint.name}
+                      </h3>
+
+                      {/* Description - smaller text */}
+                      <p className="text-[10px] text-[rgb(var(--color-text-secondary))] line-clamp-1 flex-1">
+                        {blueprint.description || '—'}
+                      </p>
+
+                      {/* Spawn button - compact */}
+                      <div className="pt-1.5 mt-auto border-t border-[rgb(var(--color-border))]/30">
+                        <span className="inline-block w-full px-2 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-[10px] font-medium rounded transition-colors text-center">
+                          Spawn
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -144,3 +219,5 @@ const NodeLabModal = ({ isOpen, onClose, onSpawnNode }) => {
 };
 
 export default NodeLabModal;
+
+

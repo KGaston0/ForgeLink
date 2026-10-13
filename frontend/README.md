@@ -52,7 +52,8 @@ src/
 ├── main.jsx                         # Entry point
 │
 ├── components/                      # Shared UI
-│   ├── layout/Sidebar/              # Collapsible sidebar (shadcn + lucide-react + tooltips)
+│   ├── layout/Sidebar/              # Explorer sidebar with real-time hierarchy tree
+│   │                                # (listens to canvas-frames-updated event)
 │   └── ui/                          # shadcn/ui primitives + app-level components
 │       ├── avatar.jsx               #   Avatar with gradient fallback
 │       ├── button.jsx               #   Button with CVA variants (default, ghost, outline, etc.)

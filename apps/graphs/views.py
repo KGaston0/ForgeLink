@@ -133,11 +133,23 @@ class GraphViewSet(viewsets.ModelViewSet):
             data['hidden_children_count'] = hidden_counts.get(gn.node_id, 0)
             nodes_data.append(data)
 
+        # ISSUE 1 FIX: Build full hierarchy including ALL nodes (not just frames) for real-time explorer
+        all_hierarchy = [
+            {
+                'id': gn.id,
+                'name': gn.node.title,
+                'parent_id': gn.parent_node_id,
+                'is_frame': gn.is_frame
+            }
+            for gn in all_graph_nodes
+        ]
+
         return Response({
             'graph': GraphSerializer(graph).data,
             'current_folder': current_folder_data,
             'nodes': nodes_data,
             'connections': processed_connections,
+            'hierarchy': all_hierarchy,
         })
 
     @action(detail=True, methods=['put'], url_path='canvas/bulk')
@@ -259,6 +271,7 @@ class GraphViewSet(viewsets.ModelViewSet):
                 title=entry.get('label', 'Untitled'),
                 node_type=entry.get('node_type', 'note'),
                 custom_properties=entry.get('custom_properties', {}),
+                blueprint_id=entry.get('blueprint_id'),
             )
             nodes_to_create.append((entry, node))
 
@@ -344,6 +357,7 @@ class GraphViewSet(viewsets.ModelViewSet):
                 label = entry.get('label')
                 node_type = entry.get('node_type')
                 custom_props = entry.get('custom_properties')
+                blueprint_id = entry.get('blueprint_id')
 
                 changed = False
                 if label is not None and label != node_obj.title:
@@ -354,6 +368,9 @@ class GraphViewSet(viewsets.ModelViewSet):
                     changed = True
                 if custom_props is not None and custom_props != node_obj.custom_properties:
                     node_obj.custom_properties = custom_props
+                    changed = True
+                if blueprint_id is not None and blueprint_id != node_obj.blueprint_id:
+                    node_obj.blueprint_id = blueprint_id
                     changed = True
 
                 if changed:
@@ -368,7 +385,7 @@ class GraphViewSet(viewsets.ModelViewSet):
             if nodes_to_update:
                 Node.objects.bulk_update(
                     nodes_to_update,
-                    ['title', 'node_type', 'custom_properties'],
+                    ['title', 'node_type', 'custom_properties', 'blueprint_id'],
                 )
 
         # --- Phase 4: Resolve parent_node references with validation ---

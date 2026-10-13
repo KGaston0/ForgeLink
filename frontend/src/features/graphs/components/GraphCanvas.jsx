@@ -19,6 +19,7 @@ import CustomEdge from './edges/CustomEdge';
 import { EDGE_DIRECTIONS } from './edges/edgeConstants';
 import NodeEditorModal from './NodeEditorModal';
 import EdgeEditorModal from './EdgeEditorModal';
+import NodeLabModal from './NodeLabModal';
 import Toolbar from './Toolbar';
 import PortalCreationModal from './PortalCreationModal';
 import {
@@ -94,8 +95,12 @@ function GraphCanvasInner({ graphUuid }) {
   const [currentFolderName, setCurrentFolderName] = useState(null);
   const [parentFolderId, setParentFolderId] = useState(null);
   const [isPortalModalOpen, setIsPortalModalOpen] = useState(false);
+  const [isNodeLabOpen, setIsNodeLabOpen] = useState(false);
 
   const [saveStatus, setSaveStatus] = useState('saved');
+
+  // ISSUE 3 FIX: Store backend hierarchy for real-time merge with live nodes
+  const [backendHierarchy, setBackendHierarchy] = useState([]);
 
   const [contextMenu, setContextMenu] = useState(null);
   const [editingNode, setEditingNode] = useState(null);
@@ -225,6 +230,10 @@ function GraphCanvasInner({ graphUuid }) {
         setEdges(loadedEdges);
         setSaveStatus('saved');
 
+        // ISSUE 3 FIX: Store backend hierarchy for real-time merge with live nodes
+        // (tree building moved to separate useEffect for live updates)
+        setBackendHierarchy(data.hierarchy || []);
+
         // Fix 3: Viewport Centering
         setTimeout(() => {
           fitView({ padding: 0.2, duration: 800 });
@@ -239,6 +248,32 @@ function GraphCanvasInner({ graphUuid }) {
     window.addEventListener('canvas-unsaved', handleUnsaved);
     return () => window.removeEventListener('canvas-unsaved', handleUnsaved);
   }, [markUnsaved]);
+
+
+  // --- STEP 1B: Dispatch current folder change to Sidebar ---
+  useEffect(() => {
+    const event = new CustomEvent('canvas-folder-changed', {
+      detail: currentFolderId,
+    });
+    window.dispatchEvent(event);
+  }, [currentFolderId]);
+
+  // --- STEP 2: Listen for sidebar navigation and update current folder ---
+  useEffect(() => {
+    const handleNavigate = async (e) => {
+      const folderId = e.detail;
+      
+      // Save any unsaved changes before navigating
+      if (saveStatus !== 'saved' && saveStateRef.current) {
+        await saveStateRef.current();
+      }
+
+      setCurrentFolderId(folderId);
+    };
+
+    window.addEventListener('sidebar-navigate', handleNavigate);
+    return () => window.removeEventListener('sidebar-navigate', handleNavigate);
+  }, [saveStatus]);
 
   // --- CHANGE INTERCEPTORS ---
   const handleNodesChange = useCallback((changes) => {
@@ -284,7 +319,7 @@ function GraphCanvasInner({ graphUuid }) {
       type: 'custom',
       position: centerPosition,
       zIndex: 1000,
-      style: { width: 160, height: 80 },
+      style: {},
       data: {
         label: t('graphCanvas.creation.newNode', { type: nodeType }),
         nodeType,
@@ -346,6 +381,48 @@ function GraphCanvasInner({ graphUuid }) {
           target_graph_uuid: targetGraphUuid,
           target_graph_name: targetGraphName
         }
+      },
+    }]));
+    markUnsaved();
+  }, [setNodes, markUnsaved, takeSnapshot, getCenterSpawnPosition, currentFolderId]);
+
+  // --- SPAWN NODE FROM BLUEPRINT ---
+  const spawnBlueprintNode = useCallback((blueprintData) => {
+    takeSnapshot();
+    const centerPosition = getCenterSpawnPosition();
+    const isFrame = blueprintData.isFrame || false;
+    
+    // Offset based on whether it's a frame or normal node
+    if (isFrame) {
+      centerPosition.x -= 200;
+      centerPosition.y -= 150;
+    } else {
+      centerPosition.x -= 80;
+      centerPosition.y -= 40;
+    }
+
+    setNodes((nds) => sortNodes([...nds, {
+      id: `temp-${Date.now()}`,
+      type: 'custom',
+      position: centerPosition,
+      dragHandle: isFrame ? '.custom-drag-handle' : undefined,
+      style: { 
+        width: isFrame ? 400 : 160, 
+        height: isFrame ? 300 : 80 
+      },
+      zIndex: isFrame ? -1 : 1000,
+      data: {
+        label: blueprintData.label || blueprintData.nodeType,
+        nodeType: blueprintData.nodeType,
+        blueprintId: blueprintData.blueprintId,
+        graphNodeId: null,
+        nodeId: null,
+        parentNode: currentFolderId ? `gn-${currentFolderId}` : null,
+        isFrame: isFrame,
+        width: isFrame ? 400 : 160,
+        height: isFrame ? 300 : 80,
+        customProps: blueprintData.customProps || {},
+        customColor: blueprintData.color || undefined,
       },
     }]));
     markUnsaved();
@@ -612,8 +689,9 @@ function GraphCanvasInner({ graphUuid }) {
           parent_node: node.data.parentNode || null,
           is_frame: isFrame,
           width: getDim('width', isFrame ? 400 : 160),
-          height: getDim('height', isFrame ? 300 : 80),
+          height: getDim('height', isFrame ? 300 : undefined),
           custom_properties: node.data.customProps || {},
+          blueprint_id: node.data.blueprintId || null,
         };
       });
 
@@ -765,7 +843,7 @@ function GraphCanvasInner({ graphUuid }) {
       return {
         ...node,
         dragHandle: !isCurrentlyFrame ? '.custom-drag-handle' : undefined,
-        style: !isCurrentlyFrame ? { width: frameWidth, height: frameHeight } : undefined,
+        style: !isCurrentlyFrame ? { width: frameWidth, height: frameHeight } : {},
         zIndex: !isCurrentlyFrame ? -1 : 1000,
         data: { ...node.data, isFrame: !isCurrentlyFrame, width: !isCurrentlyFrame ? frameWidth : node.data.width, height: !isCurrentlyFrame ? frameHeight : node.data.height },
       };
@@ -920,6 +998,7 @@ function GraphCanvasInner({ graphUuid }) {
         canRedo={canRedo}
         onZoomOut={currentFolderId ? onGoUp : null}
         onAddPortal={() => setIsPortalModalOpen(true)}
+        onOpenNodeLab={() => setIsNodeLabOpen(true)}
       />
 
       <div className="flex-1 relative" ref={reactFlowWrapper}>
@@ -1029,6 +1108,12 @@ function GraphCanvasInner({ graphUuid }) {
         onSelect={createPortalNode}
         projectId={projectId}
       />
+
+      <NodeLabModal
+        isOpen={isNodeLabOpen}
+        onClose={() => setIsNodeLabOpen(false)}
+        onSpawnNode={spawnBlueprintNode}
+      />
     </div>
   );
 }
@@ -1040,3 +1125,4 @@ export default function GraphCanvas({ graphUuid }) {
     </ReactFlowProvider>
   );
 }
+

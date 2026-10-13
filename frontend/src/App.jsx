@@ -13,6 +13,7 @@ import SettingsPage from './pages/settings/SettingsPage.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import GraphCanvasPage from './pages/graphs/GraphCanvasPage.jsx';
 import NodeLabPage from './pages/nodelab/NodeLabPage.jsx';
+import BlueprintBuilderPage from './pages/nodelab/BlueprintBuilderPage.jsx';
 
 function App() {
   return (
@@ -35,6 +36,8 @@ function App() {
             </Route>
             <Route path="/graphs/:id" element={<GraphCanvasPage />} />
             <Route path="/node-types" element={<NodeLabPage />} />
+            <Route path="/node-types/builder" element={<BlueprintBuilderPage />} />
+            <Route path="/node-types/builder/:id" element={<BlueprintBuilderPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           </Routes>

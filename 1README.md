@@ -36,6 +36,7 @@ A graph-based knowledge management application for worldbuilding, story design, 
 - Frame nodes with child nesting and resizing
 - Custom edge routing with directional arrows
 - Node and edge editor modals
+- Real-time sidebar explorer with hierarchical tree
 - Auto-save with debounce (bulk PUT endpoint)
 - Undo/redo history
 

@@ -138,6 +138,9 @@ Junction table: node membership + per-graph visual layout.
 **Constraint:** `UniqueConstraint(graph, node)` — a node can only appear once per graph.
 **Validation:** Node must belong to the same project as the graph.
 
+**Response fields** (from `GET /graphs/{uuid}/canvas/`):
+- `hidden_children_count` — Number of child nodes not displayed due to depth filtering (used to show "X hidden" indicators)
+
 ### ConnectionType
 | Field | Type | Description |
 |---|---|---|
@@ -159,6 +162,21 @@ Junction table: node membership + per-graph visual layout.
 | target_handle_position | Float | Nullable, 0.0–1.0 perimeter position |
 
 **Validations:** No self-connections, nodes must be in the same project as the graph, nodes must be present in the graph (via GraphNode), connection type must belong to the same project.
+
+**Response fields** (from `GET /graphs/{uuid}/canvas/`):
+- `is_hoisted` — true if the connection links nodes from different depth levels (appears in visible subset)
+
+### Hierarchy (Canvas Response)
+Response-only structure for building the sidebar explorer tree. Sent in the `hierarchy` field of `GET /graphs/{uuid}/canvas/`.
+
+| Field | Type | Description |
+|---|---|---|
+| id | Integer | GraphNode ID |
+| name | String | Node title (from Node.title) |
+| parent_id | Integer or null | Parent GraphNode ID (null for root nodes) |
+| is_frame | Boolean | Whether this is a frame node |
+
+**Purpose:** Build a complete tree structure on the frontend for real-time sidebar explorer, independent of depth filtering.
 
 ---
 
@@ -239,13 +257,20 @@ GraphCanvasPage (route page)
 ```
 
 **Data flow:**
-1. `fetchCanvasData(graphUuid)` → loads graph info, nodes (GraphNodes), connections
+1. `fetchCanvasData(graphUuid, currentFolderId, depth)` → loads graph info, nodes (GraphNodes), connections, and full node hierarchy
 2. Maps backend data to ReactFlow nodes/edges format
 3. User interactions modify local ReactFlow state
 4. `saveCanvasBulk(graphUuid, projectId, payload)` → debounced auto-save (2.5s after last change)
 5. Response maps temp IDs to real backend IDs
 
 **ID handling:** The URL uses UUID (`graphUuid`), but internal data operations (FK references in graph-nodes, connections) use integer IDs obtained from `fetchCanvasData` response.
+
+**Sidebar Synchronization:**
+- Canvas receives `hierarchy` from the backend (complete tree structure of all nodes)
+- Canvas builds a tree structure and dispatches `canvas-frames-updated` event with the tree
+- Sidebar listens for `canvas-frames-updated` and renders the explorer tree
+- Sidebar dispatches `sidebar-ready` on mount, which triggers Canvas to re-emit the tree if available
+- This bi-directional handshake ensures Sidebar always gets data even if it mounts after Canvas loads data
 
 ### Project Detail Layout
 
@@ -265,6 +290,27 @@ Shared data is passed via `useOutletContext()`:
 - `updateProject(data)` — Callback to update project
 - `projectId` — Internal integer ID (for FK operations)
 - `projectUuid` — UUID string (for API URL paths)
+
+### Frontend Custom Events
+
+The frontend uses `window` events for cross-component communication:
+
+| Event | Dispatched by | Listened by | Payload | Purpose |
+|---|---|---|---|---|
+| `canvas-frames-updated` | GraphCanvas | Sidebar | `detail: tree` (hierarchy array) | Notify Sidebar of full node tree structure |
+| `sidebar-ready` | Sidebar | GraphCanvas | `undefined` | Handshake: Sidebar signals it's mounted and ready for data |
+| `canvas-folder-changed` | GraphCanvas | Sidebar | `detail: folderId` | Notify Sidebar of current drill-down folder |
+
+**Example usage:**
+```javascript
+// Dispatch event
+window.dispatchEvent(new CustomEvent('canvas-frames-updated', { detail: tree }));
+
+// Listen for event
+const handler = (e) => console.log(e.detail);
+window.addEventListener('canvas-frames-updated', handler);
+window.removeEventListener('canvas-frames-updated', handler);
+```
 
 ---
 
@@ -460,11 +506,22 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 
 ---
 
-## ZUI Drill-down and Portals
+## ZUI Drill-down, Portals, and Sidebar Explorer
 
-The Zoomable User Interface (ZUI) allows users to navigate complex graphs using a folder-like drill-down approach and cross-graph portals.
+The Zoomable User Interface (ZUI) allows users to navigate complex graphs using a folder-like drill-down approach and cross-graph portals. The Sidebar provides a real-time tree explorer of all nodes.
 
 ### Architecture Overview
+
+#### 0. Sidebar Explorer (Real-time Tree)
+The sidebar displays a hierarchical tree of all nodes in the current graph, updated in real-time as the canvas changes.
+
+- **Data Source:** The `hierarchy` field from `GET /graphs/{uuid}/canvas/`
+- **Tree Building:** Canvas builds the tree from backend hierarchy data and dispatches `canvas-frames-updated` event
+- **Synchronization:** 
+  - Sidebar listens for `canvas-frames-updated` and renders the tree
+  - Sidebar dispatches `sidebar-ready` event on mount
+  - Canvas re-emits the tree when `sidebar-ready` is detected (ensures sync even if Sidebar mounts late)
+- **Visual Indicators:** Each node shows whether it's a frame (folder icon) or regular node (document icon)
 
 #### 1. Folder-like Drill-down (Nesting)
 Instead of a literal camera zoom, the canvas implements a "memory-wipe" navigation where drilling into a frame clears the current nodes and loads only the children of that frame.

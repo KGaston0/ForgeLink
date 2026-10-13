@@ -14,12 +14,14 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave, onDelet
   const [label, setLabel] = useState('');
   const [nodeType, setNodeType] = useState('note');
   const [customProps, setCustomProps] = useState([]);
+  const [blueprint, setBlueprint] = useState(null);
   const titleInputRef = useRef(null);
 
   useEffect(() => {
     if (!node) return;
     setLabel(node.data?.label || '');
     setNodeType(node.data?.nodeType || 'note');
+    setBlueprint(node.data?.blueprint || null);
 
     const existing = node.data?.customProps || {};
     setCustomProps(
@@ -72,6 +74,7 @@ export default function NodeEditorModal({ node, isOpen, onClose, onSave, onDelet
       label: label.trim() || node.data.label,
       nodeType,
       customProps: propsObj,
+      blueprint,
     });
   };
 
