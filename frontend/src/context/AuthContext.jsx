@@ -42,10 +42,15 @@ export function AuthProvider({ children }) {
     try {
       // Try to get user data using httpOnly cookie authentication
       const userData = await authService.getCurrentUser();
+      // /auth/me/ answers 200 with { authenticated: false } when there is no session
+      if (!userData?.authenticated) {
+        setUser(null);
+        setIsAuthenticated(false);
+        return;
+      }
       setUser(userData);
       setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Auth check failed:', error);
+    } catch {
       // User is not authenticated or token expired
       setUser(null);
       setIsAuthenticated(false);

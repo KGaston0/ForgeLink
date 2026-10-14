@@ -5,6 +5,8 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers
 import logging
 
 logger = logging.getLogger(__name__)
@@ -103,6 +105,17 @@ class CookieTokenRefreshView(TokenRefreshView):
         return super().finalize_response(request, response, *args, **kwargs)
 
 
+@extend_schema(
+    responses=inline_serializer('AuthMeResponse', {
+        'authenticated': serializers.BooleanField(),
+        'user': inline_serializer('AuthMeUser', {
+            'username': serializers.CharField(),
+            'email': serializers.EmailField(),
+            'first_name': serializers.CharField(),
+            'last_name': serializers.CharField(),
+        }, required=False),
+    }),
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def me(request):
@@ -120,6 +133,10 @@ def me(request):
     })
 
 
+@extend_schema(
+    request=None,
+    responses=inline_serializer('LogoutResponse', {'detail': serializers.CharField()}),
+)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout(request):

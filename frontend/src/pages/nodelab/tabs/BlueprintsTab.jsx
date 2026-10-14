@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { fetchBlueprints, deleteBlueprint } from '@/features/graphs/api/graphService';
 import LoadingSpinner from '@/components/ui/loading-spinner';
@@ -89,7 +88,6 @@ function BlueprintCard({ blueprint, isPinned, onPinToggle, onEdit, onDelete }) {
 }
 
 export default function BlueprintsTab() {
-  const { t } = useTranslation();
   const [blueprints, setBlueprints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

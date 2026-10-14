@@ -27,12 +27,7 @@ case $command in
             source .venv/bin/activate
             python manage.py migrate
             echo -e "${GREEN}✓ Database reset${NC}"
-            python manage.py shell << EOF
-from django.contrib.auth.models import User
-User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-User.objects.create_user('testuser', 'test@example.com', 'test123')
-print("✓ Default users created")
-EOF
+            echo -e "${YELLOW}Create an admin with: ./helpers.sh create-user${NC}"
         fi
         ;;
 
@@ -87,12 +82,6 @@ EOF
         echo -e "${GREEN}✓ Frontend OK${NC}"
         ;;
 
-    "urls")
-        echo -e "${BLUE}All available URL patterns:${NC}"
-        source .venv/bin/activate
-        python manage.py show_urls
-        ;;
-
     *)
         echo -e "${BLUE}ForgeLink Helper Script${NC}"
         echo -e "\n${YELLOW}Usage:${NC} ./helpers.sh [command]\n"
@@ -106,7 +95,6 @@ EOF
         echo "  test-frontend     - Lint frontend code"
         echo "  lint-all          - Lint all code"
         echo "  check             - Check system status"
-        echo "  urls              - Show all URL patterns"
         echo ""
         echo -e "${YELLOW}Examples:${NC}"
         echo "  ./helpers.sh create-user"

@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Resolve the project root from the script location (works from any cwd and any machine)
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR" || exit 1
+
 # Colors
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
@@ -17,12 +21,12 @@ if command -v tmux &> /dev/null; then
     tmux new-session -d -s forgelink -x 200 -y 50
 
     # Window 1: Backend
-    tmux send-keys -t forgelink:0 "cd /home/klu/PycharmProjects/ForgeLink && source .venv/bin/activate && python manage.py runserver" Enter
+    tmux send-keys -t forgelink:0 "cd \"$ROOT_DIR\" && source .venv/bin/activate && python manage.py runserver" Enter
     tmux rename-window -t forgelink:0 "Backend"
 
     # Window 2: Frontend
     tmux new-window -t forgelink:1 -n "Frontend"
-    tmux send-keys -t forgelink:1 "cd /home/klu/PycharmProjects/ForgeLink/frontend && npm run dev" Enter
+    tmux send-keys -t forgelink:1 "cd \"$ROOT_DIR/frontend\" && npm run dev" Enter
 
     echo -e "${GREEN}✓ Started both servers in tmux${NC}"
     echo -e "\n${YELLOW}Tmux commands:${NC}"
@@ -57,8 +61,6 @@ echo -e "${GREEN}Access Points:${NC}"
 echo -e "  Backend API:  ${BLUE}http://localhost:8000/api/${NC}"
 echo -e "  Admin Panel:  ${BLUE}http://localhost:8000/admin/${NC}"
 echo -e "  Frontend:     ${BLUE}http://localhost:5173/${NC}"
-echo -e "\n${YELLOW}Credentials:${NC}"
-echo -e "  Username: admin"
-echo -e "  Password: admin123"  # ggignore: test credentials for local development
+echo -e "\n${YELLOW}No admin user yet? Run:${NC} python manage.py createsuperuser"
 echo -e "${BLUE}========================================${NC}"
 

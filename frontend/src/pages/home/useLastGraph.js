@@ -32,7 +32,7 @@ export default function useLastGraph() {
       } else {
         setGraph(null);
       }
-    } catch (err) {
+    } catch {
       setError('Could not load recent graph');
       setGraph(null);
     } finally {

@@ -21,7 +21,6 @@ const StandardNode = ({
   startEditing,
   hasCustomProps,
   customPropsEntries,
-  drawerId,
   ToggleButton,
 }) => {
   const hasCustomColor = !!data.customColor;

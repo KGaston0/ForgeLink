@@ -1,6 +1,5 @@
 from django.test import TestCase
 from django.urls import reverse
-from django.core.exceptions import ValidationError
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -49,31 +48,13 @@ class NodeModelTest(TestCase):
         """Test for __str__ method"""
         self.assertEqual(str(self.node), 'Test Node (character)')
 
-    def test_node_types(self):
-        """Test for types of available nodes"""
-        node_types = [choice[0] for choice in Node.NODE_TYPES]
-        self.assertIn('character', node_types)
-        self.assertIn('location', node_types)
-        self.assertIn('event', node_types)
-        self.assertIn('item', node_types)
-        self.assertIn('concept', node_types)
-        self.assertIn('note', node_types)
+    def test_node_type_is_free_text(self):
+        """node_type is a free-form semantic type, not a fixed list of choices"""
+        for node_type in ['character', 'Dragon', 'Spell']:
+            node = Node.objects.create(project=self.project, title=node_type, node_type=node_type)
+            node.full_clean()
+            self.assertEqual(Node.objects.get(pk=node.pk).node_type, node_type)
 
-    def test_node_hierarchy(self):
-        """Test for hierarchy de nodos (parent-child)"""
-        child_node = Node.objects.create(
-            project=self.project,
-            title='Child Node',
-            parent_node=self.node
-        )
-        self.assertEqual(child_node.parent_node, self.node)
-        self.assertIn(child_node, self.node.child_nodes.all())
-
-    def test_node_cannot_be_its_own_parent(self):
-        """Test that a node cannot be its own parent"""
-        self.node.parent_node = self.node
-        with self.assertRaises(ValidationError):
-            self.node.clean()
 
 
 class NodeAPITest(APITestCase):
@@ -213,22 +194,3 @@ class NodeAPITest(APITestCase):
         data = get_response_data(response)
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]['title'], 'Hero Character')
-
-    def test_get_node_children(self):
-        """Test for getting hijos de un nodo"""
-        Node.objects.create(
-            project=self.project,
-            title='Child 1',
-            parent_node=self.node
-        )
-        Node.objects.create(
-            project=self.project,
-            title='Child 2',
-            parent_node=self.node
-        )
-        self.client.force_authenticate(user=self.user)
-        url = reverse('node-children', kwargs={'pk': self.node.pk})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = get_response_data(response)
-        self.assertEqual(len(data), 2)

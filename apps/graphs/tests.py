@@ -141,6 +141,8 @@ class GraphAPITest(APITestCase):
             email='other@example.com',
             password='testpass123'
         )
+        # Creating a user auto-creates a starter project and graph; start from a clean slate.
+        Project.objects.all().delete()
         self.project = Project.objects.create(
             name='Test Project',
             owner=self.user
@@ -192,7 +194,7 @@ class GraphAPITest(APITestCase):
     def test_retrieve_graph(self):
         """Test for getting a specific graph"""
         self.client.force_authenticate(user=self.user)
-        url = reverse('graph-detail', kwargs={'pk': self.graph.pk})
+        url = reverse('graph-detail', kwargs={'uuid': self.graph.uuid})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Test Graph')
@@ -200,7 +202,7 @@ class GraphAPITest(APITestCase):
     def test_update_graph(self):
         """Test for updating graph"""
         self.client.force_authenticate(user=self.user)
-        url = reverse('graph-detail', kwargs={'pk': self.graph.pk})
+        url = reverse('graph-detail', kwargs={'uuid': self.graph.uuid})
         data = {'name': 'Updated Graph'}
         response = self.client.patch(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -210,7 +212,7 @@ class GraphAPITest(APITestCase):
     def test_delete_graph(self):
         """Test for deleting graph"""
         self.client.force_authenticate(user=self.user)
-        url = reverse('graph-detail', kwargs={'pk': self.graph.pk})
+        url = reverse('graph-detail', kwargs={'uuid': self.graph.uuid})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Graph.objects.count(), 0)
@@ -251,7 +253,7 @@ class GraphAPITest(APITestCase):
         )
 
         self.client.force_authenticate(user=self.user)
-        url = reverse('graph-canvas', kwargs={'pk': self.graph.pk})
+        url = reverse('graph-canvas', kwargs={'uuid': self.graph.uuid})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('graph', response.data)

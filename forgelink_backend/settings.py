@@ -11,8 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
-import os
 from decouple import config, Csv
+from django.core.exceptions import ImproperlyConfigured
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,6 +27,9 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-hr)=8($4^=-iry7iw+!46
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
+
+if not DEBUG and SECRET_KEY.startswith('django-insecure-'):
+    raise ImproperlyConfigured('Set a strong SECRET_KEY in the environment when DEBUG is False.')
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
@@ -48,6 +51,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',  # For token blacklisting on logout
     'corsheaders',
     'django_filters',
+    'drf_spectacular',
     # Local apps
     'apps.nodes',
     'apps.projects',
@@ -175,6 +179,15 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# OpenAPI schema. Interactive docs are served at /api/docs/ (only when DEBUG is on).
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'ForgeLink API',
+    'DESCRIPTION': 'Graph-based knowledge management API. Authentication uses JWT in httpOnly cookies.',
+    'VERSION': '0.1.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # JWT settings (reasonable values for dev)
@@ -196,10 +209,11 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
+# Cookie-based auth + CORS_ALLOW_CREDENTIALS means allowing every origin is unsafe, so it is opt-in.
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:8080,http://127.0.0.1:5500,http://localhost:5500',
+    default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://localhost:8080',
     cast=Csv()
 )
 
@@ -209,13 +223,15 @@ CORS_ALLOW_CREDENTIALS = True
 # If serving HTML from another origin (live-server), Django needs to trust that origin for CSRF
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
-    default='http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000,http://127.0.0.1:8000',
+    default='http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000',
     cast=Csv(),
 )
 
 # Security Headers
 X_FRAME_OPTIONS = 'DENY'  # Prevent clickjacking
 SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent MIME sniffing
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 # Note: SECURE_BROWSER_XSS_FILTER was removed in Django 4.0+.
 # Modern browsers ignore the X-XSS-Protection header; rely on CSP instead.
 

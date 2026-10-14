@@ -180,8 +180,8 @@ class ConnectionTypeAPITest(APITestCase):
         self.connection_type.refresh_from_db()
         self.assertEqual(self.connection_type.color, '#00FF00')
 
-    def test_delete_connection_type_with_connections(self):
-        """Test for deleting connection type with existing connections"""
+    def test_delete_connection_type_cascades_to_connections(self):
+        """Deleting a connection type also deletes the connections that use it"""
         # Create a connection using this type
         graph = Graph.objects.create(project=self.project, name='Test Graph')
         node1 = Node.objects.create(project=self.project, title='Node 1')
@@ -198,10 +198,9 @@ class ConnectionTypeAPITest(APITestCase):
         self.client.force_authenticate(user=self.user)
         url = reverse('connectiontype-detail', kwargs={'pk': self.connection_type.pk})
 
-        # Should return 400 when trying to delete a connection type in use
         response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('Cannot delete connection type', response.data['detail'])
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(NodeConnection.objects.filter(graph=graph).exists())
 
 
 class NodeConnectionAPITest(APITestCase):

@@ -23,7 +23,11 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]' }],
+      // Context files legitimately export a provider and its hook together
+      'react-refresh/only-export-components': 'warn',
+      // Resetting form state when a modal opens is a common, intentional pattern here
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
 ])

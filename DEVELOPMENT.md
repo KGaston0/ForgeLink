@@ -1,566 +1,291 @@
 # ForgeLink — Development Guide
 
-Architecture, conventions, workflows, and design system reference.
+How the system works and how to work on it. For setup see the [README](./README.md); for the frontend layout and design system see [frontend/README.md](./frontend/README.md). Endpoint details live in the generated API reference at http://localhost:8000/api/docs/ (development only).
 
 ---
 
-## Project Structure
+## Repository layout
 
 ```
-ForgeLink/
-├── forgelink_backend/            # Django project config
-│   ├── settings.py               # Settings (DB, JWT, CORS, security headers)
-│   ├── urls.py                   # Root URL config
-│   ├── auth_views.py             # JWT cookie authentication views
-│   └── authentication.py         # Custom auth backend (cookie-based JWT)
-│
-├── apps/                         # Django apps
-│   ├── users/                    # Custom User model (AbstractUser + membership)
-│   ├── projects/                 # Projects + signals (auto-create on registration)
-│   ├── nodes/                    # Nodes (typed entities with hierarchy)
-│   ├── graphs/                   # Graphs + GraphNodes (canvas + layout)
-│   └── connections/              # ConnectionTypes + NodeConnections
-│
-├── frontend/src/                 # React SPA
-│   ├── App.jsx                   # Route definitions
-│   ├── index.css                 # shadcn/ui HSL variables, component classes, React Flow overrides
-│   ├── main.jsx                  # Entry point
-│   │
-│   ├── components/               # Shared UI components
-│   │   ├── layout/Sidebar/       # Collapsible sidebar (shadcn + lucide-react + tooltips)
-│   │   └── ui/                   # shadcn/ui primitives + app-level components
-│   │       ├── avatar.jsx        #   Radix Avatar with gradient fallback
-│   │       ├── button.jsx        #   CVA button with 6 variants + 4 sizes
-│   │       ├── loading-spinner.jsx  # Theme-aware spinner (fullscreen / inline)
-│   │       ├── separator.jsx     #   Radix Separator
-│   │       ├── theme-toggle.jsx  #   Animated Sun/Moon toggle (lucide-react)
-│   │       └── tooltip.jsx       #   Radix Tooltip with portal
-│   │
-│   ├── pages/                    # Route-level page components
-│   │   ├── auth/                 # LoginPage, RegisterPage
-│   │   ├── home/                 # Dashboard, useDashboardStats hook
-│   │   ├── landing/              # LandingPage + co-located components
-│   │   │   └── components/       #   Navigation, UserMenu, Footer, HeroSection,
-│   │   │                         #   BentoGrid, DualPurpose, PricingSection, CTASection
-│   │   ├── projects/             # ProjectsPage, ProjectDetailLayout
-│   │   │   └── tabs/             # OverviewTab, SettingsTab
-│   │   ├── graphs/               # GraphCanvasPage
-│   │   ├── nodelab/              # NodeLabPage
-│   │   │   └── tabs/             # BlueprintsTab, NodeListsTab
-│   │   └── settings/             # SettingsPage
-│   │
-│   ├── features/graphs/          # Graph editor feature module
-│   │   ├── api/graphService.js   # API calls (fetchCanvasData, saveCanvasBulk, etc.)
-│   │   ├── components/
-│   │   │   ├── GraphCanvas.jsx   # Main canvas (ReactFlow wrapper + auto-save)
-│   │   │   ├── Toolbar.jsx       # Node creation toolbar
-│   │   │   ├── NodeEditorModal.jsx
-│   │   │   ├── EdgeEditorModal.jsx
-│   │   │   ├── NodeLabModal.jsx
-│   │   │   ├── nodes/            # BaseNode, StandardNode, FrameNode, ConnectionHandles
-│   │   │   └── edges/            # CustomEdge, edgeConstants
-│   │   └── hooks/useUndoRedo.js  # Undo/redo state management
-│   │
-│   ├── lib/utils.js              # cn() utility (clsx + tailwind-merge)
-│   ├── services/api/             # apiClient (axios instance + token refresh interceptor)
-│   ├── context/                  # AuthContext, ThemeContext
-│   ├── config/apiConfig.js       # API base URL + endpoint constants
-│   ├── routes/ProtectedRoute.jsx # Auth guard (redirects to /login)
-│   └── types/NodeType.js         # Type definitions
-│
-├── components.json               # shadcn/ui configuration
-├── dev.sh                        # Start backend + frontend in tmux
-├── setup.sh                      # Initial project setup script
-├── helpers.sh                    # Development utilities
-└── requirements.txt              # Python dependencies
+forgelink_backend/   Django project: settings, root URLs, JWT cookie auth, serializer mixins
+apps/
+  users/             Custom User model (AbstractUser + membership fields)
+  projects/          Project + signal that creates a starter project for new users
+  nodes/             Node, NodeBlueprint, BlueprintList
+  graphs/            Graph, GraphNode, canvas endpoints
+  connections/       ConnectionType, NodeConnection
+frontend/            React SPA
+.github/workflows/   CI
 ```
 
 ---
 
-## Data Models
+## Data model
 
-### User
-Custom model extending `AbstractUser`. Added fields:
+```
+User
+ ├── NodeBlueprint  (creator)            reusable node templates
+ ├── BlueprintList  (creator)            groups of blueprints
+ └── Project (uuid)
+      ├── Node                           entity that lives in the project
+      ├── ConnectionType                 relationship kind, per project
+      └── Graph (uuid)                   one canvas
+           ├── GraphNode                 a Node placed on this canvas
+           └── NodeConnection            link between two Nodes, scoped to this canvas
+```
 
-| Field | Type | Description |
-|---|---|---|
-| membership_type | CharField | `free`, `basic`, `premium`, `enterprise` |
-| membership_start_date | DateTime | Nullable |
-| membership_end_date | DateTime | Nullable |
+A node belongs to a project and can be placed on several graphs, once per graph. Position, color, size and nesting are stored per placement (`GraphNode`), not on the node.
+
+### Users
+`membership_type` (`free`, `basic`, `premium`, `enterprise`), `membership_start_date`, `membership_end_date`, `phone_number`, `bio`, `avatar_url`, `email_verified`.
 
 ### Project
-| Field | Type | Description |
-|---|---|---|
-| uuid | UUIDField | Public identifier (used in URLs, auto-generated) |
-| name | CharField(255) | Project name |
-| description | TextField | Optional |
-| owner | FK → User | CASCADE |
-| created_at | DateTime | auto_now_add |
-| updated_at | DateTime | auto_now |
-
-**Ordering:** `-updated_at`
+`uuid` (public identifier), `name`, `description`, `owner` (CASCADE). Ordered by `-updated_at`.
 
 ### Node
-| Field | Type | Description |
-|---|---|---|
-| project | FK → Project | CASCADE |
-| parent_node | FK → self | CASCADE, nullable (hierarchy) |
-| title | CharField(255) | |
-| node_type | CharField(50) | `character`, `location`, `event`, `item`, `concept`, `note`, `frame` |
-| content | TextField | Optional body |
-| custom_properties | JSONField | Extensible key-value data |
+| Field | Notes |
+|---|---|
+| `project` | CASCADE |
+| `blueprint` | FK to NodeBlueprint, SET_NULL |
+| `node_type` | free text, default `note` (for example `character`, `Dragon`, `portal`) |
+| `title`, `content` | |
+| `custom_properties` | JSON, free-form properties |
 
-**Validations:** No self-referencing parent, no cross-project parent, no cyclic hierarchies.
+### NodeBlueprint and BlueprintList
+A blueprint is a user-defined node type: `name`, `description`, `category`, `is_frame`, `color`, `schema` (JSON property rules), `is_published`, owned by `creator`. A `BlueprintList` groups blueprints (many-to-many) for organization.
 
 ### Graph
-| Field | Type | Description |
-|---|---|---|
-| uuid | UUIDField | Public identifier (used in URLs) |
-| project | FK → Project | CASCADE |
-| name | CharField(255) | Unique per project |
-| description | TextField | Optional |
-
-**Constraint:** `UniqueConstraint(project, name)`
+`uuid`, `project`, `name` (unique per project), `description`.
 
 ### GraphNode
-Junction table: node membership + per-graph visual layout.
+| Field | Notes |
+|---|---|
+| `graph`, `node` | unique together; the node must belong to the graph's project |
+| `position_x`, `position_y`, `color` | layout |
+| `is_frame`, `width`, `height` | frame nodes contain other nodes (defaults 400 x 300) |
+| `parent_node` | self FK to the containing frame, CASCADE. Must be in the same graph; cycles are rejected |
 
-| Field | Type | Description |
-|---|---|---|
-| graph | FK → Graph | CASCADE |
-| node | FK → Node | CASCADE |
-| position_x / position_y | Float | Canvas coordinates |
-| color | CharField(7) | Hex color, default `#3B82F6` |
-| is_frame | Boolean | Frame node flag |
-| width / height | Integer | Dimensions (default 400×300 for frames) |
-| parent_node | FK → self | SET_NULL, nullable (nesting within frames) |
-
-**Constraint:** `UniqueConstraint(graph, node)` — a node can only appear once per graph.
-**Validation:** Node must belong to the same project as the graph.
-
-**Response fields** (from `GET /graphs/{uuid}/canvas/`):
-- `hidden_children_count` — Number of child nodes not displayed due to depth filtering (used to show "X hidden" indicators)
+The canvas nests nodes through `GraphNode.parent_node`. Nesting is a property of a placement on one graph, not of the node, so a node can sit inside a frame on one graph and at the top level on another.
 
 ### ConnectionType
-| Field | Type | Description |
-|---|---|---|
-| project | FK → Project | CASCADE |
-| name | CharField(100) | Unique per project |
-| description | TextField | Optional |
-| color | CharField(7) | Hex color for visualization |
+`project`, `name` (unique per project), `description`, `color`.
 
 ### NodeConnection
-| Field | Type | Description |
-|---|---|---|
-| graph | FK → Graph | CASCADE |
-| source_node | FK → Node | CASCADE |
-| target_node | FK → Node | CASCADE |
-| connection_type | FK → ConnectionType | PROTECT |
-| label | CharField(255) | Optional edge label |
-| direction | CharField(15) | `forward`, `reverse`, `bidirectional`, `undirected` |
-| source_handle_position | Float | Nullable, 0.0–1.0 perimeter position |
-| target_handle_position | Float | Nullable, 0.0–1.0 perimeter position |
-
-**Validations:** No self-connections, nodes must be in the same project as the graph, nodes must be present in the graph (via GraphNode), connection type must belong to the same project.
-
-**Response fields** (from `GET /graphs/{uuid}/canvas/`):
-- `is_hoisted` — true if the connection links nodes from different depth levels (appears in visible subset)
-
-### Hierarchy (Canvas Response)
-Response-only structure for building the sidebar explorer tree. Sent in the `hierarchy` field of `GET /graphs/{uuid}/canvas/`.
-
-| Field | Type | Description |
-|---|---|---|
-| id | Integer | GraphNode ID |
-| name | String | Node title (from Node.title) |
-| parent_id | Integer or null | Parent GraphNode ID (null for root nodes) |
-| is_frame | Boolean | Whether this is a frame node |
-
-**Purpose:** Build a complete tree structure on the frontend for real-time sidebar explorer, independent of depth filtering.
-
----
-
-## Backend Architecture
-
-### ViewSets & Lookup
-
-| Resource | ViewSet | lookup_field | URL pattern |
-|---|---|---|---|
-| Project | `ProjectViewSet` | `uuid` | `/projects/{uuid}/` |
-| Graph | `GraphViewSet` | `uuid` | `/graphs/{uuid}/` |
-| Node | `NodeViewSet` | `pk` (default) | `/nodes/{id}/` |
-| GraphNode | `GraphNodeViewSet` | `pk` | `/graph-nodes/{id}/` |
-| Connection | `NodeConnectionViewSet` | `pk` | `/connections/{id}/` |
-| ConnectionType | `ConnectionTypeViewSet` | `pk` | `/connection-types/{id}/` |
-
-### Owner Scoping
-All ViewSets filter querysets to the authenticated user's data:
-- Projects: `owner=user`
-- Graphs: `project__owner=user`
-- Nodes: `project__owner=user`
-- GraphNodes: `graph__project__owner=user`
-- Connections: `graph__project__owner=user`
-
-### Signals
-`apps/projects/signals.py` — `post_save` on User creation:
-1. Creates "Mi Primer Proyecto" (project)
-2. Creates "Grafo Principal" (graph within that project)
-
-### Canvas Bulk Endpoint
-`PUT /graphs/{uuid}/canvas/bulk/` — Saves the entire canvas state in a single request. Handles:
-- Creating new nodes + graph-nodes
-- Updating existing graph-node positions and properties
-- Creating new connections
-- Updating existing connection properties
-- Mapping frontend temp IDs to backend IDs in response
-
----
-
-## Frontend Architecture
-
-### Route Structure
-
-```jsx
-<Route element={<ProtectedRoute />}>
-  <Route path="/dashboard" element={<Dashboard />} />
-  <Route path="/projects" element={<ProjectsPage />} />
-  <Route path="/projects/:id" element={<ProjectDetailLayout />}>
-    <Route index element={<OverviewTab />} />
-    <Route path="settings" element={<SettingsTab />} />
-  </Route>
-  <Route path="/graphs/:id" element={<GraphCanvasPage />} />
-  <Route path="/settings" element={<SettingsPage />} />
-</Route>
-```
-
-> The `:id` param in URLs is always a **UUID** string.
-
-### Authentication Flow
-1. **Login:** `POST /auth/jwt/login/` → sets httpOnly cookies
-2. **API calls:** `apiClient` (axios) sends cookies automatically
-3. **Token refresh:** Interceptor catches 401, calls `/auth/jwt/refresh/`, retries original request
-4. **Logout:** `POST /auth/jwt/logout/` → blacklists refresh token, clears cookies
-5. **Route guard:** `ProtectedRoute` checks `AuthContext.isAuthenticated`, redirects to `/login`
-
-### Graph Canvas Architecture
-
-The graph editor has a layered architecture:
-
-```
-GraphCanvasPage (route page)
-  └── GraphCanvas (ReactFlowProvider wrapper)
-       └── GraphCanvasInner (main logic)
-            ├── ReactFlow (canvas with custom node/edge types)
-            ├── Toolbar (node creation)
-            ├── NodeEditorModal (edit node properties)
-            └── EdgeEditorModal (edit connection properties)
-```
-
-**Data flow:**
-1. `fetchCanvasData(graphUuid, currentFolderId, depth)` → loads graph info, nodes (GraphNodes), connections, and full node hierarchy
-2. Maps backend data to ReactFlow nodes/edges format
-3. User interactions modify local ReactFlow state
-4. `saveCanvasBulk(graphUuid, projectId, payload)` → debounced auto-save (2.5s after last change)
-5. Response maps temp IDs to real backend IDs
-
-**ID handling:** The URL uses UUID (`graphUuid`), but internal data operations (FK references in graph-nodes, connections) use integer IDs obtained from `fetchCanvasData` response.
-
-**Sidebar Synchronization:**
-- Canvas receives `hierarchy` from the backend (complete tree structure of all nodes)
-- Canvas builds a tree structure and dispatches `canvas-frames-updated` event with the tree
-- Sidebar listens for `canvas-frames-updated` and renders the explorer tree
-- Sidebar dispatches `sidebar-ready` on mount, which triggers Canvas to re-emit the tree if available
-- This bi-directional handshake ensures Sidebar always gets data even if it mounts after Canvas loads data
-
-### Project Detail Layout
-
-Tab-based navigation using React Router nested routes + `<Outlet>`:
-
-```
-ProjectDetailLayout (fetches project + graphs, renders tabs)
-  ├── OverviewTab (graphs grid, create graph modal)
-  └── SettingsTab (general settings form, danger zone)
-       └── Sub-navigation: General | Danger Zone
-```
-
-Shared data is passed via `useOutletContext()`:
-- `project` — Project object
-- `graphs` — Array of graphs
-- `addGraph(graph)` — Callback to add a new graph
-- `updateProject(data)` — Callback to update project
-- `projectId` — Internal integer ID (for FK operations)
-- `projectUuid` — UUID string (for API URL paths)
-
-### Frontend Custom Events
-
-The frontend uses `window` events for cross-component communication:
-
-| Event | Dispatched by | Listened by | Payload | Purpose |
-|---|---|---|---|---|
-| `canvas-frames-updated` | GraphCanvas | Sidebar | `detail: tree` (hierarchy array) | Notify Sidebar of full node tree structure |
-| `sidebar-ready` | Sidebar | GraphCanvas | `undefined` | Handshake: Sidebar signals it's mounted and ready for data |
-| `canvas-folder-changed` | GraphCanvas | Sidebar | `detail: folderId` | Notify Sidebar of current drill-down folder |
-
-**Example usage:**
-```javascript
-// Dispatch event
-window.dispatchEvent(new CustomEvent('canvas-frames-updated', { detail: tree }));
-
-// Listen for event
-const handler = (e) => console.log(e.detail);
-window.addEventListener('canvas-frames-updated', handler);
-window.removeEventListener('canvas-frames-updated', handler);
-```
-
----
-
-## Design System
-
-### Theme Architecture
-
-Built on **shadcn/ui** with **Tailwind CSS v4** (CSS-based config, no `tailwind.config.js`).
-
-All design tokens are defined as HSL values in `frontend/src/index.css`. The `@theme inline` block registers them as Tailwind colors so you can use classes like `bg-primary`, `text-muted-foreground`, `border-border`.
-
-### CSS Variables (HSL format)
-
-```css
-:root {
-  /* Core surfaces */
-  --background: 220 16% 96%;        /* Warm gray (not pure white) */
-  --foreground: 240 6% 10%;         /* Near-black text */
-  --card: 220 14% 93%;              /* Card/panel background */
-  --popover: 220 14% 93%;           /* Dropdown/modal background */
-
-  /* Brand colors */
-  --primary: 187 72% 43%;           /* Cyan — buttons, links, focus rings */
-  --accent: 271 81% 56%;            /* Purple — gradients, secondary brand */
-
-  /* Semantic */
-  --muted: 220 14% 89%;             /* Subtle backgrounds */
-  --muted-foreground: 220 9% 46%;   /* Secondary text */
-  --destructive: 0 84% 60%;         /* Error/danger */
-  --border: 220 13% 86%;            /* Borders */
-  --ring: 187 72% 43%;              /* Focus ring (cyan) */
-
-  /* Sidebar-specific */
-  --sidebar: 220 16% 93%;
-  --sidebar-foreground: 240 6% 10%;
-  --sidebar-accent: 187 72% 43%;
-  --sidebar-border: 220 13% 86%;
-}
-
-.dark {
-  --background: 240 6% 10%;         /* Deep charcoal */
-  --foreground: 210 40% 98%;        /* Off-white text */
-  --card: 240 5% 12%;
-  --primary: 187 72% 43%;           /* Cyan (same in both themes) */
-  --accent: 271 81% 56%;            /* Purple (same in both themes) */
-  --border: 240 4% 16%;
-  /* ... */
-}
-```
-
-**Usage:** `bg-background`, `text-foreground`, `text-primary`, `border-border`, `bg-card`, etc.
-
-> Legacy variables (`--color-bg`, `--color-text`, etc.) are still defined for backward compatibility in unmigrated components. New code should always use the shadcn tokens.
-
-### UI Components (`components/ui/`)
-
-All components use the `cn()` utility (clsx + tailwind-merge) and follow shadcn/ui conventions:
-
-| Component | File | Description |
-|---|---|---|
-| Button | `button.jsx` | 6 variants (default, destructive, outline, secondary, ghost, link) × 4 sizes |
-| Avatar | `avatar.jsx` | Radix Avatar with image + fallback (gradient initials) |
-| Tooltip | `tooltip.jsx` | Radix Tooltip with portal, used in collapsed sidebar |
-| Separator | `separator.jsx` | Horizontal/vertical divider |
-| LoadingSpinner | `loading-spinner.jsx` | Themed spinner, fullscreen overlay or inline |
-| ThemeToggle | `theme-toggle.jsx` | Animated Sun/Moon icons with rotation transition |
-
-### Global CSS Classes
-
-Defined in `index.css` `@layer components`:
-
-| Class | Description |
+| Field | Notes |
 |---|---|
-| `.btn-primary` | Brand gradient button (cyan → purple, 135deg) |
-| `.btn-secondary` | Transparent bordered button |
-| `.input-field` | Styled input with focus ring |
-| `.input-error` | Red border variant for validation errors |
+| `graph`, `source_node`, `target_node`, `connection_type` | unique together; deleting a connection type deletes its connections |
+| `label` | optional |
+| `direction` | `forward`, `reverse`, `bidirectional`, `undirected` |
+| `source_handle_position`, `target_handle_position` | nullable float, position of the edge anchor on the node |
 
-### Theme System
-
-`ThemeContext` provides `theme`, `toggleTheme`, `isDark`, `isLight`. Reads from `localStorage`, falls back to system preference.
-
-**Toggle:** Sets `dark` class on `<html>` element. All CSS variables swap via `.dark { ... }`.
-
-### Typography
-
-- **Font:** `Inter`, system-ui, sans-serif (registered via `@theme inline`)
-- **Headings and body** use the same font stack for consistency
+Validation: no self-connections; nodes and connection type must belong to the graph's project; both nodes must be placed on the graph.
 
 ---
 
-## Development Workflow
+## Backend
 
-### Common Commands
+### Identifiers
+Projects and graphs are addressed by `uuid` in URLs (`lookup_field = 'uuid'`). Everything else uses the integer `id`. Related objects are always referenced by integer id in request bodies, including `project` when creating a graph.
 
+### Ownership
+Every queryset is filtered to the requesting user (`project__owner`, `graph__project__owner`, `creator`). Writes are protected the same way: serializers that accept a foreign key use `OwnerScopedRelatedFieldsMixin` ([serializer_mixins.py](./forgelink_backend/serializer_mixins.py)) so only objects the user owns are accepted. New serializers with related fields must declare `owner_scoped_fields`. Cross-user tests are in [apps/projects/test_isolation.py](./apps/projects/test_isolation.py).
+
+### Authentication
+- `POST /api/auth/jwt/login/` validates the credentials and sets two httpOnly cookies, `access_token` (30 minutes) and `refresh_token` (7 days). The body is only `{"detail": "Login successful"}`.
+- `JWTCookieAuthentication` reads the access token from the `Authorization` header first and from the cookie second.
+- `POST /api/auth/jwt/refresh/` reads the refresh token from its cookie and sets new cookies. Refresh tokens rotate, and the previous one is blacklisted.
+- `POST /api/auth/jwt/logout/` blacklists the refresh token and clears both cookies. It accepts unauthenticated calls so an expired session can still clear its cookies.
+- `GET /api/auth/me/` answers 200 with `{"authenticated": false}` when there is no token and `{"authenticated": true, "user": {...}}` with a valid one. An invalid or expired access token returns 401, which makes the frontend refresh it.
+- `POST /api/users/` registers a user (public). A `post_save` signal ([apps/projects/signals.py](./apps/projects/signals.py)) creates a starter project and graph for each new user.
+
+### Settings
+Read from the environment or `.env` with python-decouple.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `SECRET_KEY` | insecure dev key | Required when `DEBUG` is false |
+| `DEBUG` | `True` | Also enables `/api/docs/` and `/api/schema/` |
+| `ALLOWED_HOSTS` | `localhost,127.0.0.1` | |
+| `DB_ENGINE` | `sqlite3` | Any other value selects PostgreSQL |
+| `DB_NAME` | `db.sqlite3` (SQLite) / `forgelink_db` | |
+| `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | | PostgreSQL only |
+| `CORS_ALLOW_ALL_ORIGINS` | `False` | Keep false: credentials are sent with cookies |
+| `CORS_ALLOWED_ORIGINS` | Vite dev origins | Frontend origins |
+| `CSRF_TRUSTED_ORIGINS` | Vite and Django dev origins | |
+| `JWT_COOKIE_SECURE` | `False` | Set `True` behind HTTPS |
+| `JWT_COOKIE_SAMESITE` | `Lax` | |
+
+### Removing a node from a graph
+
+`DELETE /api/graph-nodes/{id}/` removes the placement and everything nested inside it (a frame's contents), plus the connections of that graph that touch any of them. A `Node` is deleted as well, but only when it no longer has a placement on any graph; a node that also appears on another graph stays in the project and on that graph. Deleting a whole graph removes its placements and connections and leaves the project's nodes in place.
+
+### Canvas endpoints
+
+`GET /api/graphs/{uuid}/canvas/` returns everything the editor needs for one level of the graph.
+
+Query parameters: `folder_id` (GraphNode id of the frame to show; omit for the root level) and `depth` (levels of nesting to include, default 3, `-1` for all).
+
+Response:
+
+| Key | Contents |
+|---|---|
+| `graph` | the graph |
+| `current_folder` | the frame being viewed, or `null` at the root |
+| `nodes` | visible GraphNodes with layout, plus `hidden_children_count` for descendants beyond `depth` |
+| `connections` | connections between visible nodes |
+| `hierarchy` | flat list of every GraphNode (`id`, `name`, `parent_id`, `is_frame`), used for the sidebar explorer |
+
+Edge hoisting: a connection whose endpoint is hidden inside a frame is re-routed to the nearest visible ancestor, flagged `is_hoisted: true`, and its handle positions are cleared for that end. Connections that would loop onto the same visible node are omitted.
+
+`PUT /api/graphs/{uuid}/canvas/bulk/` saves the whole canvas in one transaction. Body:
+
+```json
+{
+  "nodes": [
+    {
+      "temp_id": "temp-1",
+      "graph_node_id": null,
+      "node_type": "character",
+      "label": "Aria",
+      "position_x": 100, "position_y": 200,
+      "is_frame": false, "width": 160, "height": 80,
+      "parent_node": null,
+      "blueprint_id": null,
+      "custom_properties": {}
+    }
+  ],
+  "connections": [
+    {
+      "connection_id": null,
+      "source_temp_id": "temp-1",
+      "target_temp_id": "gn-7",
+      "connection_type_id": 1,
+      "label": "", "direction": "forward",
+      "source_handle_position": null, "target_handle_position": null
+    }
+  ]
+}
+```
+
+- `graph_node_id` null creates a node and its placement; an existing id updates it. The same holds for `connection_id`.
+- Nodes are referenced as `temp-*` (created in this request) or `gn-<id>` (existing GraphNode of this graph). `parent_node` accepts the same references.
+- The response lists created nodes as `{temp_id, node_id, graph_node_id}` so the client can replace its temporary ids.
+- Blueprints and connection types must belong to the user and project; otherwise the request fails with 400 and nothing is saved.
+- Hoisted connections (`is_hoisted: true`) keep their original endpoints.
+
+---
+
+## Frontend internals
+
+### Authentication flow
+1. `authService.login` posts credentials; the cookies are set by the backend.
+2. `AuthContext` calls `/auth/me/` on load and trusts the `authenticated` flag.
+3. `apiClient` (axios, `withCredentials`) catches a 401, calls the refresh endpoint once (concurrent requests share the same refresh) and retries the request. Login, refresh and logout are never retried. If the refresh fails it throws `AuthenticationError`, and `AuthContext` clears the user and redirects to `/login`.
+4. `ProtectedRoute` redirects unauthenticated visitors to `/login`.
+
+### Graph editor
+```
+GraphCanvasPage
+  └── GraphCanvas  (ReactFlowProvider)
+       └── GraphCanvasInner
+            ├── ReactFlow with custom node types (standard, frame, portal) and edge type
+            ├── Toolbar
+            ├── NodeEditorModal / EdgeEditorModal / PortalCreationModal / NodeLabModal
+            └── useUndoRedo
+```
+
+1. `fetchCanvasData(graphUuid, folderId, depth)` loads one level and maps it to React Flow nodes and edges.
+2. Edits change local React Flow state and mark the canvas unsaved.
+3. `saveCanvasBulk` runs 2.5 seconds after the last change.
+4. The response maps temporary ids to real ones.
+
+The URL carries the graph UUID. Foreign keys in payloads use the integer ids returned by the canvas response.
+
+### Drill-down navigation
+- The editor tracks `currentFolderId`. Double-clicking a frame (or a frame in the sidebar tree) sets it, and the canvas reloads showing only that frame's children.
+- Pending changes are saved before the folder changes.
+- Nodes created while inside a frame get that frame as their parent.
+- A node is given a React Flow `parentId` only when its parent is in the visible set; otherwise it is placed at the top level of the view.
+- Deleting a frame removes the placements nested inside it from the graph (CASCADE on `GraphNode.parent_node`); the underlying nodes stay in the project.
+
+### Portals
+A portal is a node with `node_type = 'portal'` and `custom_properties.target_graph_uuid`. Double-clicking it navigates to `/graphs/<target_graph_uuid>`. The creation modal lists the other graphs of the same project.
+
+### Sidebar explorer
+The sidebar shows the node tree of the current graph. It builds from `hierarchy` through `buildFrameTree` ([features/graphs/utils/buildFrameTree.js](./frontend/src/features/graphs/utils/buildFrameTree.js)) and refreshes when the canvas reloads, so nodes created since the last reload appear after the next load.
+
+### Window events
+Components that do not share a parent communicate through `window` custom events.
+
+| Event | From | To | `detail` |
+|---|---|---|---|
+| `canvas-frames-updated` | GraphCanvas | Sidebar | tree of `{id, name, is_frame, children}` |
+| `canvas-folder-changed` | GraphCanvas | Sidebar | current folder id (`null` at root) |
+| `sidebar-navigate` | Sidebar | GraphCanvas | folder id to open |
+| `canvas-unsaved` | node components | GraphCanvas | none; marks the canvas as having unsaved changes |
+
+---
+
+## Design notes
+
+Why the system is built the way it is, where the code does not make it obvious.
+
+- **Node and GraphNode are separate.** A `Node` holds what something is (title, type, properties). A `GraphNode` holds where it sits on one canvas (position, color, size, containing frame). Because `(graph, node)` is unique, the same node can appear on several graphs with different layouts and nesting, and rearranging a canvas never touches the project's data.
+- **Node types are free text, not a fixed list.** The product is for worldbuilding, where the types are the user's own ("Dragon", "Spell"). Blueprints add a reusable template and property schema on top of a plain string.
+- **Projects and graphs use UUIDs in URLs.** Sequential ids are not exposed in the address bar. Ids are still used inside request bodies, so ownership checks, not secrecy of the id, are what protect data (see Ownership).
+- **Ownership is enforced in the serializers as well as the querysets.** Filtering a ViewSet queryset only hides other users' objects when reading. DRF accepts any primary key for a foreign key on write, so without `OwnerScopedRelatedFieldsMixin` a user could attach their data to someone else's project by guessing an id.
+- **Tokens live in httpOnly cookies.** JavaScript cannot read them, which limits what an XSS can steal. The access token is short-lived (30 minutes), and refresh tokens rotate and are blacklisted after use, so a stolen refresh token stops working as soon as the legitimate one is used. Because cookies are sent automatically, CORS stays closed to unknown origins.
+- **Concurrent refreshes share one request.** With rotation, two simultaneous refreshes would blacklist each other's token and log the user out, so the client sends a single refresh and every waiting request reuses it.
+- **The canvas is saved in one transaction.** `canvas/bulk/` applies all node and connection changes atomically, with `bulk_create`/`bulk_update`, so a failed save never leaves half a canvas behind and large canvases stay fast. Temporary ids let the client create nodes and connect them in the same request.
+- **The canvas loads one level at a time.** Large graphs would be slow to render and fetch whole, so `canvas/` returns a folder up to `depth` levels. The separate flat `hierarchy` list lets the sidebar show the full tree regardless of depth.
+- **Edges are hoisted to the nearest visible ancestor.** When an edge's endpoint is inside a frame that is not expanded, drawing it to a missing node would break the edge, so it is drawn to the frame instead. Saving ignores the hoisted endpoints; otherwise saving would rewrite the real connection to point at the frame.
+- **Drill-down replaces the canvas instead of zooming.** React Flow fails when a node's `parentId` is not in the node array. Loading only the current folder's children and treating them as top-level nodes avoids that. Pending changes are saved before the folder changes so nothing is lost on navigation.
+- **The sidebar and the canvas talk through window events.** Each page renders `<Sidebar />` next to its content, so on the graph page the sidebar and the canvas are siblings and neither passes props to the other.
+- **A starter project is created at registration.** So a new user can open a working canvas immediately.
+- **SQLite by default, PostgreSQL for production.** Local setup needs no database server.
+
+---
+
+## Workflow
+
+### Commands
 ```bash
 # Backend
-source .venv/bin/activate
-python manage.py runserver          # Start backend
-python manage.py makemigrations     # Create migrations
-python manage.py migrate            # Apply migrations
-python manage.py createsuperuser    # Create admin user
-python manage.py shell              # Django shell
-python manage.py test               # Run tests
+python manage.py runserver
+python manage.py makemigrations && python manage.py migrate
+python manage.py createsuperuser
+python manage.py test
+python manage.py spectacular --validate      # check the OpenAPI schema
 
-# Frontend
-cd frontend
-npm run dev                         # Start dev server
-npm run build                       # Production build
-npm run preview                     # Preview build
-npm run lint                        # ESLint
+# Frontend (from frontend/)
+npm run dev
+npm run lint
+npm run build
 ```
 
-### Helper Scripts
+`./helpers.sh` wraps the common ones (`check`, `shell`, `migrations`, `test-backend`, `lint-all`, `create-user`, `reset-db`).
 
-| Script | Purpose |
-|---|---|
-| `./dev.sh` | Start backend + frontend in tmux |
-| `./setup.sh` | Initial project setup |
-| `./helpers.sh check` | System status check |
-| `./helpers.sh reset-db` | Reset database (⚠️ deletes data) |
-| `./helpers.sh shell` | Django shell |
-| `./helpers.sh migrations` | Create + apply migrations |
-| `./helpers.sh create-user` | Create superuser |
-| `./helpers.sh urls` | List all URL patterns |
+### Continuous integration
+`.github/workflows/ci.yml` runs on pushes to `main` and `Dev` and on pull requests:
+- Backend: `manage.py check`, `makemigrations --check`, `manage.py test`.
+- Frontend: `npm ci`, `npm run lint`, `npm run build`.
 
 ### Database
+SQLite works without configuration. For PostgreSQL set `DB_ENGINE=postgresql` and the `DB_*` variables in `.env`. After switching branches that change migrations, recreate the local SQLite file or run `migrate` on a fresh database.
 
-**Development:** SQLite (`db.sqlite3`) — no setup needed, auto-created on migrate.
-
-**Production:** PostgreSQL. Configure in `.env`:
-```env
-DB_NAME=forgelink_db
-DB_USER=forgelink_user
-DB_PASSWORD=your-password
-DB_HOST=localhost
-DB_PORT=5432
-```
-
-### Adding a New Feature
-
-1. **Backend:** Create models in the appropriate app, add serializers, ViewSet, register in `urls.py`
-2. **Frontend:**
-   - **Complex feature** (own state, multiple components, API): create `features/<feature>/` with `api/`, `components/`, `hooks/`
-   - **Simple CRUD page**: create `pages/<feature>/` with the page + optional `tabs/`
-   - **Page-specific components**: co-locate inside the page folder (e.g., `pages/landing/components/`)
-   - **Shared primitive**: add to `components/ui/` following shadcn/ui conventions (kebab-case filename, `cn()` utility, `forwardRef`)
-   - **Route**: register in `App.jsx`
-3. **New shadcn component:** `npx shadcn@latest add <component>` or create manually in `components/ui/`
-
-### Code Conventions
-
-**Backend (Python):**
-- PEP 8
-- Docstrings on models and ViewSet actions
-- `lookup_field = 'uuid'` for public-facing resources
-- Owner-scoped querysets in all ViewSets
-
-**Frontend (React):**
-- Functional components with hooks
-- One component per file
-- Validation on `onChange` + `onBlur` (not just `onSubmit`)
-- Disable submit buttons when form has errors
-- `aria-*` attributes on all form elements
-- `role="alert"` for errors, `role="status"` for success messages
+### Adding a feature
+1. Backend: model and migration, serializer (declare `owner_scoped_fields` for foreign keys), ViewSet filtered to the user, route, tests including a cross-user case.
+2. Frontend: a complex feature goes in `features/<name>/` (`api/`, `components/`, `hooks/`); a simple page goes in `pages/<name>/`. Register routes in `App.jsx`.
+3. Add every user-visible string to both `src/locales/en.json` and `src/locales/es.json`.
 
 ---
 
 ## Troubleshooting
 
-**Port in use:**
-```bash
-lsof -ti:8000 | xargs kill -9   # Backend
-lsof -ti:5173 | xargs kill -9   # Frontend
-```
-
-**Migration conflicts:**
-```bash
-python manage.py migrate --fake-initial
-```
-
-**Stale Python cache:**
-```bash
-find . -type d -name __pycache__ -exec rm -rf {} +
-```
-
-**Node modules issues:**
-```bash
-cd frontend && rm -rf node_modules package-lock.json && npm install
-```
-
----
-
----
-
-## ZUI Drill-down, Portals, and Sidebar Explorer
-
-The Zoomable User Interface (ZUI) allows users to navigate complex graphs using a folder-like drill-down approach and cross-graph portals. The Sidebar provides a real-time tree explorer of all nodes.
-
-### Architecture Overview
-
-#### 0. Sidebar Explorer (Real-time Tree)
-The sidebar displays a hierarchical tree of all nodes in the current graph, updated in real-time as the canvas changes.
-
-- **Data Source:** The `hierarchy` field from `GET /graphs/{uuid}/canvas/`
-- **Tree Building:** Canvas builds the tree from backend hierarchy data and dispatches `canvas-frames-updated` event
-- **Synchronization:** 
-  - Sidebar listens for `canvas-frames-updated` and renders the tree
-  - Sidebar dispatches `sidebar-ready` event on mount
-  - Canvas re-emits the tree when `sidebar-ready` is detected (ensures sync even if Sidebar mounts late)
-- **Visual Indicators:** Each node shows whether it's a frame (folder icon) or regular node (document icon)
-
-#### 1. Folder-like Drill-down (Nesting)
-Instead of a literal camera zoom, the canvas implements a "memory-wipe" navigation where drilling into a frame clears the current nodes and loads only the children of that frame.
-
-- **State Management:** The frontend tracks `currentFolderId` (the ID of the frame being viewed).
-- **Backend Filtering:** When `folder_id` is provided to `GET /graphs/{uuid}/canvas/`, the API returns only nodes where `parent_node == folder_id`. If `folder_id` is null, it returns only root-level nodes.
-- **Context-Aware Creation:** New nodes created while drilled down are automatically assigned the `currentFolderId` as their `parent_node`.
-- **Navigation:** 
-  - **Drill-down:** Double-clicking a FrameNode sets `currentFolderId` to that frame's ID and re-fetches data.
-  - **Go Up:** Navigating back sets `currentFolderId` to the parent of the current folder (provided in the `current_folder` metadata from the API).
-- **Atomic Navigation:** To prevent data loss, a bulk save (`PUT /graphs/{uuid}/canvas/bulk/`) MUST complete successfully before changing `currentFolderId` and re-fetching.
-
-#### 2. Canvas Rendering & Physics
-React Flow requires a specific `parentId` property for nested rendering, which can cause crashes if the parent is not present in the current node array (the "memory-wipe" scenario).
-
-- **Conditional parentId:** In the frontend, `reactFlowNode.parentId` is assigned ONLY if the parent node exists in the current visible subset of nodes.
-- **Top-level floating:** If a node's parent is the `currentFolderId` (and thus not rendered), the node is treated as a top-level root node in the current view to prevent coordinate clamping crashes.
-- **Cascade Deletion:** Deleting a frame recursively deletes all nested children both in the frontend state and the backend (via `models.CASCADE` on the `parent_node` ForeignKey).
-
-#### 3. Cross-Graph Portals
-Portals allow users to link different graphs within the same project without breaking the 2D layout logic.
-
-- **PortalNode:** A special node type that stores `target_graph_uuid` in its `custom_properties`.
-- **Navigation:** Double-clicking a PortalNode triggers a route change to `/graphs/{target_graph_uuid}`.
-- **Creation UI:** A dedicated modal allows users to select a target graph from the current project to create a new portal.
-
----
-
-## Access Points
-
-| Service | URL |
+| Problem | Fix |
 |---|---|
-| Frontend | http://localhost:5173/ |
-| Backend API | http://localhost:8000/api/ |
-| Django Admin | http://localhost:8000/admin/ |
-
----
-
-**See also:**
-- [Quick Start](./QUICK_START.md) — Get running in minutes
-- [API Reference](./API_ENDPOINTS.md) — Complete endpoint documentation
-- [Frontend](./frontend/README.md) — Frontend setup, structure, and routes
+| Port 8000 or 5173 already in use | Stop the other process, or run on another port (`python manage.py runserver 8001`, `npm run dev -- --port 5174`) and add the new frontend origin to `CORS_ALLOWED_ORIGINS` |
+| `no such column` or migration errors after switching branches | Delete the local SQLite file and run `python manage.py migrate` |
+| Login works but every request returns 401 | Check that the browser origin is in `CORS_ALLOWED_ORIGINS` and that `VITE_API_URL` points to the running backend |
+| `Module not found` in the frontend | Run `npm install` in `frontend/` |
+| Frontend import of `@/lib/utils` fails | Make sure `frontend/src/lib/utils.js` exists (it must not be git-ignored) |

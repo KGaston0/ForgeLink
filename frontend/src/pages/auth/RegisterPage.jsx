@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
@@ -14,48 +15,47 @@ export default function RegisterPage() {
     first_name: '',
     last_name: '',
   });
-  const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
-  // Real-time validation
-  useEffect(() => {
+  // Real-time validation (derived from form state)
+  const errors = useMemo(() => {
     const newErrors = {};
     if (touched.username && formData.username) {
       if (formData.username.length < 3) {
-        newErrors.username = 'Username must be at least 3 characters';
+        newErrors.username = t('auth.register.errors.usernameMinLength');
       } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-        newErrors.username = 'Username can only contain letters, numbers, and underscores';
+        newErrors.username = t('auth.register.errors.usernameInvalid');
       }
     }
     if (touched.email && formData.email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email address';
+        newErrors.email = t('auth.register.errors.emailInvalid');
       }
     }
     if (touched.password && formData.password) {
       if (formData.password.length < 8) {
-        newErrors.password = 'Password must be at least 8 characters';
+        newErrors.password = t('auth.register.errors.passwordMinLength');
       } else if (!/(?=.*[a-z])/.test(formData.password)) {
-        newErrors.password = 'Password must contain at least one lowercase letter';
+        newErrors.password = t('auth.register.errors.passwordLowercase');
       } else if (!/(?=.*[A-Z])/.test(formData.password)) {
-        newErrors.password = 'Password must contain at least one uppercase letter';
+        newErrors.password = t('auth.register.errors.passwordUppercase');
       } else if (!/(?=.*\d)/.test(formData.password)) {
-        newErrors.password = 'Password must contain at least one number';
+        newErrors.password = t('auth.register.errors.passwordNumber');
       } else if (!/(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])/.test(formData.password)) {
-        newErrors.password = 'Password must contain at least one special character';
+        newErrors.password = t('auth.register.errors.passwordSpecial');
       }
     }
     if (touched.password_confirm && formData.password_confirm) {
       if (formData.password !== formData.password_confirm) {
-        newErrors.password_confirm = 'Passwords do not match';
+        newErrors.password_confirm = t('auth.register.errors.passwordMismatch');
       }
     }
-    setErrors(newErrors);
-  }, [formData, touched]);
+    return newErrors;
+  }, [formData, touched, t]);
   const isFormValid = () => {
     return (
       formData.username.length >= 3 &&

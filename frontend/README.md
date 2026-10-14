@@ -1,161 +1,97 @@
 # ForgeLink — Frontend
 
-React SPA for ForgeLink. Interactive graph editor, project management, and dashboard.
-
----
-
-## Quick Start
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend: http://localhost:5173/ — Requires backend running on http://localhost:8000/
-
----
+React single-page app: graph editor, project management and dashboard. Setup for the whole project is in the [root README](../README.md); how the editor and authentication work is in [DEVELOPMENT.md](../DEVELOPMENT.md).
 
 ## Commands
 
+Run from `frontend/`.
+
 | Command | Description |
 |---|---|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Production build |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
+| `npm install` | Install dependencies |
+| `npm run dev` | Dev server on http://localhost:5173 (needs the backend on :8000) |
+| `npm run build` | Production build into `dist/` |
+| `npm run preview` | Serve the production build |
+| `npm run lint` | ESLint |
 
----
+Configuration: `VITE_API_URL` (default `http://localhost:8000/api`). Copy `.env.example` to `.env` to change it.
 
-## Tech Stack
+## Stack
 
-| Package | Version | Purpose                                                    |
-|---|---|------------------------------------------------------------|
-| React | 19.2 | UI library                                                 |
-| Vite | 7 | Build tool / dev server                                    |
-| Tailwind CSS | v4 | Utility-first CSS (CSS-based config, HSL variables)        |
-| shadcn/ui | — | Component primitives (Radix UI + class-variance-authority) |
-| lucide-react | — | Icon library                                               |
-| @xyflow/react | 12 | Interactive graph canvas editor                            |
-| axios | 1.13 | HTTP client with cookie-based auth                         |
-| react-router-dom | 7 | Nested routing                                             |
-| clsx + tailwind-merge | — | Class merging via `cn()` utility                           |
-
----
+React 19, Vite 7, Tailwind CSS v4, shadcn/ui (Radix + class-variance-authority), @xyflow/react 12, react-router-dom 7, axios, react-i18next, lucide-react.
 
 ## Structure
 
 ```
 src/
-├── App.jsx                          # Route definitions
-├── index.css                        # Theme variables (HSL), component classes, React Flow overrides
-├── main.jsx                         # Entry point
-│
-├── components/                      # Shared UI
-│   ├── layout/Sidebar/              # Explorer sidebar with real-time hierarchy tree
-│   │                                # (listens to canvas-frames-updated event)
-│   └── ui/                          # shadcn/ui primitives + app-level components
-│       ├── avatar.jsx               #   Avatar with gradient fallback
-│       ├── button.jsx               #   Button with CVA variants (default, ghost, outline, etc.)
-│       ├── loading-spinner.jsx      #   Themed spinner (fullscreen / inline)
-│       ├── separator.jsx            #   Horizontal/vertical divider
-│       ├── theme-toggle.jsx         #   Animated dark/light toggle
-│       └── tooltip.jsx              #   Radix tooltip with portal
-│
-├── pages/                           # Route pages
-│   ├── auth/                        # LoginPage, RegisterPage
-│   ├── home/                        # Dashboard + useDashboardStats hook
-│   ├── landing/                     # LandingPage + co-located components
-│   │   └── components/              #   Navigation, UserMenu, Footer, HeroSection,
-│   │                                #   BentoGrid, DualPurpose, PricingSection, CTASection
-│   ├── projects/                    # ProjectsPage, ProjectDetailLayout
-│   │   └── tabs/                    #   OverviewTab (graphs), SettingsTab (edit/delete)
-│   ├── graphs/                      # GraphCanvasPage
-│   ├── nodelab/                     # NodeLabPage
-│   │   └── tabs/                    #   BlueprintsTab, NodeListsTab
-│   └── settings/                    # SettingsPage
-│
-├── features/graphs/                 # Graph editor feature module
-│   ├── api/graphService.js          # Canvas API (fetch, save bulk, CRUD)
-│   ├── components/
-│   │   ├── GraphCanvas.jsx          # Main canvas with auto-save + undo/redo
-│   │   ├── Toolbar.jsx              # Drag-and-drop node creation
-│   │   ├── NodeEditorModal.jsx      # Edit node properties
-│   │   ├── EdgeEditorModal.jsx      # Edit connection properties
-│   │   ├── nodes/                   # BaseNode, StandardNode, FrameNode, ConnectionHandles
-│   │   └── edges/                   # CustomEdge, edgeConstants
-│   └── hooks/useUndoRedo.js         # History state management
-│
-├── lib/utils.js                     # cn() utility (clsx + tailwind-merge)
-├── services/api/                    # apiClient (axios + token refresh interceptor)
-├── context/                         # AuthContext, ThemeContext
-├── config/apiConfig.js              # API base URL + endpoint constants
-├── routes/ProtectedRoute.jsx        # Auth guard → redirects to /login
-└── types/NodeType.js                # Type definitions
+├── App.jsx, main.jsx, index.css, i18n.js
+├── components/
+│   ├── layout/Sidebar/        Collapsible sidebar with the graph explorer tree
+│   └── ui/                    shadcn primitives and shared components (button, avatar, tooltip,
+│                              separator, theme-toggle, loading-spinner)
+├── pages/                     One folder per route, page-specific components live beside the page
+│   ├── auth/  home/  landing/  projects/  graphs/  nodelab/  settings/
+├── features/graphs/           Graph editor: api/, components/ (canvas, toolbar, modals,
+│                              nodes/, edges/), hooks/ (undo/redo), utils/
+├── context/                   AuthContext, ThemeContext, ActivityFeedContext
+├── services/api/              apiClient (axios, token refresh) and authService
+├── config/apiConfig.js        API base URL and endpoint paths
+├── routes/ProtectedRoute.jsx  Redirects unauthenticated visitors to /login
+├── lib/utils.js               cn() helper (clsx + tailwind-merge)
+├── locales/                   en.json, es.json
+└── types/NodeType.js
 ```
 
-### Architecture Principles
+Where new code goes:
+- A complex, self-contained domain (own API calls, components and hooks) goes in `features/<name>/`.
+- A simple page goes in `pages/<name>/`, with its tabs and components beside it.
+- A primitive reused across the app goes in `components/ui/`, following shadcn conventions (kebab-case file, `cn()`, `forwardRef`).
 
-- **`components/ui/`** — Shared primitives reusable across the entire app. Follow shadcn/ui conventions (kebab-case filenames, `cn()`, `forwardRef`).
-- **`components/layout/`** — Layout components shared across multiple pages (currently only Sidebar).
-- **`pages/`** — Each route has its own folder. Page-specific components are co-located (e.g., `pages/landing/components/`).
-- **`features/`** — Reserved for complex, self-contained domain modules with their own API, components, and hooks (currently only `graphs`).
-- Simple CRUD pages (projects, settings, nodelab) stay in `pages/` — no need for a feature folder.
+Imports use the `@/` alias for `src/`, configured in `vite.config.js` and `jsconfig.json`:
 
----
-
-## Routes
-
-| Path | Page | Auth |
-|---|---|---|
-| `/` | Landing Page | Public |
-| `/login` | Login | Public |
-| `/register` | Register | Public |
-| `/dashboard` | Dashboard (stats + recent projects) | Protected |
-| `/projects` | Projects list + create modal | Protected |
-| `/projects/:uuid` | Project detail → Overview tab (graphs) | Protected |
-| `/projects/:uuid/settings` | Project detail → Settings tab | Protected |
-| `/graphs/:uuid` | Graph canvas editor | Protected |
-| `/node-types` | Node Lab | Protected |
-| `/settings` | User settings | Protected |
-
-> URL `:uuid` params are UUID strings, not integer IDs.
-
----
-
-## Styling
-
-### shadcn/ui + Tailwind CSS v4
-
-All design tokens defined as **HSL values** in `index.css` via `@theme inline`. No `tailwind.config.js` needed (Tailwind v4 uses CSS-based configuration).
-
-**Key tokens:**
-- Surfaces: `bg-background`, `bg-card`, `bg-muted`, `bg-sidebar`
-- Text: `text-foreground`, `text-muted-foreground`, `text-primary`
-- Brand: `text-primary` (cyan), `text-accent` (purple)
-- Borders: `border-border`, `border-input`
-- Focus: `ring-ring` (cyan)
-- Errors: `text-destructive`, `border-destructive`
-
-**Light theme:** Warm grays (not pure white) for a softer, premium feel.
-**Dark theme:** Deep charcoal grays (not black).
-
-**Legacy classes** (`.btn-primary`, `.btn-secondary`, `.input-field`, `.input-error`) are still available for components not yet migrated to shadcn Button.
-
-### Path Alias
-
-`@/` maps to `src/` — configured in `vite.config.js` and `jsconfig.json`. Use for all imports:
 ```js
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 ```
 
----
+## Routes
 
-## Documentation
+| Path | Page | Access |
+|---|---|---|
+| `/` | Landing | Public |
+| `/login`, `/register` | Authentication | Public |
+| `/dashboard` | Stats, recent projects, resume work, activity feed | Protected |
+| `/projects` | Projects list | Protected |
+| `/projects/:id` | Project detail, Overview tab | Protected |
+| `/projects/:id/settings` | Project detail, Settings tab | Protected |
+| `/graphs/:id` | Graph editor | Protected |
+| `/node-types` | Node Lab (blueprints and lists) | Protected |
+| `/node-types/builder`, `/node-types/builder/:id` | Blueprint builder | Protected |
+| `/settings` | User settings, language | Protected |
 
-| Document | Description |
+The `:id` of projects and graphs is the UUID.
+
+## Design system
+
+Tailwind v4 has no `tailwind.config.js`. Design tokens are HSL variables in `src/index.css`, registered as Tailwind colors in the `@theme inline` block, and swapped by a `.dark` class on `<html>`.
+
+| Use | Classes |
 |---|---|
-| [Development Guide](../DEVELOPMENT.md) | Architecture, data models, design system, workflows |
-| [API Reference](../API_ENDPOINTS.md) | Complete backend endpoint documentation |
-| [Quick Start](../QUICK_START.md) | Full project setup instructions |
+| Surfaces | `bg-background`, `bg-card`, `bg-muted`, `bg-sidebar` |
+| Text | `text-foreground`, `text-muted-foreground` |
+| Brand | `text-primary` (cyan), `text-accent` (purple) |
+| Borders and focus | `border-border`, `border-input`, `ring-ring` |
+| Errors | `text-destructive`, `border-destructive` |
+
+The explorer sidebar has its own tokens (`--explorer-foreground`, `--explorer-muted-foreground`, `--explorer-hover`).
+
+`index.css` also defines legacy classes for components that predate shadcn: `.btn-primary`, `.btn-secondary`, `.input-field`, `.input-error`, and the older `--color-*` variables. Use the tokens and `components/ui` in new code.
+
+`ThemeContext` exposes `theme`, `toggleTheme`, `isDark`, `isLight` and `resetToSystem`. It follows the system preference until the user picks a theme, then stores the choice in `localStorage` (`forgelink-theme`, `forgelink-theme-manual`).
+
+## Conventions
+
+- Functional components with hooks, one component per file.
+- No hardcoded user-visible text outside the landing page: use `const { t } = useTranslation()`, with semantic keys such as `dashboard.resumeWork.title`, interpolation instead of concatenation, and every new key added to both `locales/en.json` and `locales/es.json`. Validation helpers receive `t` as a parameter.
+- Forms validate on change and on blur, disable submit while invalid, and expose state with `aria-invalid`, `aria-describedby`, `aria-busy`, `role="alert"` for errors and `role="status"` for success. Every input has a label bound with `htmlFor`.
+- Use the single `LoadingSpinner` for loading states.

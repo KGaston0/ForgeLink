@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from forgelink_backend.serializer_mixins import OwnerScopedRelatedFieldsMixin
 from .models import Node, NodeBlueprint, BlueprintList
 
 
@@ -23,7 +25,7 @@ class NodeBlueprintSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['creator', 'created_at', 'updated_at']
 
-    def get_spawned_nodes_count(self, obj):
+    def get_spawned_nodes_count(self, obj) -> int:
         """Return the number of nodes spawned from this blueprint."""
         return obj.spawned_nodes.count()
 
@@ -48,12 +50,14 @@ class BlueprintListSerializer(serializers.ModelSerializer):
         read_only_fields = ['creator', 'created_at', 'updated_at']
 
 
-class BlueprintListWriteSerializer(serializers.ModelSerializer):
+class BlueprintListWriteSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """
     Write serializer for BlueprintList.
     
     Accepts blueprint IDs instead of full nested objects for create/update operations.
     """
+
+    owner_scoped_fields = {'blueprint_ids': 'creator'}
 
     creator = serializers.StringRelatedField(read_only=True)
     blueprint_ids = serializers.PrimaryKeyRelatedField(
@@ -93,7 +97,7 @@ class BlueprintListWriteSerializer(serializers.ModelSerializer):
         return instance
 
 
-class NodeSerializer(serializers.ModelSerializer):
+class NodeSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerializer):
     """
     Serializer for Node model.
     
@@ -101,8 +105,11 @@ class NodeSerializer(serializers.ModelSerializer):
     via the 'blueprint' foreign key.
     """
 
-    child_count = serializers.SerializerMethodField()
-    depth_level = serializers.SerializerMethodField()
+    owner_scoped_fields = {
+        'project': 'owner',
+        'blueprint_id': 'creator',
+    }
+
     graph_ids = serializers.SerializerMethodField()
     blueprint = NodeBlueprintSerializer(read_only=True)
     blueprint_id = serializers.PrimaryKeyRelatedField(
@@ -116,34 +123,13 @@ class NodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Node
         fields = [
-            'id', 'project', 'parent_node', 'title', 'node_type', 'content',
+            'id', 'project', 'title', 'node_type', 'content',
             'custom_properties', 'blueprint', 'blueprint_id',
             'created_at', 'updated_at',
-            'child_count', 'depth_level', 'graph_ids'
+            'graph_ids'
         ]
         read_only_fields = ['created_at', 'updated_at', 'graph_ids', 'blueprint']
 
-    def get_child_count(self, obj):
-        """Return the count of direct child nodes."""
-        return obj.child_nodes.count()
-
-    def get_depth_level(self, obj):
-        """Return the depth level in the hierarchy."""
-        return obj.get_depth()
-
-    def get_graph_ids(self, obj):
+    def get_graph_ids(self, obj) -> list[int]:
         """Return list of graph IDs this node belongs to."""
         return list(obj.graph_nodes.values_list('graph_id', flat=True))
-
-
-class NodeDetailSerializer(NodeSerializer):
-    """
-    Detailed serializer with nested children.
-    
-    Includes full child node data for hierarchical browsing.
-    """
-
-    child_nodes = NodeSerializer(many=True, read_only=True)
-
-    class Meta(NodeSerializer.Meta):
-        fields = NodeSerializer.Meta.fields + ['child_nodes']
