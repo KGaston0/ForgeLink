@@ -75,8 +75,8 @@ class NodeConnectionSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelS
                 instance.connection_type = attrs['connection_type']
             elif instance.connection_type_id is not None and (not hasattr(instance, 'connection_type') or instance.connection_type is None):
                 instance.connection_type = ConnectionType.objects.get(pk=instance.connection_type_id)
-        except ObjectDoesNotExist as e:
-            raise ValidationError(f"Related object does not exist: {str(e)}")
+        except ObjectDoesNotExist:
+            raise ValidationError("Related object does not exist.")
 
         # Run model validation
         try:

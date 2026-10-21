@@ -80,8 +80,8 @@ class GraphNodeSerializer(OwnerScopedRelatedFieldsMixin, serializers.ModelSerial
             # Load parent_node if it's being set or already exists
             if instance.parent_node_id is not None and (not hasattr(instance, 'parent_node') or instance.parent_node is None):
                 instance.parent_node = GraphNode.objects.get(pk=instance.parent_node_id)
-        except ObjectDoesNotExist as e:
-            raise ValidationError(f"Related object does not exist: {str(e)}")
+        except ObjectDoesNotExist:
+            raise ValidationError("Related object does not exist.")
 
         # Run model validation
         try:

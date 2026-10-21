@@ -221,8 +221,12 @@ class GraphViewSet(viewsets.ModelViewSet):
                     graph, project, connections_data, node_results['temp_id_map'],
                 )
                 graph.save(update_fields=['updated_at'])
-        except BulkValidationError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except BulkValidationError:
+            # The message names the offending object, so keep it out of the response
+            return Response(
+                {'detail': 'The canvas references objects that do not exist or are not available.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except Exception:
             logger.exception('Bulk canvas save failed for graph %s', uuid)
             return Response(
