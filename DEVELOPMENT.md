@@ -266,8 +266,8 @@ npm run build
 `./helpers.sh` wraps the common ones (`check`, `shell`, `migrations`, `test-backend`, `lint-all`, `create-user`, `reset-db`).
 
 ### Continuous integration
-`.github/workflows/ci.yml` runs on pushes to `main` and `Dev` and on pull requests:
-- Backend: `manage.py check`, `makemigrations --check`, `manage.py test`.
+`.github/workflows/ci.yml` runs on pushes to `main`, on pull requests and on manual dispatch. `main` requires the `Backend (Django)` and `Frontend (React)` checks to pass before merging.
+- Backend: `manage.py check`, `makemigrations --check`, the OpenAPI schema validation (`spectacular --validate --fail-on-warn`) and `manage.py test`.
 - Frontend: `npm ci`, `npm run lint`, `npm run build`.
 
 ### Database
